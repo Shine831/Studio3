@@ -84,7 +84,8 @@ export default function SignupPage() {
       });
       router.push('/dashboard');
     } catch (err: any) {
-      let friendlyMessage = "An unexpected error occurred. Please try again.";
+      console.error("Email/Password signup error:", err);
+      let friendlyMessage = err.message || "An unexpected error occurred. Please try again.";
       if (err.code === 'auth/email-already-in-use') {
         friendlyMessage = "This email address is already in use by another account.";
       } else if (err.code === 'auth/weak-password') {
@@ -116,7 +117,8 @@ export default function SignupPage() {
       });
       router.push('/dashboard');
     } catch (err: any) {
-        let friendlyMessage = "An unexpected error occurred during Google sign-up.";
+        console.error("Google signup error:", err);
+        let friendlyMessage = err.message || "An unexpected error occurred during Google sign-up.";
         if (err.code === 'auth/popup-closed-by-user') {
             friendlyMessage = 'The sign-up window was closed before completion. Please try again.';
         } else if (err.code === 'auth/account-exists-with-different-credential') {

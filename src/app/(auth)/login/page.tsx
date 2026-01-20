@@ -59,13 +59,15 @@ export default function LoginPage() {
       });
       router.push('/dashboard');
     } catch (err: any) {
-      const errorCode = err.code;
-      let friendlyMessage = "An unexpected error occurred. Please try again.";
-      if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential') {
+      console.error("Email/Password login error:", err);
+      let friendlyMessage = err.message || "An unexpected error occurred. Please try again.";
+      
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         friendlyMessage = "Invalid email or password. Please check your credentials and try again.";
-      } else if (errorCode === 'auth/too-many-requests') {
+      } else if (err.code === 'auth/too-many-requests') {
         friendlyMessage = "Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.";
       }
+      
       setError(friendlyMessage);
       toast({
         variant: 'destructive',
@@ -90,12 +92,15 @@ export default function LoginPage() {
       });
       router.push('/dashboard');
     } catch (err: any) {
-      let friendlyMessage = "An unexpected error occurred during Google sign-in.";
+      console.error("Google Login Error:", err);
+      let friendlyMessage = err.message || "An unexpected error occurred during Google sign-in.";
+      
       if (err.code === 'auth/popup-closed-by-user') {
         friendlyMessage = 'The sign-in window was closed before completion. Please try again.';
       } else if (err.code === 'auth/account-exists-with-different-credential') {
         friendlyMessage = 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
       }
+
       setError(friendlyMessage);
        toast({
         variant: 'destructive',
