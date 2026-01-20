@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import {
-  getAuth,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
@@ -20,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { getFirebaseApp } from '@/firebase/client-provider';
+import { useAuth } from '@/firebase/provider';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,11 +29,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const app = getFirebaseApp();
-  const auth = getAuth(app);
+  const auth = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) {
+      setError("Authentication service not ready.");
+      return;
+    }
     if (!email || !password) {
       setError('Please fill in all fields.');
       return;
@@ -61,6 +63,10 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!auth) {
+      setError("Authentication service not ready.");
+      return;
+    }
     setLoading(true);
     setError(null);
     const provider = new GoogleAuthProvider();
@@ -117,7 +123,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || !auth}
                 />
               </div>
               <div className="grid gap-2">
@@ -136,10 +142,10 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || !auth}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !auth}>
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
               <Button
@@ -147,7 +153,7 @@ export default function LoginPage() {
                 type="button"
                 className="w-full"
                 onClick={handleGoogleLogin}
-                disabled={loading}
+                disabled={loading || !auth}
               >
                 <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                   <path

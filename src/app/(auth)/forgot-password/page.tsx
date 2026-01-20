@@ -2,22 +2,19 @@
 
 import Link from 'next/link';
 import React, { useState } from 'react';
-import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
-
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { getFirebaseApp } from '@/firebase/client-provider';
+import { useAuth } from '@/firebase/provider';
 
 export default function ForgotPasswordPage() {
   const { toast } = useToast();
@@ -26,11 +23,19 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
-  const app = getFirebaseApp();
-  const auth = getAuth(app);
+  const auth = useAuth();
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) {
+      setError("Authentication service is not available. Please try again later.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Authentication service is not available.",
+      });
+      return;
+    }
     if (!email) {
       setError('Please enter your email address.');
       return;
@@ -97,10 +102,10 @@ export default function ForgotPasswordPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
+                    disabled={loading || !auth}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full" disabled={loading || !auth}>
                   {loading ? 'Sending...' : 'Send Reset Link'}
                 </Button>
               </div>

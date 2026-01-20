@@ -2,23 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { getAuth } from 'firebase/auth';
-import { getFirebaseApp } from '@/firebase/client-provider';
+import { useAuth } from '@/firebase/provider';
 
 export const useUser = () => {
+  const auth = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const app = getFirebaseApp();
-    const auth = getAuth(app);
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    if (auth) {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    } else {
+      // If auth is not available, we are not loading and there is no user.
       setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    }
+  }, [auth]);
 
   return { user, loading };
 };
