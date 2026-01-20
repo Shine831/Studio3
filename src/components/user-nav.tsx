@@ -26,18 +26,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useUser } from '@/firebase/auth/use-user';
-import { getAuth, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/firebase/provider';
 
 export function UserNav() {
   const { setTheme } = useTheme();
   const { user } = useUser();
+  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    const auth = getAuth();
+    if (!auth) {
+      toast({
+        variant: 'destructive',
+        title: 'Logout Failed',
+        description: 'Authentication service not available.',
+      });
+      return;
+    }
     await signOut(auth);
     toast({
       title: 'Logged Out',
