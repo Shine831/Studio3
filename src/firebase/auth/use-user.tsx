@@ -16,9 +16,6 @@ export const useUser = () => {
         setLoading(false);
       });
       return () => unsubscribe();
-    } else {
-      // If auth is not available, we are not loading and there is no user.
-      setLoading(false);
     }
   }, [auth]);
 

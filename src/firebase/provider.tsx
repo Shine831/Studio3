@@ -1,48 +1,56 @@
 'use client';
 
-import { ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useEffect,
+  useState,
+} from 'react';
 import { FirebaseApp, getApps, initializeApp, getApp } from 'firebase/app';
 import { Auth, getAuth } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
-
 import { firebaseConfig } from '@/firebase/config';
 
-// --- Singleton Initialization ---
-// This code runs only once when the module is first imported,
-// ensuring a single, consistent instance of Firebase services.
-let firebaseAppInstance: FirebaseApp;
-if (getApps().length === 0) {
-  firebaseAppInstance = initializeApp(firebaseConfig);
-} else {
-  firebaseAppInstance = getApp();
+interface FirebaseContextValue {
+  app: FirebaseApp | null;
+  auth: Auth | null;
+  firestore: Firestore | null;
 }
 
-const authInstance: Auth = getAuth(firebaseAppInstance);
-const firestoreInstance: Firestore = getFirestore(firebaseAppInstance);
-// --- End Singleton Initialization ---
+const FirebaseContext = createContext<FirebaseContextValue>({
+  app: null,
+  auth: null,
+  firestore: null,
+});
 
+export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
+  const [instances, setInstances] = useState<FirebaseContextValue>({
+    app: null,
+    auth: null,
+    firestore: null,
+  });
 
-// The provider component is now a "pass-through". It no longer manages
-// state but is kept for structural compatibility with the root layout.
-export const FirebaseProvider = ({
-  children,
-}: {
-  children: ReactNode;
-}) => {
-  return <>{children}</>;
-};
-
-// The hooks now return the singleton instances directly, bypassing React Context.
-// This is a more robust approach for Next.js applications.
-
-export const useFirebase = () => {
-    return {
-        firebaseApp: firebaseAppInstance,
-        auth: authInstance,
-        firestore: firestoreInstance,
+  useEffect(() => {
+    let app: FirebaseApp;
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApp();
     }
+    const auth = getAuth(app);
+    const firestore = getFirestore(app);
+    setInstances({ app, auth, firestore });
+  }, []);
+
+  return (
+    <FirebaseContext.Provider value={instances}>
+      {children}
+    </FirebaseContext.Provider>
+  );
 };
 
-export const useFirebaseApp = (): FirebaseApp => firebaseAppInstance;
-export const useFirestore = (): Firestore => firestoreInstance;
-export const useAuth = (): Auth => authInstance;
+export const useFirebase = () => useContext(FirebaseContext);
+export const useFirebaseApp = () => useContext(FirebaseContext).app;
+export const useAuth = () => useContext(FirebaseContext).auth;
+export const useFirestore = () => useContext(FirebaseContext).firestore;
