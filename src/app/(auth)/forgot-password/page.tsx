@@ -14,10 +14,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { useFirebase } from '@/firebase';
+import { auth } from '@/firebase';
 
 export default function ForgotPasswordPage() {
-  const firebase = useFirebase();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -26,10 +25,6 @@ export default function ForgotPasswordPage() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firebase) {
-      setError('Firebase not initialized. Please try again.');
-      return;
-    }
     if (!email) {
       setError('Please enter your email address.');
       return;
@@ -38,22 +33,24 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      await sendPasswordResetEmail(firebase.auth, email);
+      await sendPasswordResetEmail(auth, email);
       setSubmitted(true);
       toast({
         title: 'Check your email',
         description: 'If an account exists for this email, a password reset link has been sent.',
       });
     } catch (err: any) {
-      let friendlyMessage = err.message || "An unexpected error occurred. Please try again.";
+      let friendlyMessage = "An unexpected error occurred. Please try again.";
+      // We don't want to reveal if a user exists or not for security reasons.
+      // So, in most cases, we pretend the operation was successful.
       if (err.code === 'auth/user-not-found') {
-        // We don't want to reveal if a user exists or not.
         setSubmitted(true); // Pretend it was successful.
         toast({
             title: 'Check your email',
             description: 'If an account exists for this email, a password reset link has been sent.',
         });
       } else {
+        friendlyMessage = err.message;
         setError(friendlyMessage);
         console.error("Password Reset Error:", err);
         toast({
@@ -107,10 +104,10 @@ export default function ForgotPasswordPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading || !firebase}
+                    disabled={loading}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading || !firebase}>
+                <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Sending...' : 'Send Reset Link'}
                 </Button>
               </div>

@@ -21,10 +21,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { useFirebase } from '@/firebase';
+import { auth, firestore } from '@/firebase';
 
 export default function LoginPage() {
-  const firebase = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
@@ -33,18 +32,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const updateUserLoginTimestamp = (user: User | null) => {
-      if (!user || !firebase) return;
-      const userRef = doc(firebase.firestore, 'users', user.uid);
+      if (!user) return;
+      const userRef = doc(firestore, 'users', user.uid);
       setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true })
           .catch(error => console.error("Error updating login timestamp:", error));
   }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firebase) {
-      setError('Firebase not initialized. Please try again.');
-      return;
-    }
     if (!email || !password) {
       setError('Please fill in all fields.');
       return;
@@ -52,7 +47,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const userCredential = await signInWithEmailAndPassword(firebase.auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       updateUserLoginTimestamp(userCredential.user);
       toast({
         title: 'Login Successful',
@@ -61,12 +56,21 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err: any) {
       console.error("Email/Password login error:", err);
-      let friendlyMessage = err.message || "An unexpected error occurred. Please try again.";
+      let friendlyMessage = "An unexpected error occurred. Please try again.";
       
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        friendlyMessage = "Invalid email or password. Please check your credentials and try again.";
-      } else if (err.code === 'auth/too-many-requests') {
-        friendlyMessage = "Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.";
+      if (err.code) {
+        switch (err.code) {
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+            case 'auth/invalid-credential':
+              friendlyMessage = "Invalid email or password. Please check your credentials and try again.";
+              break;
+            case 'auth/too-many-requests':
+              friendlyMessage = "Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.";
+              break;
+            default:
+              friendlyMessage = err.message;
+        }
       }
       
       setError(friendlyMessage);
@@ -81,15 +85,11 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    if (!firebase) {
-      setError('Firebase not initialized. Please try again.');
-      return;
-    }
     setLoading(true);
     setError(null);
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(firebase.auth, provider);
+      const result = await signInWithPopup(auth, provider);
       updateUserLoginTimestamp(result.user);
        toast({
         title: 'Login Successful',
@@ -98,12 +98,19 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err: any) {
       console.error("Google Login Error:", err);
-      let friendlyMessage = err.message || "An unexpected error occurred during Google sign-in.";
+      let friendlyMessage = "An unexpected error occurred during Google sign-in.";
       
-      if (err.code === 'auth/popup-closed-by-user') {
-        friendlyMessage = 'The sign-in window was closed before completion. Please try again.';
-      } else if (err.code === 'auth/account-exists-with-different-credential') {
-        friendlyMessage = 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
+      if (err.code) {
+        switch (err.code) {
+            case 'auth/popup-closed-by-user':
+              friendlyMessage = 'The sign-in window was closed before completion. Please try again.';
+              break;
+            case 'auth/account-exists-with-different-credential':
+              friendlyMessage = 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
+              break;
+             default:
+                friendlyMessage = err.message;
+        }
       }
 
       setError(friendlyMessage);
@@ -151,7 +158,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading || !firebase}
+                  disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -170,10 +177,10 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading || !firebase}
+                  disabled={loading}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading || !firebase}>
+              <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
               <Button
@@ -181,7 +188,7 @@ export default function LoginPage() {
                 type="button"
                 className="w-full"
                 onClick={handleGoogleLogin}
-                disabled={loading || !firebase}
+                disabled={loading}
               >
                 <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                   <path

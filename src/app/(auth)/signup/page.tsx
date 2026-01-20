@@ -22,10 +22,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal } from 'lucide-react';
-import { useFirebase } from '@/firebase';
+import { auth, firestore } from '@/firebase';
 
 export default function SignupPage() {
-  const firebase = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [fullName, setFullName] = useState('');
@@ -38,8 +37,7 @@ export default function SignupPage() {
     user: User,
     fullName?: string
   ) => {
-    if (!firebase) return;
-    const userRef = doc(firebase.firestore, 'users', user.uid);
+    const userRef = doc(firestore, 'users', user.uid);
     const docSnap = await getDoc(userRef);
 
     if (!docSnap.exists()) {
@@ -60,10 +58,6 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firebase) {
-      setError('Firebase not initialized. Please try again.');
-      return;
-    }
     if (!fullName || !email || !password) {
       setError('Please fill in all fields.');
       return;
@@ -76,7 +70,7 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(firebase.auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: fullName });
       await createNewUserDocument(userCredential.user, fullName);
 
@@ -87,13 +81,21 @@ export default function SignupPage() {
       router.push('/dashboard');
     } catch (err: any) {
       console.error("Email/Password signup error:", err);
-      let friendlyMessage = err.message || "An unexpected error occurred. Please try again.";
-      if (err.code === 'auth/email-already-in-use') {
-        friendlyMessage = "This email address is already in use by another account.";
-      } else if (err.code === 'auth/weak-password') {
-        friendlyMessage = "The password is too weak. Please use a stronger password.";
-      } else if (err.code === 'auth/invalid-email') {
-        friendlyMessage = "The email address is not valid.";
+      let friendlyMessage = "An unexpected error occurred. Please try again.";
+      if (err.code) {
+        switch (err.code) {
+          case 'auth/email-already-in-use':
+            friendlyMessage = "This email address is already in use by another account.";
+            break;
+          case 'auth/weak-password':
+            friendlyMessage = "The password is too weak. Please use a stronger password.";
+            break;
+          case 'auth/invalid-email':
+            friendlyMessage = "The email address is not valid.";
+            break;
+          default:
+            friendlyMessage = err.message;
+        }
       }
       setError(friendlyMessage);
       toast({
@@ -107,15 +109,11 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignup = async () => {
-    if (!firebase) {
-      setError('Firebase not initialized. Please try again.');
-      return;
-    }
     setLoading(true);
     setError(null);
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(firebase.auth, provider);
+      const result = await signInWithPopup(auth, provider);
       await createNewUserDocument(result.user);
       toast({
         title: 'Account Created',
@@ -124,11 +122,18 @@ export default function SignupPage() {
       router.push('/dashboard');
     } catch (err: any) {
         console.error("Google signup error:", err);
-        let friendlyMessage = err.message || "An unexpected error occurred during Google sign-up.";
-        if (err.code === 'auth/popup-closed-by-user') {
-            friendlyMessage = 'The sign-up window was closed before completion. Please try again.';
-        } else if (err.code === 'auth/account-exists-with-different-credential') {
-            friendlyMessage = 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
+        let friendlyMessage = "An unexpected error occurred during Google sign-up.";
+        if (err.code) {
+            switch (err.code) {
+                case 'auth/popup-closed-by-user':
+                    friendlyMessage = 'The sign-up window was closed before completion. Please try again.';
+                    break;
+                case 'auth/account-exists-with-different-credential':
+                    friendlyMessage = 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
+                    break;
+                default:
+                    friendlyMessage = err.message;
+            }
         }
         setError(friendlyMessage);
         toast({
@@ -172,7 +177,7 @@ export default function SignupPage() {
                     required 
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
-                    disabled={loading || !firebase}
+                    disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -184,7 +189,7 @@ export default function SignupPage() {
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  disabled={loading || !firebase}
+                  disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -195,10 +200,10 @@ export default function SignupPage() {
                     required
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    disabled={loading || !firebase}
+                    disabled={loading}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading || !firebase}>
+              <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Creating account...' : 'Create account'}
               </Button>
               <Button
@@ -206,7 +211,7 @@ export default function SignupPage() {
                 type="button"
                 className="w-full"
                 onClick={handleGoogleSignup}
-                disabled={loading || !firebase}
+                disabled={loading}
               >
                 <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                   <path
