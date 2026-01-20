@@ -8,8 +8,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   updateProfile,
+  User,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +23,33 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal } from 'lucide-react';
 import { useAuth, useFirestore } from '@/firebase/provider';
+
+const createNewUserDocument = async (
+    firestore: any,
+    user: User,
+    fullName?: string
+  ) => {
+    const userRef = doc(firestore, 'users', user.uid);
+    // Check if the document already exists
+    const docSnap = await getDoc(userRef);
+
+    if (!docSnap.exists()) {
+        const userData = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || fullName,
+            photoURL: user.photoURL || null,
+            role: 'student',
+            createdAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+        };
+        // Use non-blocking write with error handling
+        setDoc(userRef, userData)
+          .catch(error => {
+              console.error("Error creating user document:", error);
+          });
+    }
+  };
 
 
 export default function SignupPage() {
@@ -36,24 +64,10 @@ export default function SignupPage() {
   const auth = useAuth();
   const db = useFirestore();
 
-  const createUserDocument = async (user: any) => {
-    if (!db) return;
-    const userRef = doc(db, 'users', user.uid);
-    const userData = {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName || fullName,
-      photoURL: user.photoURL,
-      createdAt: serverTimestamp(),
-      role: 'student'
-    };
-    await setDoc(userRef, userData, { merge: true });
-  }
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-      setError("Authentication service not ready.");
+    if (!auth || !db) {
+      setError("Authentication service not ready. Please try again.");
       return;
     }
     if (!fullName || !email || !password) {
@@ -66,7 +80,7 @@ export default function SignupPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: fullName });
-      await createUserDocument(userCredential.user);
+      await createNewUserDocument(db, userCredential.user, fullName);
 
       toast({
         title: 'Account Created',
@@ -86,8 +100,8 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignup = async () => {
-    if (!auth) {
-      setError("Authentication service not ready.");
+    if (!auth || !db) {
+      setError("Authentication service not ready. Please try again.");
       return;
     }
     setLoading(true);
@@ -95,7 +109,7 @@ export default function SignupPage() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      await createUserDocument(result.user);
+      await createNewUserDocument(db, result.user);
       toast({
         title: 'Account Created',
         description: "Welcome! You're now signed up.",

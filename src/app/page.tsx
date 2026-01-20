@@ -156,11 +156,7 @@ export default function LandingPage() {
               RéviseCamer
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-              {content.fr.tagline}
-              <br />
-              <span className="italic">
-                {content.en.tagline}
-              </span>
+              {t.tagline}
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Button size="lg" asChild>

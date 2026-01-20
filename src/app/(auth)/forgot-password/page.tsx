@@ -28,11 +28,12 @@ export default function ForgotPasswordPage() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth) {
-      setError("Authentication service is not available. Please try again later.");
+      const authError = "Authentication service is not available. Please try again later.";
+      setError(authError);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Authentication service is not available.",
+        description: authError,
       });
       return;
     }

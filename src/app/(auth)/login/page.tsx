@@ -7,7 +7,9 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  User,
 } from 'firebase/auth';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,7 +21,16 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { useAuth } from '@/firebase/provider';
+import { useAuth, useFirestore } from '@/firebase/provider';
+
+const updateUserLoginTimestamp = (firestore: any, user: User | null) => {
+    if (!user) return;
+    const userRef = doc(firestore, 'users', user.uid);
+    // We use merge:true to not overwrite existing fields like createdAt
+    setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true })
+        .catch(error => console.error("Error updating login timestamp:", error));
+}
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,11 +41,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const auth = useAuth();
+  const db = useFirestore();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-      setError("Authentication service not ready.");
+    if (!auth || !db) {
+      setError("Authentication service not ready. Please try again.");
       return;
     }
     if (!email || !password) {
@@ -44,7 +56,8 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      updateUserLoginTimestamp(db, userCredential.user);
       toast({
         title: 'Login Successful',
         description: "Welcome back!",
@@ -63,15 +76,16 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    if (!auth) {
-      setError("Authentication service not ready.");
+    if (!auth || !db) {
+      setError("Authentication service not ready. Please try again.");
       return;
     }
     setLoading(true);
     setError(null);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      updateUserLoginTimestamp(db, result.user);
        toast({
         title: 'Login Successful',
         description: "Welcome back!",
