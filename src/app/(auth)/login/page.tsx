@@ -21,9 +21,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { useAuth, useFirestore } from '@/firebase/provider';
+import { getFirebaseInstances } from '@/firebase';
 
-const updateUserLoginTimestamp = (firestore: any, user: User | null) => {
+const { auth, firestore } = getFirebaseInstances();
+
+const updateUserLoginTimestamp = (user: User | null) => {
     if (!user) return;
     const userRef = doc(firestore, 'users', user.uid);
     // We use merge:true to not overwrite existing fields like createdAt
@@ -40,15 +42,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const auth = useAuth();
-  const db = useFirestore();
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth || !db) {
-      setError("Authentication service not ready. Please try again.");
-      return;
-    }
     if (!email || !password) {
       setError('Please fill in all fields.');
       return;
@@ -57,18 +52,25 @@ export default function LoginPage() {
     setError(null);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      updateUserLoginTimestamp(db, userCredential.user);
+      updateUserLoginTimestamp(userCredential.user);
       toast({
         title: 'Login Successful',
         description: "Welcome back!",
       });
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message);
+      const errorCode = err.code;
+      let friendlyMessage = "An unexpected error occurred. Please try again.";
+      if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential') {
+        friendlyMessage = "Invalid email or password. Please check your credentials and try again.";
+      } else if (errorCode === 'auth/too-many-requests') {
+        friendlyMessage = "Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.";
+      }
+      setError(friendlyMessage);
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: err.message,
+        description: friendlyMessage,
       });
     } finally {
       setLoading(false);
@@ -76,27 +78,29 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    if (!auth || !db) {
-      setError("Authentication service not ready. Please try again.");
-      return;
-    }
     setLoading(true);
     setError(null);
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      updateUserLoginTimestamp(db, result.user);
+      updateUserLoginTimestamp(result.user);
        toast({
         title: 'Login Successful',
         description: "Welcome back!",
       });
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message);
+      let friendlyMessage = "An unexpected error occurred during Google sign-in.";
+      if (err.code === 'auth/popup-closed-by-user') {
+        friendlyMessage = 'The sign-in window was closed before completion. Please try again.';
+      } else if (err.code === 'auth/account-exists-with-different-credential') {
+        friendlyMessage = 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
+      }
+      setError(friendlyMessage);
        toast({
         variant: 'destructive',
         title: 'Google Login Failed',
-        description: err.message,
+        description: friendlyMessage,
       });
     } finally {
       setLoading(false);
@@ -137,7 +141,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading || !auth}
+                  disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -156,10 +160,10 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading || !auth}
+                  disabled={loading}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading || !auth}>
+              <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
               <Button
@@ -167,7 +171,7 @@ export default function LoginPage() {
                 type="button"
                 className="w-full"
                 onClick={handleGoogleLogin}
-                disabled={loading || !auth}
+                disabled={loading}
               >
                 <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                   <path

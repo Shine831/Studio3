@@ -22,15 +22,15 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal } from 'lucide-react';
-import { useAuth, useFirestore } from '@/firebase/provider';
+import { getFirebaseInstances } from '@/firebase';
+
+const { auth, firestore } = getFirebaseInstances();
 
 const createNewUserDocument = async (
-    firestore: any,
     user: User,
     fullName?: string
   ) => {
     const userRef = doc(firestore, 'users', user.uid);
-    // Check if the document already exists
     const docSnap = await getDoc(userRef);
 
     if (!docSnap.exists()) {
@@ -43,11 +43,10 @@ const createNewUserDocument = async (
             createdAt: serverTimestamp(),
             lastLoginAt: serverTimestamp(),
         };
-        // Use non-blocking write with error handling
-        setDoc(userRef, userData)
-          .catch(error => {
-              console.error("Error creating user document:", error);
-          });
+        await setDoc(userRef, userData);
+    } else {
+        // If document exists, just update the last login time
+        await setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true });
     }
   };
 
@@ -61,18 +60,15 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const auth = useAuth();
-  const db = useFirestore();
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth || !db) {
-      setError("Authentication service not ready. Please try again.");
-      return;
-    }
     if (!fullName || !email || !password) {
       setError('Please fill in all fields.');
       return;
+    }
+    if (password.length < 6) {
+        setError('Password must be at least 6 characters long.');
+        return;
     }
     setLoading(true);
     setError(null);
@@ -80,7 +76,7 @@ export default function SignupPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: fullName });
-      await createNewUserDocument(db, userCredential.user, fullName);
+      await createNewUserDocument(userCredential.user, fullName);
 
       toast({
         title: 'Account Created',
@@ -88,11 +84,19 @@ export default function SignupPage() {
       });
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message);
+      let friendlyMessage = "An unexpected error occurred. Please try again.";
+      if (err.code === 'auth/email-already-in-use') {
+        friendlyMessage = "This email address is already in use by another account.";
+      } else if (err.code === 'auth/weak-password') {
+        friendlyMessage = "The password is too weak. Please use a stronger password.";
+      } else if (err.code === 'auth/invalid-email') {
+        friendlyMessage = "The email address is not valid.";
+      }
+      setError(friendlyMessage);
       toast({
         variant: 'destructive',
         title: 'Signup Failed',
-        description: err.message,
+        description: friendlyMessage,
       });
     } finally {
       setLoading(false);
@@ -100,28 +104,30 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignup = async () => {
-    if (!auth || !db) {
-      setError("Authentication service not ready. Please try again.");
-      return;
-    }
     setLoading(true);
     setError(null);
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      await createNewUserDocument(db, result.user);
+      await createNewUserDocument(result.user);
       toast({
         title: 'Account Created',
         description: "Welcome! You're now signed up.",
       });
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message);
-      toast({
-        variant: 'destructive',
-        title: 'Google Signup Failed',
-        description: err.message,
-      });
+        let friendlyMessage = "An unexpected error occurred during Google sign-up.";
+        if (err.code === 'auth/popup-closed-by-user') {
+            friendlyMessage = 'The sign-up window was closed before completion. Please try again.';
+        } else if (err.code === 'auth/account-exists-with-different-credential') {
+            friendlyMessage = 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
+        }
+        setError(friendlyMessage);
+        toast({
+            variant: 'destructive',
+            title: 'Google Signup Failed',
+            description: friendlyMessage,
+        });
     } finally {
       setLoading(false);
     }
@@ -158,7 +164,7 @@ export default function SignupPage() {
                     required 
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
-                    disabled={loading || !auth}
+                    disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -170,7 +176,7 @@ export default function SignupPage() {
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  disabled={loading || !auth}
+                  disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -181,10 +187,10 @@ export default function SignupPage() {
                     required
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    disabled={loading || !auth}
+                    disabled={loading}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading || !auth}>
+              <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Creating account...' : 'Create account'}
               </Button>
               <Button
@@ -192,7 +198,7 @@ export default function SignupPage() {
                 type="button"
                 className="w-full"
                 onClick={handleGoogleSignup}
-                disabled={loading || !auth}
+                disabled={loading}
               >
                 <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                   <path

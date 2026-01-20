@@ -14,7 +14,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { useAuth } from '@/firebase/provider';
+import { getFirebaseInstances } from '@/firebase';
+
+const { auth } = getFirebaseInstances();
 
 export default function ForgotPasswordPage() {
   const { toast } = useToast();
@@ -22,21 +24,9 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  
-  const auth = useAuth();
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-      const authError = "Authentication service is not available. Please try again later.";
-      setError(authError);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: authError,
-      });
-      return;
-    }
     if (!email) {
       setError('Please enter your email address.');
       return;
@@ -49,15 +39,25 @@ export default function ForgotPasswordPage() {
       setSubmitted(true);
       toast({
         title: 'Check your email',
-        description: 'A password reset link has been sent to your email address.',
+        description: 'If an account exists for this email, a password reset link has been sent.',
       });
     } catch (err: any) {
-      setError(err.message);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: err.message,
-      });
+      let friendlyMessage = "An unexpected error occurred. Please try again.";
+      if (err.code === 'auth/user-not-found') {
+        // We don't want to reveal if a user exists or not.
+        setSubmitted(true); // Pretend it was successful.
+        toast({
+            title: 'Check your email',
+            description: 'If an account exists for this email, a password reset link has been sent.',
+        });
+      } else {
+        setError(friendlyMessage);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: friendlyMessage,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -103,10 +103,10 @@ export default function ForgotPasswordPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading || !auth}
+                    disabled={loading}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading || !auth}>
+                <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Sending...' : 'Send Reset Link'}
                 </Button>
               </div>

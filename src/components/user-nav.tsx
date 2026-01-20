@@ -29,24 +29,16 @@ import { useUser } from '@/firebase/auth/use-user';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase/provider';
+import { getFirebaseInstances } from '@/firebase';
 
 export function UserNav() {
   const { setTheme } = useTheme();
   const { user } = useUser();
-  const auth = useAuth();
+  const { auth } = getFirebaseInstances();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    if (!auth) {
-      toast({
-        variant: 'destructive',
-        title: 'Logout Failed',
-        description: 'Authentication service not available.',
-      });
-      return;
-    }
     await signOut(auth);
     toast({
       title: 'Logged Out',
@@ -57,7 +49,11 @@ export function UserNav() {
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('');
+    const names = name.split(' ');
+    if (names.length > 1) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   }
 
   return (
