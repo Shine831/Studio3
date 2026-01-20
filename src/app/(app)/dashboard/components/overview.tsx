@@ -12,28 +12,28 @@ export function Overview() {
     {
       icon: <BookCheck className="h-4 w-4 text-muted-foreground" />,
       title: 'Courses in Progress',
-      value: '4',
-      description: '2 completed this month',
+      value: '0',
+      description: 'Start a course to begin',
     },
     {
       icon: <Medal className="h-4 w-4 text-muted-foreground" />,
       title: 'Average Score',
-      value: '82%',
-      description: '+5% from last month',
-      progress: 82,
+      value: 'N/A',
+      description: 'Complete quizzes to see your score',
+      progress: 0,
     },
     {
       icon: <Clock className="h-4 w-4 text-muted-foreground" />,
       title: 'Total Study Time',
-      value: '18h 45m',
+      value: '0h 0m',
       description: 'This month',
     },
     {
       icon: <Brain className="h-4 w-4 text-muted-foreground" />,
       title: 'Quizzes Passed',
-      value: '25',
-      description: '92% pass rate',
-      progress: 92
+      value: '0',
+      description: '0% pass rate',
+      progress: 0
     },
   ];
 
@@ -48,7 +48,7 @@ export function Overview() {
           <CardContent>
             <div className="text-2xl font-bold">{stat.value}</div>
             <p className="text-xs text-muted-foreground">{stat.description}</p>
-            {stat.progress && <Progress value={stat.progress} className="mt-4 h-2" />}
+            {stat.progress !== undefined && <Progress value={stat.progress} className="mt-4 h-2" />}
           </CardContent>
         </Card>
       ))}

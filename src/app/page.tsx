@@ -1,3 +1,4 @@
+'use client';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -11,8 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { Icons } from '@/components/icons';
 import { placeholderImages } from '@/lib/data';
+import { useLanguage } from '@/context/language-context';
 
 export default function LandingPage() {
+  const { language } = useLanguage();
+
   const features = [
     {
       icon: <BookOpen className="h-10 w-10" />,
@@ -60,6 +64,39 @@ export default function LandingPage() {
     },
   ];
 
+  const content = {
+    fr: {
+      tagline: 'Cours, quiz et répétiteurs pour réussir votre lycée au Cameroun.',
+      getStarted: 'Commencer',
+      browseCourses: 'Parcourir les cours',
+      everythingYouNeed: 'Tout ce dont vous avez besoin pour réussir',
+      platformDescription: 'Une plateforme conçue pour les élèves camerounais.',
+      features: 'Fonctionnalités',
+      courses: 'Cours',
+      tutors: 'Répétiteurs',
+      login: 'Se connecter',
+      signup: 'S\'inscrire',
+      terms: 'Conditions',
+      privacy: 'Confidentialité'
+    },
+    en: {
+      tagline: 'Lessons, quizzes and tutors to succeed in Cameroonian high school.',
+      getStarted: 'Get Started',
+      browseCourses: 'Browse Courses',
+      everythingYouNeed: 'Everything you need to succeed',
+      platformDescription: 'A platform designed for Cameroonian students.',
+      features: 'Features',
+      courses: 'Courses',
+      tutors: 'Tutors',
+      login: 'Log In',
+      signup: 'Sign Up',
+      terms: 'Terms',
+      privacy: 'Privacy'
+    }
+  };
+
+  const t = content[language];
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -75,28 +112,28 @@ export default function LandingPage() {
               href="#features"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              Features
+              {t.features}
             </Link>
             <Link
               href="/courses"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              Courses
+              {t.courses}
             </Link>
             <Link
               href="/tutors"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              Tutors
+              {t.tutors}
             </Link>
           </nav>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <Button variant="ghost" asChild>
-              <Link href="/login">Log In</Link>
+              <Link href="/login">{t.login}</Link>
             </Button>
             <Button asChild>
-              <Link href="/signup">Sign Up</Link>
+              <Link href="/signup">{t.signup}</Link>
             </Button>
           </div>
         </div>
@@ -119,19 +156,18 @@ export default function LandingPage() {
               RéviseCamer
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-              Cours, quiz et répétiteurs pour réussir votre lycée au Cameroun.
+              {content.fr.tagline}
               <br />
               <span className="italic">
-                Lessons, quizzes and tutors to succeed in Cameroonian high
-                school.
+                {content.en.tagline}
               </span>
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Button size="lg" asChild>
-                <Link href="/signup">Get Started</Link>
+                <Link href="/signup">{t.getStarted}</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/courses">Browse Courses</Link>
+                <Link href="/courses">{t.browseCourses}</Link>
               </Button>
             </div>
           </div>
@@ -141,10 +177,10 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h2 className="font-headline text-3xl font-bold text-foreground">
-                Everything you need to succeed
+                {t.everythingYouNeed}
               </h2>
               <p className="mt-4 text-muted-foreground">
-                A platform designed for Cameroonian students.
+                {t.platformDescription}
               </p>
             </div>
             <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -155,12 +191,12 @@ export default function LandingPage() {
                       {feature.icon}
                     </div>
                     <CardTitle className="pt-4 font-headline text-lg">
-                      {feature.title.en}
+                      {feature.title[language]}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
-                      {feature.description.en}
+                      {feature.description[language]}
                     </p>
                   </CardContent>
                 </Card>
@@ -182,16 +218,16 @@ export default function LandingPage() {
             </div>
             <div className="mt-4 flex items-center gap-6 md:mt-0">
               <Link
-                href="#"
+                href="/terms"
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
-                Terms
+                {t.terms}
               </Link>
               <Link
-                href="#"
+                href="/privacy"
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
-                Privacy
+                {t.privacy}
               </Link>
             </div>
           </div>

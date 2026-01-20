@@ -2,25 +2,109 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  updateProfile,
+} from 'firebase/auth';
+import { doc, setDoc, getFirestore, serverTimestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Terminal } from 'lucide-react';
+import { getFirebaseApp } from '@/firebase/client';
+
 
 export default function SignupPage() {
-    const router = useRouter();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-    const handleSignup = (e: React.FormEvent) => {
-        e.preventDefault();
-        router.push('/dashboard');
+  const app = getFirebaseApp();
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const createUserDocument = async (user: any) => {
+    const userRef = doc(db, 'users', user.uid);
+    const userData = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName || fullName,
+      photoURL: user.photoURL,
+      createdAt: serverTimestamp(),
+      role: 'student'
+    };
+    await setDoc(userRef, userData, { merge: true });
+  }
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName || !email || !password) {
+      setError('Please fill in all fields.');
+      return;
     }
+    setLoading(true);
+    setError(null);
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: fullName });
+      await createUserDocument(userCredential.user);
+
+      toast({
+        title: 'Account Created',
+        description: "Welcome! You're now signed up.",
+      });
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message);
+      toast({
+        variant: 'destructive',
+        title: 'Signup Failed',
+        description: err.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setLoading(true);
+    setError(null);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      await createUserDocument(result.user);
+      toast({
+        title: 'Account Created',
+        description: "Welcome! You're now signed up.",
+      });
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message);
+      toast({
+        variant: 'destructive',
+        title: 'Google Signup Failed',
+        description: err.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -34,11 +118,27 @@ export default function SignupPage() {
       </div>
       <Card>
         <CardContent className="pt-6">
+          {error && (
+             <Alert variant="destructive" className="mb-4">
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>Heads up!</AlertTitle>
+                <AlertDescription>
+                    {error}
+                </AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSignup}>
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="full-name">Full Name</Label>
-                <Input id="full-name" placeholder="Your Name" required />
+                <Input 
+                    id="full-name" 
+                    placeholder="Your Name" 
+                    required 
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    disabled={loading}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
@@ -47,17 +147,38 @@ export default function SignupPage() {
                   type="email"
                   placeholder="m@example.com"
                   required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required />
+                <Input 
+                    id="password" 
+                    type="password" 
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    disabled={loading}
+                />
               </div>
-              <Button type="submit" className="w-full">
-                Create account
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Creating account...' : 'Create account'}
               </Button>
-              <Button variant="outline" className="w-full">
-                <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.62 1.9-5.62 1.9-4.76 0-8.64-3.89-8.64-8.64s3.88-8.64 8.64-8.64c2.69 0 4.35 1.05 5.33 1.95l2.62-2.62C19.03 1.18 16.25 0 12.48 0 5.6 0 0 5.6 0 12.48s5.6 12.48 12.48 12.48c7.34 0 12.07-4.82 12.07-12.07 0-.82-.07-1.55-.2-2.28H12.48z"></path></svg>
+              <Button
+                variant="outline"
+                type="button"
+                className="w-full"
+                onClick={handleGoogleSignup}
+                disabled={loading}
+              >
+                <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
+                  <path
+                    fill="currentColor"
+                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.62 1.9-5.62 1.9-4.76 0-8.64-3.89-8.64-8.64s3.88-8.64 8.64-8.64c2.69 0 4.35 1.05 5.33 1.95l2.62-2.62C19.03 1.18 16.25 0 12.48 0 5.6 0 0 5.6 0 12.48s5.6 12.48 12.48 12.48c7.34 0 12.07-4.82 12.07-12.07 0-.82-.07-1.55-.2-2.28H12.48z"
+                  ></path>
+                </svg>
                 Sign up with Google
               </Button>
             </div>

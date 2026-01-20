@@ -6,15 +6,16 @@ import {
   ChartTooltipContent,
   ChartContainer,
 } from '@/components/ui/chart';
+import { CardDescription } from '@/components/ui/card';
 
 const data = [
-  { name: 'Mon', total: Math.floor(Math.random() * 120) + 30 },
-  { name: 'Tue', total: Math.floor(Math.random() * 120) + 30 },
-  { name: 'Wed', total: Math.floor(Math.random() * 120) + 30 },
-  { name: 'Thu', total: Math.floor(Math.random() * 120) + 30 },
-  { name: 'Fri', total: Math.floor(Math.random() * 120) + 30 },
-  { name: 'Sat', total: Math.floor(Math.random() * 120) + 30 },
-  { name: 'Sun', total: Math.floor(Math.random() * 120) + 30 },
+  { name: 'Mon', total: 0 },
+  { name: 'Tue', total: 0 },
+  { name: 'Wed', total: 0 },
+  { name: 'Thu', total: 0 },
+  { name: 'Fri', total: 0 },
+  { name: 'Sat', total: 0 },
+  { name: 'Sun', total: 0 },
 ];
 
 const chartConfig = {
@@ -25,29 +26,38 @@ const chartConfig = {
 };
 
 export function RecentActivityChart() {
+  const totalMinutes = data.reduce((acc, item) => acc + item.total, 0);
+
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-      <BarChart accessibilityLayer data={data}>
-        <XAxis
-          dataKey="name"
-          stroke="#888888"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
-        />
-        <YAxis
-          stroke="#888888"
-          fontSize={12}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(value) => `${value}m`}
-        />
-        <ChartTooltip 
-          cursor={false} 
-          content={<ChartTooltipContent indicator="dot" />} 
-        />
-        <Bar dataKey="total" fill="var(--color-total)" radius={4} />
-      </BarChart>
+      {totalMinutes > 0 ? (
+        <BarChart accessibilityLayer data={data}>
+          <XAxis
+            dataKey="name"
+            stroke="#888888"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            stroke="#888888"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value) => `${value}m`}
+          />
+          <ChartTooltip 
+            cursor={false} 
+            content={<ChartTooltipContent indicator="dot" />} 
+          />
+          <Bar dataKey="total" fill="var(--color-total)" radius={4} />
+        </BarChart>
+      ) : (
+        <div className="flex h-full w-full flex-col items-center justify-center">
+            <p className="text-muted-foreground">No activity yet.</p>
+            <CardDescription>Your study time will appear here.</CardDescription>
+        </div>
+      )}
     </ChartContainer>
   );
 }

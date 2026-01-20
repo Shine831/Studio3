@@ -25,10 +25,31 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { placeholderImages } from '@/lib/data';
+import { useUser } from '@/firebase/auth/use-user';
+import { getAuth, signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export function UserNav() {
   const { setTheme } = useTheme();
+  const { user } = useUser();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    const auth = getAuth();
+    await signOut(auth);
+    toast({
+      title: 'Logged Out',
+      description: 'You have been successfully logged out.',
+    });
+    router.push('/');
+  };
+
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('');
+  }
 
   return (
     <DropdownMenu>
@@ -36,20 +57,19 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
             <AvatarImage
-              src={placeholderImages.find(p => p.id === 'user-avatar-1')?.imageUrl}
-              alt="@shadcn"
-              data-ai-hint={placeholderImages.find(p => p.id === 'user-avatar-1')?.imageHint}
+              src={user?.photoURL || ''}
+              alt={user?.displayName || 'User'}
             />
-            <AvatarFallback>SC</AvatarFallback>
+            <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Student Name</p>
+            <p className="text-sm font-medium leading-none">{user?.displayName || 'User'}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              student@example.com
+              {user?.email || 'No email'}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -94,11 +114,9 @@ export function UserNav() {
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/">
+        <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
-          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
