@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { getAuth } from 'firebase/auth';
-import { getFirebaseApp } from '@/firebase/client';
+import { getFirebaseApp } from '@/firebase/client-provider';
 
 export const useUser = () => {
   const [user, setUser] = useState<User | null>(null);

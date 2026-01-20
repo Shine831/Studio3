@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { getFirebaseApp } from '@/firebase/client';
+import { getFirebaseApp } from '@/firebase/client-provider';
 
 export default function ForgotPasswordPage() {
   const { toast } = useToast();
