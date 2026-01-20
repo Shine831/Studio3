@@ -8,8 +8,7 @@ import {
 } from 'lucide-react';
 import { Icons } from './icons';
 import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { UserNav } from './user-nav';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -19,9 +18,9 @@ const navItems = [
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ className }: { className?: string }) {
   return (
-    <div className="hidden border-r bg-card md:block">
+    <div className={cn("hidden border-r bg-card md:block", className)}>
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-16 items-center border-b px-4 lg:px-6">
           <Link href="/dashboard" className="flex items-center gap-2 font-semibold font-headline">

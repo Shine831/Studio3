@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { LanguageSwitcher } from './language-switcher';
@@ -25,7 +27,12 @@ export function AppHeader() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0">
-          <AppSidebar />
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+          <SheetDescription className="sr-only">
+            The main navigation for the application, with links to dashboard,
+            courses, tutors, study plan, and settings.
+          </SheetDescription>
+          <AppSidebar className="block" />
         </SheetContent>
       </Sheet>
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
