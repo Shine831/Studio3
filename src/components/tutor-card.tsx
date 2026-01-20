@@ -1,0 +1,66 @@
+import Image from 'next/image';
+import Link from 'next/link';
+import { Star, Verified } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import type { Tutor } from '@/lib/types';
+
+interface TutorCardProps {
+  tutor: Tutor;
+}
+
+export function TutorCard({ tutor }: TutorCardProps) {
+  return (
+    <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg">
+      <CardHeader className="flex flex-row items-center gap-4">
+        <Avatar className="h-16 w-16">
+          <AvatarImage src={tutor.avatarUrl} alt={tutor.name} data-ai-hint={tutor.imageHint}/>
+          <AvatarFallback>{tutor.name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div className="flex-1">
+          <CardTitle className="text-lg font-headline flex items-center gap-2">
+            {tutor.name}
+            {tutor.verified && <Verified className="h-5 w-5 text-primary" />}
+          </CardTitle>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            <span>{tutor.rating}</span>
+            <span>({tutor.reviewsCount} reviews)</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <div className="flex flex-wrap gap-2">
+          {tutor.subjects.map((subject) => (
+            <Badge key={subject} variant="secondary">
+              {subject}
+            </Badge>
+          ))}
+          {tutor.level.map((lvl) => (
+            <Badge key={lvl} variant="outline">
+              {lvl}
+            </Badge>
+          ))}
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between items-center bg-muted/50 p-4">
+        <div className="text-lg font-bold text-foreground">
+          ${tutor.rate}
+          <span className="text-sm font-normal text-muted-foreground">/hr</span>
+        </div>
+        <Button asChild>
+          <Link href={`/tutors/${tutor.id}`}>View Profile</Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}

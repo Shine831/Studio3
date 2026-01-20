@@ -1,3 +1,58 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-1",
+      "description": "A student studying in a classroom",
+      "imageUrl": "https://images.unsplash.com/photo-1522134939204-9b9957145632?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjbGFzc3Jvb20lMjBzdHVkZW50fGVufDB8fHx8MTc2ODg3NjMxOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "classroom student"
+    },
+    {
+      "id": "math-course",
+      "description": "Abstract mathematical formulas and graphs",
+      "imageUrl": "https://images.unsplash.com/photo-1754304342448-3eef0ab5ba9e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtYXRoZW1hdGljcyUyMGZvcm11bGF8ZW58MHx8fHwxNzY4ODc2MzE5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mathematics formula"
+    },
+    {
+      "id": "physics-course",
+      "description": "Illustration of atoms and particles",
+      "imageUrl": "https://images.unsplash.com/photo-1707135719639-409915fbc68f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhdG9tJTIwcGh5c2ljc3xlbnwwfHx8fDE3Njg4NTUxNTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "atom physics"
+    },
+    {
+      "id": "chemistry-course",
+      "description": "Beakers and lab equipment",
+      "imageUrl": "https://images.unsplash.com/photo-1614934273316-5bbe576f8567?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzY2llbmNlJTIwbGFib3JhdG9yeXxlbnwwfHx8fDE3Njg4NTYxMTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "science laboratory"
+    },
+    {
+      "id": "biology-course",
+      "description": "DNA helix strand",
+      "imageUrl": "https://images.unsplash.com/photo-1738944910346-296f0936b057?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxkbmElMjBoZWxpeHxlbnwwfHx8fDE3Njg3ODk1OTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dna helix"
+    },
+    {
+      "id": "tutor-1",
+      "description": "Profile picture of a female tutor",
+      "imageUrl": "https://images.unsplash.com/photo-1614283233556-f35b0c801ef1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2ODc2MDg2NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "tutor-2",
+      "description": "Profile picture of a male tutor",
+      "imageUrl": "https://images.unsplash.com/photo-1583195763986-0231686dcd43?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3Njg3ODY3NTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man portrait"
+    },
+    {
+      "id": "tutor-3",
+      "description": "Profile picture of a female tutor",
+      "imageUrl": "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwZXJzb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3Njg4NzU1MzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "user-avatar-1",
+      "description": "Avatar for a user",
+      "imageUrl": "https://images.unsplash.com/photo-1626526804650-7118ac691b7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc2ODg1Nzc2N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person face"
+    }
+  ]
 }
