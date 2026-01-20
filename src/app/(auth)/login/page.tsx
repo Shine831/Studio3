@@ -21,20 +21,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { getFirebaseInstances } from '@/firebase';
-
-const { auth, firestore } = getFirebaseInstances();
-
-const updateUserLoginTimestamp = (user: User | null) => {
-    if (!user) return;
-    const userRef = doc(firestore, 'users', user.uid);
-    // We use merge:true to not overwrite existing fields like createdAt
-    setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true })
-        .catch(error => console.error("Error updating login timestamp:", error));
-}
-
+import { useFirebase } from '@/firebase';
 
 export default function LoginPage() {
+  const firebase = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
@@ -42,8 +32,19 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const updateUserLoginTimestamp = (user: User | null) => {
+      if (!user || !firebase) return;
+      const userRef = doc(firebase.firestore, 'users', user.uid);
+      setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true })
+          .catch(error => console.error("Error updating login timestamp:", error));
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firebase) {
+      setError('Firebase not initialized. Please try again.');
+      return;
+    }
     if (!email || !password) {
       setError('Please fill in all fields.');
       return;
@@ -51,7 +52,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(firebase.auth, email, password);
       updateUserLoginTimestamp(userCredential.user);
       toast({
         title: 'Login Successful',
@@ -80,11 +81,15 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!firebase) {
+      setError('Firebase not initialized. Please try again.');
+      return;
+    }
     setLoading(true);
     setError(null);
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(firebase.auth, provider);
       updateUserLoginTimestamp(result.user);
        toast({
         title: 'Login Successful',
@@ -146,7 +151,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || !firebase}
                 />
               </div>
               <div className="grid gap-2">
@@ -165,10 +170,10 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || !firebase}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !firebase}>
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
               <Button
@@ -176,7 +181,7 @@ export default function LoginPage() {
                 type="button"
                 className="w-full"
                 onClick={handleGoogleLogin}
-                disabled={loading}
+                disabled={loading || !firebase}
               >
                 <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                   <path

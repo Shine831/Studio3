@@ -22,15 +22,24 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal } from 'lucide-react';
-import { getFirebaseInstances } from '@/firebase';
+import { useFirebase } from '@/firebase';
 
-const { auth, firestore } = getFirebaseInstances();
+export default function SignupPage() {
+  const firebase = useFirebase();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-const createNewUserDocument = async (
+  const createNewUserDocument = async (
     user: User,
     fullName?: string
   ) => {
-    const userRef = doc(firestore, 'users', user.uid);
+    if (!firebase) return;
+    const userRef = doc(firebase.firestore, 'users', user.uid);
     const docSnap = await getDoc(userRef);
 
     if (!docSnap.exists()) {
@@ -45,23 +54,16 @@ const createNewUserDocument = async (
         };
         await setDoc(userRef, userData);
     } else {
-        // If document exists, just update the last login time
         await setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true });
     }
   };
 
-
-export default function SignupPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firebase) {
+      setError('Firebase not initialized. Please try again.');
+      return;
+    }
     if (!fullName || !email || !password) {
       setError('Please fill in all fields.');
       return;
@@ -74,7 +76,7 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(firebase.auth, email, password);
       await updateProfile(userCredential.user, { displayName: fullName });
       await createNewUserDocument(userCredential.user, fullName);
 
@@ -105,11 +107,15 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignup = async () => {
+    if (!firebase) {
+      setError('Firebase not initialized. Please try again.');
+      return;
+    }
     setLoading(true);
     setError(null);
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(firebase.auth, provider);
       await createNewUserDocument(result.user);
       toast({
         title: 'Account Created',
@@ -166,7 +172,7 @@ export default function SignupPage() {
                     required 
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
-                    disabled={loading}
+                    disabled={loading || !firebase}
                 />
               </div>
               <div className="grid gap-2">
@@ -178,7 +184,7 @@ export default function SignupPage() {
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || !firebase}
                 />
               </div>
               <div className="grid gap-2">
@@ -189,10 +195,10 @@ export default function SignupPage() {
                     required
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    disabled={loading}
+                    disabled={loading || !firebase}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !firebase}>
                 {loading ? 'Creating account...' : 'Create account'}
               </Button>
               <Button
@@ -200,7 +206,7 @@ export default function SignupPage() {
                 type="button"
                 className="w-full"
                 onClick={handleGoogleSignup}
-                disabled={loading}
+                disabled={loading || !firebase}
               >
                 <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                   <path

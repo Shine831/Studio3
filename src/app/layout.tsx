@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { LanguageProvider } from '@/context/language-context';
+import { FirebaseProvider } from '@/firebase';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -41,9 +42,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <FirebaseProvider>
             <LanguageProvider>
               {children}
             </LanguageProvider>
+          </FirebaseProvider>
           <Toaster />
         </ThemeProvider>
       </body>

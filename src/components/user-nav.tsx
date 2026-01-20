@@ -25,21 +25,21 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUser } from '@/firebase/auth/use-user';
+import { useUser, useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { getFirebaseInstances } from '@/firebase';
 
 export function UserNav() {
   const { setTheme } = useTheme();
   const { user } = useUser();
-  const { auth } = getFirebaseInstances();
+  const firebase = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    await signOut(auth);
+    if (!firebase) return;
+    await signOut(firebase.auth);
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',

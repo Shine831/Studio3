@@ -14,11 +14,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { getFirebaseInstances } from '@/firebase';
-
-const { auth } = getFirebaseInstances();
+import { useFirebase } from '@/firebase';
 
 export default function ForgotPasswordPage() {
+  const firebase = useFirebase();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +26,10 @@ export default function ForgotPasswordPage() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firebase) {
+      setError('Firebase not initialized. Please try again.');
+      return;
+    }
     if (!email) {
       setError('Please enter your email address.');
       return;
@@ -35,14 +38,14 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(firebase.auth, email);
       setSubmitted(true);
       toast({
         title: 'Check your email',
         description: 'If an account exists for this email, a password reset link has been sent.',
       });
     } catch (err: any) {
-      let friendlyMessage = "An unexpected error occurred. Please try again.";
+      let friendlyMessage = err.message || "An unexpected error occurred. Please try again.";
       if (err.code === 'auth/user-not-found') {
         // We don't want to reveal if a user exists or not.
         setSubmitted(true); // Pretend it was successful.
@@ -52,6 +55,7 @@ export default function ForgotPasswordPage() {
         });
       } else {
         setError(friendlyMessage);
+        console.error("Password Reset Error:", err);
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -103,10 +107,10 @@ export default function ForgotPasswordPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
+                    disabled={loading || !firebase}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full" disabled={loading || !firebase}>
                   {loading ? 'Sending...' : 'Send Reset Link'}
                 </Button>
               </div>
