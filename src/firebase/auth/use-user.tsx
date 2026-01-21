@@ -1,22 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/firebase';
-
-export const useUser = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, []);
-
-  return { user, loading };
-};
+// This file is kept for backwards compatibility with existing imports.
+// The canonical implementation of useUser is in `provider.tsx` and exported via `@/firebase`.
+export { useUser } from '@/firebase/provider';
