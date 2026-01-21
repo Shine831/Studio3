@@ -1,22 +1,22 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import Image from 'next/image';
 import { Star, Verified, MessageSquare, MapPin } from 'lucide-react';
 import { tutors } from '@/lib/data'; // Using mock data for now
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { useLanguage } from '@/context/language-context';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -33,6 +33,9 @@ export default function TutorProfilePage() {
   const { language } = useLanguage();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
+  const [hasRated, setHasRated] = useState(false);
+  const { user } = useUser();
+  const { toast } = useToast();
 
   const tutor = tutors.find((t) => t.id === tutorId);
 
@@ -53,6 +56,11 @@ export default function TutorProfilePage() {
       location: 'Localisation',
       leaveRating: 'Laisser une évaluation',
       submitRating: 'Soumettre l\'évaluation',
+      ratingSubmitted: 'Évaluation envoyée !',
+      ratingSubmittedDesc: 'Merci d\'avoir évalué ce répétiteur.',
+      loginToRate: 'Connectez-vous pour noter',
+      loginToRateDesc: 'Vous devez être connecté pour laisser une évaluation.',
+      alreadyRated: 'Déjà évalué',
     },
     en: {
       tutorNotFound: 'Tutor not found',
@@ -70,10 +78,34 @@ export default function TutorProfilePage() {
       location: 'Location',
       leaveRating: 'Leave a Rating',
       submitRating: 'Submit Rating',
+      ratingSubmitted: 'Rating Submitted!',
+      ratingSubmittedDesc: 'Thanks for rating this tutor.',
+      loginToRate: 'Login to Rate',
+      loginToRateDesc: 'You must be logged in to leave a rating.',
+      alreadyRated: 'Already Rated',
     },
   };
 
   const t = content[language];
+  
+  const handleSubmitRating = () => {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: t.loginToRate,
+        description: t.loginToRateDesc,
+      });
+      return;
+    }
+    // In a real app, you would save this to a database and recalculate the average.
+    // For now, we just show a confirmation toast.
+    toast({
+      title: t.ratingSubmitted,
+      description: `${t.ratingSubmittedDesc} (${rating}/5)`,
+    });
+    setHasRated(true);
+  };
+
 
   if (!tutor) {
     return (
@@ -173,18 +205,21 @@ export default function TutorProfilePage() {
                   <Star
                     key={star}
                     className={cn(
-                      "h-7 w-7 cursor-pointer",
+                      "h-7 w-7",
+                      hasRated ? "text-muted-foreground cursor-not-allowed" : "cursor-pointer",
                       (hoverRating || rating) >= star
                         ? "fill-yellow-400 text-yellow-400"
                         : "text-muted-foreground"
                     )}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    onClick={() => setRating(star)}
+                    onMouseEnter={() => !hasRated && setHoverRating(star)}
+                    onMouseLeave={() => !hasRated && setHoverRating(0)}
+                    onClick={() => !hasRated && setRating(star)}
                   />
                 ))}
               </div>
-              <Button className="mt-4" disabled={rating === 0}>{t.submitRating}</Button>
+              <Button className="mt-4" disabled={rating === 0 || hasRated} onClick={handleSubmitRating}>
+                {hasRated ? t.alreadyRated : t.submitRating}
+              </Button>
             </div>
         </CardContent>
       </Card>

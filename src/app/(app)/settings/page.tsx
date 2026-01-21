@@ -149,7 +149,6 @@ export default function SettingsPage() {
         title: content[language].updateSuccessTitle,
         description: content[language].updateSuccessDesc,
       });
-      form.reset(data, { keepValues: true }); // Resets dirty state
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
