@@ -6,14 +6,27 @@ import {
   Settings,
   Users,
   BookCopy,
+  LayoutGrid,
+  Calendar,
 } from 'lucide-react';
 import { Icons } from './icons';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/language-context';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import type { UserProfile } from '@/lib/types';
+import { doc } from 'firebase/firestore';
 
 export function AppSidebar({ className }: { className?: string }) {
   const { language } = useLanguage();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
+  );
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const content = {
     fr: {
@@ -21,29 +34,53 @@ export function AppSidebar({ className }: { className?: string }) {
       tutors: 'Répétiteurs',
       myCourses: 'Mes Cours',
       settings: 'Paramètres',
+      schedule: 'Mon Calendrier',
+      students: 'Mes Élèves',
     },
     en: {
       dashboard: 'Dashboard',
       tutors: 'Tutors',
       myCourses: 'My Courses',
       settings: 'Settings',
-    }
+      schedule: 'My Schedule',
+      students: 'My Students',
+    },
   };
 
   const t = content[language];
-
-  const navItems = [
+  
+  const studentNavItems = [
     { href: '/dashboard', icon: Home, label: t.dashboard },
     { href: '/tutors', icon: Users, label: t.tutors },
     { href: '/study-plan', icon: BookCopy, label: t.myCourses },
-    { href: '/settings', icon: Settings, label: t.settings },
   ];
+  
+  const tutorNavItems = [
+    { href: '/dashboard', icon: LayoutGrid, label: t.dashboard },
+    { href: '/schedule', icon: Calendar, label: t.schedule },
+    { href: '/students', icon: Users, label: t.students },
+  ]
+  
+  const commonNavItems = [
+     { href: '/settings', icon: Settings, label: t.settings },
+  ]
+  
+  // Default to student nav items while profile is loading
+  let navItems = [...studentNavItems, ...commonNavItems];
+  
+  if (userProfile?.role === 'tutor') {
+    navItems = [...tutorNavItems, ...commonNavItems];
+  }
+
 
   return (
-    <div className={cn("hidden border-r bg-card md:block", className)}>
+    <div className={cn('hidden border-r bg-card md:block', className)}>
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-16 items-center border-b px-4 lg:px-6">
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold font-headline">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 font-semibold font-headline"
+          >
             <Icons.logo className="h-6 w-6 text-primary" />
             <span>RéviseCamer</span>
           </Link>
@@ -51,19 +88,19 @@ export function AppSidebar({ className }: { className?: string }) {
         <div className="flex-1">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             {navItems.map(({ href, icon: Icon, label, badge }) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                    {badge && (
-                      <Badge className="ml-auto flex h-6 w-12 items-center justify-center rounded-md">
-                        {badge}
-                      </Badge>
-                    )}
-                  </Link>
+              <Link
+                key={label}
+                href={href}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+                {badge && (
+                  <Badge className="ml-auto flex h-6 w-12 items-center justify-center rounded-md">
+                    {badge}
+                  </Badge>
+                )}
+              </Link>
             ))}
           </nav>
         </div>
