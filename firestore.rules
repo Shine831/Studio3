@@ -1,0 +1,278 @@
+/**
+ * This ruleset enforces a security model for the RéviseCamer educational application.
+ * It combines strict user-ownership for personal data with a role-based system for administrative access,
+ * and provides public read access for educational content.
+ *
+ * Core Philosophy:
+ * - User Data Privacy: A user's personal information, study plans, quiz results, and notifications are private
+ *   and can only be accessed by the user themselves or an administrator.
+ * - Public Educational Content: Core learning materials like subjects, courses, and lessons are publicly
+ *   readable by anyone, but can only be managed by administrators to ensure content quality.
+ * - Role-Based Access Control (RBAC): Administrator privileges are granted by the existence of a document
+ *   in the `/roles_admin` collection, allowing for powerful and centralized control over the database.
+ * - Shared Document Security: Documents shared between users, such as bookings, are secured by checking
+ *   participant IDs (`studentId`, `tutorId`) stored directly on the document.
+ *
+ * Data Structure:
+ * - `/users/{userId}`: Contains private user profiles and subcollections for personal data
+ *   (e.g., `/studyPlans`, `/quizResults`). Access is controlled by the `{userId}` path parameter.
+ * - `/subjects/{subjectId}`: A hierarchical structure for all public educational content, including
+ *   courses, lessons, and quizzes nested within.
+ * - `/tutors/{tutorId}`: Publicly-listed tutor profiles, which can be modified only by the tutor owner or an admin.
+ * - `/bookings/{bookingId}`: A collection for tutoring sessions, with access restricted to the involved participants.
+ * - `/payments/{paymentId}`: A private collection for payment records, accessible only by the user who paid.
+ * - `/roles_admin/{userId}`: A restricted collection where the existence of a document signifies admin status.
+ *
+ * Key Security Decisions:
+ * - User Enumeration is Disallowed: The top-level `/users` collection cannot be listed, protecting user privacy.
+ * - Denormalization for Authorization: To ensure fast and secure access checks, authorization-critical data
+ *   (like `userId` on a tutor profile or `studentId` on a booking) is stored directly on the documents
+ *   being secured. This avoids slow and costly `get()` calls in rules.
+ * - Default to Secure: Collections containing sensitive or mixed-privacy data (e.g., `/bookings`, `/payments`)
+ *   have `list` operations disabled by default to prevent data leakage. Clients must build specific, authenticated
+ *   queries (e.g., `where('studentId', '==', auth.uid)`) to retrieve data.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --------------------------------------------------------------------
+    // Helper Functions
+    // --------------------------------------------------------------------
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user is the owner of a document,
+     * based on a provided UID.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the requested document currently exists in Firestore.
+     * CRITICAL for all update and delete operations.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Checks if the authenticated user has administrator privileges.
+     * Admin status is granted by the existence of a document in the /roles_admin collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Checks if the authenticated user is the tutor associated with a tutor profile.
+     */
+    function isTutorOwner(tutorProfileData) {
+      return isOwner(tutorProfileData.userId);
+    }
+
+    /**
+     * Checks if the authenticated user is a participant (student or tutor) in a booking.
+     */
+    function isBookingParticipant(bookingData) {
+      return isSignedIn() && (request.auth.uid == bookingData.studentId || request.auth.uid == bookingData.tutorId);
+    }
+    
+    /**
+     * Checks if the authenticated user is the owner of a payment record.
+     */
+    function isPaymentOwner(paymentData) {
+      return isOwner(paymentData.userId);
+    }
+
+    /**
+     * Validates that a new tutor profile is being created with 'adminVerified' set to false.
+     * Prevents users from verifying themselves upon profile creation.
+     */
+    function isNewTutorProfileValid() {
+      return request.resource.data.adminVerified == false;
+    }
+
+    /**
+     * Enforces immutability of the 'id' field in user profiles.
+     */
+    function isProfileIdImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Enforces immutability of the 'userId' field in various documents.
+     */
+    function isUserIdImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    /**
+     * Enforces immutability of the 'studentId' field in various documents.
+     */
+    function isStudentIdImmutable() {
+      return request.resource.data.studentId == resource.data.studentId;
+    }
+
+
+    // --------------------------------------------------------------------
+    // User Data Collections (/users)
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Manages user profiles. A user can create their own profile, and only they or an admin can read or modify it.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user with UID 'user123' creates their own profile at `/users/user123`.
+     * @deny (get) User 'user456' tries to read the profile at `/users/user123`.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isProfileIdImmutable();
+      allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
+    }
+
+    /**
+     * @description Manages a user's private study plans.
+     * @path /users/{userId}/studyPlans/{studyPlanId}
+     * @allow (list) User 'user123' lists all documents in their own `/users/user123/studyPlans` collection.
+     * @deny (create) User 'user456' tries to create a study plan under `/users/user123/studyPlans`.
+     * @principle Path-based ownership for user subcollections.
+     */
+    match /users/{userId}/studyPlans/{studyPlanId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isStudentIdImmutable();
+      allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
+    }
+
+    /**
+     * @description Manages a user's private quiz results.
+     * @path /users/{userId}/quizResults/{quizResultId}
+     * @allow (get) User 'user123' reads a specific quiz result from their collection.
+     * @deny (update) User 'user456' tries to update a quiz result belonging to 'user123'.
+     * @principle Path-based ownership for user subcollections.
+     */
+    match /users/{userId}/quizResults/{quizResultId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.studentId == userId;
+      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isStudentIdImmutable();
+      allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
+    }
+
+    /**
+     * @description Manages a user's private notifications.
+     * @path /users/{userId}/notifications/{notificationId}
+     * @allow (delete) User 'user123' deletes a notification from their collection.
+     * @deny (list) An unauthenticated user tries to list notifications.
+     * @principle Path-based ownership for user subcollections.
+     */
+    match /users/{userId}/notifications/{notificationId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isUserIdImmutable();
+      allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
+    }
+
+
+    // --------------------------------------------------------------------
+    // Public Content Collections (/subjects)
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Secures all educational content (subjects, courses, lessons, quizzes, questions).
+     * @path /subjects/{subjectId}/{path=**}
+     * @allow (get) Any user, authenticated or not, can read a course document.
+     * @deny (create) A non-admin user tries to create a new subject.
+     * @principle Public read access for general content, with write access restricted to administrators to maintain quality.
+     */
+    match /subjects/{subjectId}/{path=**} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && isExistingDoc();
+      allow delete: if isAdmin() && isExistingDoc();
+    }
+
+
+    // --------------------------------------------------------------------
+    // Tutor and Booking Collections
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Manages public tutor profiles. They are readable by anyone, but writable only by the owner or an admin.
+     * @path /tutors/{tutorId}
+     * @allow (update) The tutor with UID 'user789' updates their own profile.
+     * @deny (update) Tutor 'user789' tries to update the `userId` field on their profile to impersonate another user.
+     * @principle Public read with document ownership for writes.
+     */
+    match /tutors/{tutorId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isNewTutorProfileValid() && request.resource.data.userId == request.auth.uid;
+      allow update: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc() && isUserIdImmutable();
+      allow delete: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
+    }
+
+    /**
+     * @description Manages private bookings between students and tutors.
+     * @path /bookings/{bookingId}
+     * @allow (get) The student with UID 'student123' reads a booking where their ID is in the `studentId` field.
+     * @deny (list) Any user tries to list all bookings in the system, preventing data leakage.
+     * @principle Shared access for a closed set of collaborators listed on the document.
+     */
+    match /bookings/{bookingId} {
+      allow get: if isBookingParticipant(resource.data) || isAdmin();
+      allow list: if false;
+      allow create: if isOwner(request.resource.data.studentId);
+      allow update: if (isBookingParticipant(resource.data) || isAdmin()) && isExistingDoc();
+      allow delete: if (isBookingParticipant(resource.data) || isAdmin()) && isExistingDoc();
+    }
+
+
+    // --------------------------------------------------------------------
+    // Financial Collections (/payments)
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Manages private payment records. Accessible only by the user who made the payment or an admin.
+     * @path /payments/{paymentId}
+     * @allow (get) A user reads a payment record where their UID matches the `userId` field.
+     * @deny (create) A user attempts to create a payment record on behalf of another user.
+     * @principle Enforces strict document ownership based on an internal `userId` field.
+     */
+    match /payments/{paymentId} {
+      allow get: if isPaymentOwner(resource.data) || isAdmin();
+      allow list: if false;
+      allow create: if isPaymentOwner(request.resource.data);
+      allow update: if (isPaymentOwner(resource.data) || isAdmin()) && isExistingDoc() && isUserIdImmutable();
+      allow delete: if (isPaymentOwner(resource.data) || isAdmin()) && isExistingDoc();
+    }
+
+
+    // --------------------------------------------------------------------
+    // Administrative Collections (/roles_admin)
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Manages administrator privileges for the application.
+     * @path /roles_admin/{userId}
+     * @allow (create) An existing admin creates a document for a new user, granting them admin rights.
+     * @deny (get) A non-admin user attempts to read the list of administrators.
+     * @principle Role management is restricted to existing role-holders (admins only).
+     */
+    match /roles_admin/{userId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() && isExistingDoc();
+      allow delete: if isAdmin() && isExistingDoc();
+    }
+  }
+}

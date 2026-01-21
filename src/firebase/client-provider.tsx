@@ -1,50 +1,26 @@
 'use client';
 
-import { ReactNode, useState, useEffect } from 'react';
-import { FirebaseApp, getApps, initializeApp } from 'firebase/app';
-import { Auth, getAuth } from 'firebase/auth';
-import { Firestore, getFirestore } from 'firebase/firestore';
-
+import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
-import { firebaseConfig } from '@/firebase/config';
+import { initializeFirebase } from '@/firebase';
 
-interface FirebaseInstances {
-  app: FirebaseApp;
-  auth: Auth;
-  firestore: Firestore;
+interface FirebaseClientProviderProps {
+  children: ReactNode;
 }
 
-export const FirebaseClientProvider = ({ children }: { children: ReactNode }) => {
-  const [instances, setInstances] = useState<FirebaseInstances | null>(null);
-
-  useEffect(() => {
-    // Initialize Firebase on the client, and only once.
-    if (getApps().length === 0) {
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const firestore = getFirestore(app);
-      setInstances({ app, auth, firestore });
-    } else {
-      const app = getApps()[0];
-      const auth = getAuth(app);
-      const firestore = getFirestore(app);
-      setInstances({ app, auth, firestore });
-    }
-  }, []);
-
-  // While initializing, don't render children
-  // as they might depend on Firebase.
-  if (!instances) {
-    return null;
-  }
+export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+  const firebaseServices = useMemo(() => {
+    // Initialize Firebase on the client side, once per component mount.
+    return initializeFirebase();
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   return (
     <FirebaseProvider
-      firebaseApp={instances.app}
-      firestore={instances.firestore}
-      auth={instances.auth}
+      firebaseApp={firebaseServices.firebaseApp}
+      auth={firebaseServices.auth}
+      firestore={firebaseServices.firestore}
     >
       {children}
     </FirebaseProvider>
   );
-};
+}
