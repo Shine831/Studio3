@@ -1,9 +1,9 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { Star, Verified, MessageSquare, MapPin } from 'lucide-react';
+import { Star, Verified, MessageSquare, MapPin, UserPlus, UserCheck } from 'lucide-react';
 import { tutors } from '@/lib/data'; // Using mock data for now
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,13 +13,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useLanguage } from '@/context/language-context';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import type { TutorRating } from '@/lib/types';
+import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import type { TutorRating, UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -36,20 +37,34 @@ export default function TutorProfilePage() {
   const { language } = useLanguage();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
 
   const tutor = tutors.find((t) => t.id === tutorId);
 
+  // --- Data Fetching ---
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+  
   const userRatingRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !tutorId) return null;
     return doc(firestore, 'tutors', tutorId, 'ratings', user.uid);
   }, [firestore, user?.uid, tutorId]);
-
   const { data: userRating, isLoading: isRatingLoading } = useDoc<TutorRating>(userRatingRef);
-  const hasRated = !!userRating;
 
+  const followerRef = useMemoFirebase(() => {
+    if(!firestore || !user?.uid || !tutorId) return null;
+    return doc(firestore, 'tutors', tutorId, 'followers', user.uid);
+  }, [firestore, user?.uid, tutorId]);
+  const { data: followerDoc, isLoading: isFollowerLoading } = useDoc(followerRef);
+
+  const hasRated = !!userRating;
+  const isFollowing = !!followerDoc;
+
+
+  // --- Content ---
   const content = {
     fr: {
       tutorNotFound: 'Répétiteur non trouvé',
@@ -59,13 +74,10 @@ export default function TutorProfilePage() {
       subjects: 'Matières enseignées',
       classes: 'Classes enseignées',
       system: 'Système',
-      systems: {
-          francophone: 'Francophone',
-          anglophone: 'Anglophone',
-          both: 'Bilingue'
-      },
+      systems: { francophone: 'Francophone', anglophone: 'Anglophone', both: 'Bilingue' },
       location: 'Localisation',
       leaveRating: 'Laisser une évaluation',
+      yourComment: 'Votre commentaire...',
       submitRating: 'Soumettre l\'évaluation',
       ratingSubmitted: 'Évaluation envoyée !',
       ratingSubmittedDesc: 'Merci d\'avoir évalué ce répétiteur.',
@@ -73,6 +85,9 @@ export default function TutorProfilePage() {
       loginToRateDesc: 'Vous devez être connecté pour laisser une évaluation.',
       alreadyRated: 'Déjà évalué',
       ratingError: "Échec de l'envoi de l'évaluation. Veuillez réessayer.",
+      follow: 'Suivre',
+      unfollow: 'Ne plus suivre',
+      following: 'Suivi',
     },
     en: {
       tutorNotFound: 'Tutor not found',
@@ -82,13 +97,10 @@ export default function TutorProfilePage() {
       subjects: 'Subjects Taught',
       classes: 'Classes Taught',
       system: 'System',
-      systems: {
-          francophone: 'Francophone',
-          anglophone: 'Anglophone',
-          both: 'Bilingual'
-      },
+      systems: { francophone: 'Francophone', anglophone: 'Anglophone', both: 'Bilingual' },
       location: 'Location',
       leaveRating: 'Leave a Rating',
+      yourComment: 'Your comment...',
       submitRating: 'Submit Rating',
       ratingSubmitted: 'Rating Submitted!',
       ratingSubmittedDesc: 'Thanks for rating this tutor.',
@@ -96,37 +108,47 @@ export default function TutorProfilePage() {
       loginToRateDesc: 'You must be logged in to leave a rating.',
       alreadyRated: 'Already Rated',
       ratingError: 'Failed to submit rating. Please try again.',
+      follow: 'Follow',
+      unfollow: 'Unfollow',
+      following: 'Following',
     },
   };
-
   const t = content[language];
+  
+  // --- Handlers ---
+  const handleFollowToggle = async () => {
+    if (!followerRef || !user || !userProfile) return;
+    if (isFollowing) {
+        await deleteDoc(followerRef);
+    } else {
+        await setDoc(followerRef, {
+            studentId: user.uid,
+            studentName: userProfile.firstName + ' ' + userProfile.lastName,
+            studentAvatar: userProfile.profilePicture || null,
+            followedAt: serverTimestamp(),
+        });
+    }
+  }
   
   const handleSubmitRating = async () => {
     if (!user || !firestore) {
-      toast({
-        variant: 'destructive',
-        title: t.loginToRate,
-        description: t.loginToRateDesc,
-      });
+      toast({ variant: 'destructive', title: t.loginToRate, description: t.loginToRateDesc });
       return;
     }
-    if (!tutorId) return;
-
-    const ratingDocRef = doc(firestore, 'tutors', tutorId, 'ratings', user.uid);
+    if (!tutorId || !userRatingRef) return;
 
     try {
-      await setDoc(ratingDocRef, {
+      await setDoc(userRatingRef, {
         id: user.uid,
         tutorId: tutorId,
         studentId: user.uid,
+        studentName: userProfile?.firstName + ' ' + userProfile?.lastName,
         rating: rating,
+        comment: comment,
         createdAt: serverTimestamp(),
-      });
+      }, { merge: true });
 
-      toast({
-        title: t.ratingSubmitted,
-        description: `${t.ratingSubmittedDesc} (${rating}/5)`,
-      });
+      toast({ title: t.ratingSubmitted, description: `${t.ratingSubmittedDesc} (${rating}/5)` });
     } catch (error: any) {
       console.error("Error submitting rating: ", error);
       toast({
@@ -196,6 +218,10 @@ export default function TutorProfilePage() {
                     </a>
                 </Button>
             )}
+             <Button size="lg" variant={isFollowing ? "secondary" : "outline"} onClick={handleFollowToggle} disabled={isFollowerLoading}>
+                {isFollowing ? <UserCheck className="mr-2" /> : <UserPlus className="mr-2" />}
+                {isFollowing ? t.following : t.follow}
+             </Button>
           </div>
         </CardHeader>
         <CardContent className="mt-6 space-y-6 pt-6 border-t">
@@ -232,10 +258,10 @@ export default function TutorProfilePage() {
              <div className="border-t pt-6 mt-6">
               <h4 className="font-semibold">{t.leaveRating}</h4>
               {isRatingLoading ? (
-                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-24 w-full" />
               ) : (
-                <>
-                  <div className="flex items-center gap-1 mt-2">
+                <div className="mt-2 space-y-4">
+                  <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
@@ -252,10 +278,20 @@ export default function TutorProfilePage() {
                       />
                     ))}
                   </div>
-                  <Button className="mt-4" disabled={(rating === 0 && !hasRated) || hasRated} onClick={handleSubmitRating}>
+                  {!hasRated && rating > 0 && (
+                    <Textarea 
+                        placeholder={t.yourComment}
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                    />
+                  )}
+                  {hasRated && userRating?.comment && (
+                    <p className="text-sm text-muted-foreground italic p-3 bg-muted rounded-md">"{userRating.comment}"</p>
+                  )}
+                  <Button disabled={(rating === 0 && !hasRated) || hasRated} onClick={handleSubmitRating}>
                     {hasRated ? t.alreadyRated : t.submitRating}
                   </Button>
-                </>
+                </div>
               )}
             </div>
         </CardContent>
@@ -263,3 +299,5 @@ export default function TutorProfilePage() {
     </div>
   );
 }
+
+    

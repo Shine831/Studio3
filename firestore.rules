@@ -77,6 +77,14 @@ service cloud.firestore {
     function isTutorOwner(tutorProfileData) {
       return isOwner(tutorProfileData.userId);
     }
+    
+    /**
+     * Checks if the currently authenticated user is the tutor who owns this subcollection.
+     */
+    function isSubcollectionOfTutor(tutorId) {
+        let tutorProfile = get(/databases/$(database)/documents/tutors/$(tutorId));
+        return isOwner(tutorProfile.data.userId);
+    }
 
     /**
      * Checks if the authenticated user is a participant (student or tutor) in a booking.
@@ -221,20 +229,37 @@ service cloud.firestore {
       allow delete: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
 
        /**
-       * @description Manages ratings for a tutor.
+       * @description Manages ratings for a tutor. Students can create/update their own single rating.
        * @path /tutors/{tutorId}/ratings/{studentId}
        * @allow (create) A student 'student123' can create a single rating document at /tutors/tutorABC/ratings/student123.
        * @deny (create) The same student tries to create a second rating for the same tutor, which fails because the document already exists.
-       * @deny (update) Any user tries to change an existing rating.
-       * @principle Enforces a "rate only once" policy by using the student's UID as the document ID.
+       * @allow (update) The student 'student123' can update their comment or star rating.
+       * @principle Enforces a "rate only once" policy by using the student's UID as the document ID. Allows updates.
        */
       match /ratings/{studentId} {
         allow get, list: if true;
         allow create: if isOwner(studentId)
                       && request.resource.data.studentId == studentId
                       && request.resource.data.tutorId == tutorId;
-        allow update, delete: if false;
+        allow update: if isOwner(studentId) && isExistingDoc();
+        allow delete: if false;
       }
+
+      /**
+       * @description Manages the list of students following a tutor.
+       * @path /tutors/{tutorId}/followers/{studentId}
+       * @allow (create) A student 'student123' follows a tutor by creating a document at /tutors/tutorABC/followers/student123.
+       * @allow (delete) The same student unfollows by deleting that document.
+       * @allow (list) The tutor can read the list of their followers.
+       * @principle The student owns their "follow" relationship. The tutor can read who follows them.
+       */
+       match /followers/{studentId} {
+          allow get: if isOwner(studentId) || isSubcollectionOfTutor(tutorId) || isAdmin();
+          allow list: if isSubcollectionOfTutor(tutorId) || isAdmin();
+          allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
+          allow delete: if isOwner(studentId);
+          allow update: if false;
+       }
     }
 
     /**
@@ -292,3 +317,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

@@ -399,6 +399,10 @@
           "type": "number",
           "description": "The rating value (e.g., 1-5)."
         },
+        "comment": {
+          "type": "string",
+          "description": "The student's comment."
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp of when the rating was submitted.",
@@ -412,6 +416,32 @@
         "rating",
         "createdAt"
       ]
+    },
+    "FollowerRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FollowerRecord",
+      "type": "object",
+      "description": "Represents a student following a tutor.",
+      "properties": {
+        "studentId": {
+          "type": "string",
+          "description": "The UID of the student who is following."
+        },
+        "studentName": {
+            "type": "string",
+            "description": "The name of the student for easy display."
+        },
+        "studentAvatar": {
+            "type": "string",
+            "description": "The avatar URL of the student for easy display."
+        },
+        "followedAt": {
+          "type": "string",
+          "description": "Timestamp of when the follow action occurred.",
+          "format": "date-time"
+        }
+      },
+      "required": [ "studentId", "followedAt" ]
     },
     "Booking": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -853,7 +883,7 @@
         }
       },
       {
-        "path": "/tutors/{tutorId}/ratings/{ratingId}",
+        "path": "/tutors/{tutorId}/ratings/{studentId}",
         "definition": {
           "entityName": "TutorRating",
           "schema": {
@@ -866,8 +896,28 @@
               "description": "The unique identifier of the tutor profile."
             },
             {
-              "name": "ratingId",
+              "name": "studentId",
               "description": "The unique identifier for the rating, which should be the student's UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tutors/{tutorId}/followers/{studentId}",
+        "definition": {
+          "entityName": "FollowerRecord",
+          "schema": {
+            "$ref": "#/backend/entities/FollowerRecord"
+          },
+          "description": "Stores a record of a student following a tutor.",
+          "params": [
+            {
+              "name": "tutorId",
+              "description": "The unique identifier of the tutor being followed."
+            },
+            {
+              "name": "studentId",
+              "description": "The unique identifier of the student who is following."
             }
           ]
         }
@@ -984,3 +1034,5 @@
     "reasoning": "The Firestore structure is designed to provide a secure and scalable data model for the RéviseCamer application, adhering to the principles of Authorization Independence, Clarity of Intent, DBAC (Database Authentication and Authorization Control), and QAPs (Rules are not Filters). It uses denormalization to avoid complex security rules and ensures data integrity.  The core principle of this structure is Authorization Independence by denormalizing authorization context to enable atomic operations, avoiding the need for `get()` calls in security rules.\\n\\n1.  **User Profiles:** User profiles are stored in `/users/{userId}`.  This supports direct access and management of user-specific data using path-based rules.\\n\\n2.  **Subjects, Courses, Lessons, Quizzes, and Questions:** These are structured hierarchically to represent the educational content. Courses are stored under `/subjects/{subjectId}/courses/{courseId}`, lessons under `/subjects/{subjectId}/courses/{courseId}/lessons/{lessonId}`, quizzes under `/subjects/{subjectId}/courses/{courseId}/lessons/{lessonId}/quizzes/{quizId}`, and questions under `/subjects/{subjectId}/courses/{courseId}/lessons/{lessonId}/quizzes/{quizId}/questions/{questionId}`. This allows for easy querying and management of related content. The Quiz entity has a denormalized `courseId` and `lessonId` to allow direct collection queries for all quizzes in a course or lesson.\\n\\n3.  **Tutor Profiles:** Tutor profiles are stored in `/tutors/{tutorId}`. This structure allows easy listing and filtering of tutors.\\n\\n4.  **Bookings:** Bookings are stored in `/bookings/{bookingId}`. This collection stores all booking information and the security is controlled by checking the `studentId` and `tutorId` fields.\\n\\n5.  **Payments:** Payments are stored in `/payments/{paymentId}`. Access is controlled by the `userId` field.\\n\\n6.  **Study Plans and Quiz Results:** Study plans are stored under `/users/{userId}/studyPlans/{studyPlanId}` and quiz results under `/users/{userId}/quizResults/{quizResultId}`. This path-based ownership ensures only the user can access their own study plans and quiz results.\\n\\n7.  **Notifications:** Notifications are stored under `/users/{userId}/notifications/{notificationId}`, ensuring only the intended user can access their notifications.\\n\\n8. **Admin Roles:** The DBAC (Database Authentication and Authorization Control) is implemented using the dedicated collection /roles_admin/{uid}. The security rules check for the existence of a document in this collection to grant admin privileges.  Global roles leverage the **Existence over Content** principle, with dedicated collections like `/roles_admin/{uid}`.\\n\\n\\n**QAPs (Rules are not Filters):**\\nThe structure is designed to support secure `list` operations. For example, listing courses is done directly from the `/subjects/{subjectId}/courses` collection, without needing to filter based on user roles.  The structure utilizes structural segregation to simplify rules and avoid filtering. For instance, tutor profiles are in their own collection (`/tutors`) with specific rules, separate from student profiles. This prevents the need to filter user types within a single collection, improving efficiency and security."
   }
 }
+
+    

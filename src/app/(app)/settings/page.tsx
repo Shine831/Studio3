@@ -80,7 +80,7 @@ export default function SettingsPage() {
     [firestore, user]
   );
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userProfileRef);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -113,7 +113,7 @@ export default function SettingsPage() {
       });
        setPreview(userProfile.profilePicture || null);
     }
-  }, [userProfile, form]);
+  }, [userProfile, form, form.reset]);
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -131,24 +131,31 @@ export default function SettingsPage() {
 
   async function onSubmit(data: ProfileFormValues) {
     if (!userProfileRef) return;
-    try {
-      const dataToSave: Partial<ProfileFormValues> & { classes?: string[] } = { ...data };
-      if (userProfile?.role === 'tutor' && data.classes) {
-        dataToSave.classes = data.classes.split(',').map(c => c.trim()).filter(Boolean);
-      } else {
-        delete dataToSave.classes;
-      }
-      
-      if (userProfile?.role !== 'tutor') {
-        delete dataToSave.monthlyRate;
-        delete dataToSave.whatsapp;
-      }
+    
+    // Create a clean data object to save, excluding fields that shouldn't be there
+    const dataToSave: Partial<UserProfile> = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        system: data.system,
+        city: data.city,
+        profilePicture: data.profilePicture
+    };
 
+    if (userProfile?.role === 'tutor') {
+        dataToSave.whatsapp = data.whatsapp;
+        dataToSave.monthlyRate = data.monthlyRate;
+        if(data.classes){
+            dataToSave.classes = data.classes.split(',').map(c => c.trim()).filter(Boolean);
+        }
+    }
+
+    try {
       await setDoc(userProfileRef, dataToSave, { merge: true });
       toast({
         title: content[language].updateSuccessTitle,
         description: content[language].updateSuccessDesc,
       });
+      form.reset(data); // Resets the form's dirty state
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
@@ -182,7 +189,7 @@ export default function SettingsPage() {
       updateButton: 'Mettre à jour le profil',
       updateSuccessTitle: 'Profil mis à jour',
       updateSuccessDesc: 'Vos informations ont été sauvegardées avec succès.',
-      updateErrorTitle: 'Erreur',
+      updateErrorTitle: 'Erreur de mise à jour',
     },
     en: {
       title: 'Profile Settings',
@@ -206,7 +213,7 @@ export default function SettingsPage() {
       updateButton: 'Update Profile',
       updateSuccessTitle: 'Profile Updated',
       updateSuccessDesc: 'Your information has been successfully saved.',
-      updateErrorTitle: 'Error',
+      updateErrorTitle: 'Update Error',
     },
   };
 
@@ -225,6 +232,10 @@ export default function SettingsPage() {
         </div>
       </div>
     );
+  }
+  
+  if (profileError) {
+      return <p>Error loading profile.</p>
   }
 
   return (
@@ -404,3 +415,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    

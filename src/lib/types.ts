@@ -83,9 +83,19 @@ export interface QuizResult {
 }
 
 export interface TutorRating {
-  id: string;
+  id: string; // studentUID
   tutorId: string;
   studentId: string;
   rating: number;
+  comment?: string;
   createdAt: any; // Firestore Timestamp
 }
+
+export interface FollowerRecord {
+    studentId: string;
+    studentName: string;
+    studentAvatar?: string;
+    followedAt: any; // Firestore Timestamp
+}
+
+    

@@ -15,28 +15,33 @@ import {
   Users,
   Banknote,
 } from 'lucide-react';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, limit, orderBy, query } from 'firebase/firestore';
+import type { FollowerRecord, TutorRating } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
-
-// Mock data, as the data model is not fully integrated
-const upcomingSessions = [
-    { id: 1, studentName: 'Fatiha N.', subject: 'Mathématiques', date: 'Demain à 16:00' },
-    { id: 2, studentName: 'John A.', subject: 'Physics', date: '25/07/2024 à 10:00' },
-];
-
-const recentReviews = [
-    { id: 1, studentName: 'Aïssatou B.', rating: 5, comment: 'Excellent tuteur, très patient !' },
-    { id: 2, studentName: 'Chris K.', rating: 4, comment: 'Good session, I learned a lot.' },
-];
+const getInitials = (name: string | null | undefined) => {
+    if (!name) return '?';
+    const names = name.trim().split(' ').filter(n => n);
+    if (names.length > 1) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 1).toUpperCase();
+}
 
 
 export function TutorDashboard() {
   const { language } = useLanguage();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   const content = {
     fr: {
       title: 'Tableau de bord du Répétiteur',
       description: 'Gérez vos sessions, vos revenus et votre profil.',
-      totalStudents: 'Total Étudiants',
+      totalStudents: 'Total Élèves',
       avgRating: 'Note Moyenne',
       upcomingSessions: 'Sessions à Venir',
       totalEarnings: 'Revenus (30 jours)',
@@ -49,7 +54,9 @@ export function TutorDashboard() {
       basedOn: 'Basé sur',
       reviews: 'avis',
       inNext7Days: 'Dans les 7 prochains jours',
-      devFeature: 'Fonctionnalité en développement'
+      devFeature: 'Fonctionnalité en développement',
+      followers: 'abonnés ce mois-ci',
+      noFollowers: "Pas encore d'abonnés",
     },
     en: {
       title: 'Tutor Dashboard',
@@ -67,11 +74,31 @@ export function TutorDashboard() {
       basedOn: 'Based on',
       reviews: 'reviews',
       inNext7Days: 'In the next 7 days',
-      devFeature: 'Feature in development'
+      devFeature: 'Feature in development',
+      followers: 'followers this month',
+      noFollowers: 'No followers yet',
     }
   };
 
   const t = content[language];
+  
+  const followersRef = useMemoFirebase(
+    () => (user ? collection(firestore, 'tutors', user.uid, 'followers') : null),
+    [firestore, user]
+  );
+  const { data: followers, isLoading: isLoadingFollowers } = useCollection<FollowerRecord>(followersRef);
+
+  const ratingsRef = useMemoFirebase(
+    () => (user ? query(collection(firestore, 'tutors', user.uid, 'ratings'), orderBy('createdAt', 'desc'), limit(5)) : null),
+    [firestore, user]
+  );
+  const { data: ratings, isLoading: isLoadingRatings } = useCollection<TutorRating>(ratingsRef);
+
+  const stats = {
+      totalStudents: followers?.length || 0,
+      avgRating: ratings && ratings.length > 0 ? ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length : 0,
+      totalRatings: ratings?.length || 0,
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -85,8 +112,14 @@ export function TutorDashboard() {
                   <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                  <div className="text-2xl font-bold">12</div>
-                  <p className="text-xs text-muted-foreground">+2 {language === 'fr' ? 'ce mois-ci' : 'this month'}</p>
+                  {isLoadingFollowers ? <Skeleton className="h-8 w-1/2" /> : (
+                    <>
+                        <div className="text-2xl font-bold">{stats.totalStudents}</div>
+                        <p className="text-xs text-muted-foreground">
+                            {stats.totalStudents > 0 ? `${stats.totalStudents} ${t.followers}` : t.noFollowers}
+                        </p>
+                    </>
+                  )}
               </CardContent>
           </Card>
           <Card>
@@ -95,8 +128,12 @@ export function TutorDashboard() {
                   <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                  <div className="text-2xl font-bold">4.8</div>
-                  <p className="text-xs text-muted-foreground">{t.basedOn} 98 {t.reviews}</p>
+                 {isLoadingRatings ? <Skeleton className="h-8 w-1/2" /> : (
+                    <>
+                        <div className="text-2xl font-bold">{stats.avgRating.toFixed(1)}</div>
+                        <p className="text-xs text-muted-foreground">{t.basedOn} {stats.totalRatings} {t.reviews}</p>
+                    </>
+                 )}
               </CardContent>
           </Card>
           <Card>
@@ -105,8 +142,8 @@ export function TutorDashboard() {
                   <CalendarClock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                  <div className="text-2xl font-bold">{upcomingSessions.length}</div>
-                  <p className="text-xs text-muted-foreground">{t.inNext7Days}</p>
+                  <div className="text-2xl font-bold">0</div>
+                  <p className="text-xs text-muted-foreground">{t.devFeature}</p>
               </CardContent>
           </Card>
           <Card>
@@ -115,7 +152,7 @@ export function TutorDashboard() {
                   <Banknote className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                  <div className="text-2xl font-bold">150,000 <span className="text-sm">{t.currency}</span></div>
+                  <div className="text-2xl font-bold">0 <span className="text-sm">{t.currency}</span></div>
                   <p className="text-xs text-muted-foreground">{t.devFeature}</p>
               </CardContent>
           </Card>
@@ -123,22 +160,16 @@ export function TutorDashboard() {
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <Card className="lg:col-span-4">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center">
                   <CardTitle>{t.upcomingSessions}</CardTitle>
+                   <Button asChild size="sm" className="ml-auto">
+                        <Link href="/schedule">{t.viewAll}</Link>
+                   </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                  {upcomingSessions.length > 0 ? upcomingSessions.map(session => (
-                      <div key={session.id} className="flex items-center">
-                          <Avatar className="h-9 w-9">
-                              <AvatarFallback>{session.studentName[0]}</AvatarFallback>
-                          </Avatar>
-                          <div className="ml-4 space-y-1">
-                              <p className="text-sm font-medium leading-none">{session.studentName}</p>
-                              <p className="text-sm text-muted-foreground">{session.subject}</p>
-                          </div>
-                          <div className="ml-auto font-medium">{session.date}</div>
-                      </div>
-                  )) : <p className="text-sm text-muted-foreground">{t.noUpcoming}</p>}
+                  <div className="flex h-48 flex-col items-center justify-center text-center p-4">
+                    <p className="text-sm text-muted-foreground">{t.noUpcoming}</p>
+                  </div>
               </CardContent>
           </Card>
           <Card className="lg:col-span-3">
@@ -147,14 +178,19 @@ export function TutorDashboard() {
                   <CardDescription>{language === 'fr' ? 'Avis récents de vos élèves.' : 'Recent reviews from your students.'}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                  {recentReviews.length > 0 ? recentReviews.map(review => (
+                  {isLoadingRatings ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                  ) : ratings && ratings.length > 0 ? ratings.map(review => (
                        <div key={review.id} className="flex items-start">
                           <Avatar className="h-9 w-9">
-                              <AvatarFallback>{review.studentName[0]}</AvatarFallback>
+                              <AvatarFallback>{review.studentName ? getInitials(review.studentName) : '?'}</AvatarFallback>
                           </Avatar>
                           <div className="ml-4 space-y-1 w-full">
                               <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium leading-none">{review.studentName}</p>
+                                  <p className="text-sm font-medium leading-none">{review.studentName || 'Anonymous'}</p>
                                   <div className="flex items-center gap-0.5 ml-2">
                                       {[...Array(5)].map((_, i) => (
                                           <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'fill-primary text-primary' : 'fill-muted stroke-muted-foreground'}`} />
@@ -171,3 +207,5 @@ export function TutorDashboard() {
     </div>
   );
 }
+
+    
