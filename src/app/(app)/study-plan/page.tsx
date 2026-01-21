@@ -1,15 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc, addDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, addDoc, setDoc, serverTimestamp, collection, deleteDoc } from 'firebase/firestore';
 
 import {
   generatePersonalizedStudyPlan,
-  type GeneratePersonalizedStudyPlanOutput,
 } from '@/ai/flows/generate-personalized-study-plan';
 import { useLanguage } from '@/context/language-context';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
@@ -35,7 +34,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookCopy, PlusCircle, AlertCircle, Zap, ArrowRight } from 'lucide-react';
+import { BookCopy, PlusCircle, AlertCircle, Zap, ArrowRight, Trash2, MoreVertical } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +44,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Alert, AlertTitle } from '@/components/ui/alert';
 import { type SavedStudyPlan, type WithId } from '@/lib/types';
 
@@ -205,14 +221,14 @@ function AiCreditAlert({ language }: { language: 'fr' | 'en' }) {
         fr: {
             noCreditsTitle: "Crédits IA Épuisés",
             noCreditsDescription: "Vous avez utilisé tous vos crédits pour générer des plans d'étude.",
-            rechargeButton: "Recharger (1000 FCFA)",
-            rechargeDescription: "Le paiement par Mobile Money sera bientôt disponible pour ajouter plus de crédits."
+            rechargeButton: "Recharger (1200 FCFA)",
+            rechargeDescription: "Payez via Orange Money au 699 477 055 pour créditer votre compte."
         },
         en: {
             noCreditsTitle: "AI Credits Exhausted",
             noCreditsDescription: "You have used all your credits for generating study plans.",
-            rechargeButton: "Recharge (1000 FCFA)",
-            rechargeDescription: "Mobile Money payment will be available soon to add more credits."
+            rechargeButton: "Recharge (1200 FCFA)",
+            rechargeDescription: "Pay via Orange Money to 699 477 055 to credit your account."
         }
     }[language];
 
@@ -264,6 +280,10 @@ export default function StudyPlanPage() {
         lessons: "leçons",
         errorLoading: "Une erreur est survenue lors du chargement de vos plans.",
         aiCreditsRemaining: "crédits de génération restants",
+        deletePlan: "Supprimer",
+        deleteConfirmTitle: "Êtes-vous sûr ?",
+        deleteConfirmDesc: "Cette action est irréversible. Votre plan d'étude sera définitivement supprimé.",
+        cancel: "Annuler",
     },
     en: {
         title: "My Study Plans",
@@ -275,12 +295,26 @@ export default function StudyPlanPage() {
         lessons: "lessons",
         errorLoading: "An error occurred while loading your plans.",
         aiCreditsRemaining: "generation credits remaining",
+        deletePlan: "Delete",
+        deleteConfirmTitle: "Are you sure?",
+        deleteConfirmDesc: "This action cannot be undone. This will permanently delete your study plan.",
+        cancel: "Cancel",
     },
   };
   const t = content[language];
   
   const isLoading = isUserLoading || isProfileLoading || arePlansLoading;
   const hasCredits = userProfile?.aiCredits > 0;
+
+  const handleDeletePlan = async (planId: string) => {
+    if (!user) return;
+    const planDocRef = doc(firestore, 'users', user.uid, 'studyPlans', planId);
+    try {
+        await deleteDoc(planDocRef);
+    } catch(e) {
+        console.error("Error deleting study plan:", e);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -323,12 +357,45 @@ export default function StudyPlanPage() {
       {savedPlans && savedPlans.length > 0 ? (
          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
              {savedPlans.map(plan => (
-                <Card key={plan.id} className="flex flex-col">
+                <Card key={plan.id} className="flex flex-col group">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3">
-                            <BookCopy className="h-6 w-6 text-primary" />
-                            {plan.subject}
-                        </CardTitle>
+                        <div className="flex justify-between items-start">
+                             <CardTitle className="flex items-center gap-3">
+                                <BookCopy className="h-6 w-6 text-primary" />
+                                {plan.subject}
+                            </CardTitle>
+                            <AlertDialog>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                {t.deletePlan}
+                                            </DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>{t.deleteConfirmTitle}</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        {t.deleteConfirmDesc}
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeletePlan(plan.id)} className="bg-destructive hover:bg-destructive/90">
+                                        {t.deletePlan}
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
                         <CardDescription>{plan.learningGoals}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-grow">

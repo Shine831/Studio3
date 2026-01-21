@@ -1,23 +1,19 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
-import { doc } from 'firebase/firestore';
-
+import { doc, updateDoc, DocumentReference } from 'firebase/firestore';
 import {
   generateQuiz,
   type GenerateQuizOutput,
-  type Question,
 } from '@/ai/flows/generate-quiz';
 import {
   generateLessonContent,
 } from '@/ai/flows/generate-lesson-content';
 import { useLanguage } from '@/context/language-context';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import type { SavedStudyPlan, WithId } from '@/lib/types';
-
-
+import type { SavedStudyPlan, WithId, Lesson, Question } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -32,7 +28,6 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CheckCircle, XCircle, BookCopy, ArrowLeft } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
@@ -222,10 +217,8 @@ function QuizResults({
   )
 }
 
-function LessonContent({ lesson, subject, language }: { lesson: { title: string, description: string, duration: number }, subject: string, language: 'fr' | 'en' }) {
+function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef }: { lesson: Lesson, subject: string, language: 'fr' | 'en', plan: WithId<SavedStudyPlan>, lessonIndex: number, planRef: DocumentReference | null }) {
     const [isContentLoading, setIsContentLoading] = useState(false);
-    const [content, setContent] = useState<string | null>(null);
-    const [quiz, setQuiz] = useState<GenerateQuizOutput | null>(null);
     const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [quizScore, setQuizScore] = useState<number | null>(null);
@@ -234,6 +227,7 @@ function LessonContent({ lesson, subject, language }: { lesson: { title: string,
     const t = {
         fr: {
             generateLesson: "Générer la leçon",
+            generatingLesson: "Génération de la leçon...",
             takeQuiz: "Faire le Quiz",
             generatingQuiz: "Génération du quiz...",
             quizError: "Une erreur est survenue lors de la génération du quiz. Veuillez réessayer.",
@@ -241,6 +235,7 @@ function LessonContent({ lesson, subject, language }: { lesson: { title: string,
         },
         en: {
             generateLesson: "Generate Lesson",
+            generatingLesson: "Generating lesson...",
             takeQuiz: "Take the Quiz",
             generatingQuiz: "Generating quiz...",
             quizError: "An error occurred while generating the quiz. Please try again.",
@@ -249,10 +244,14 @@ function LessonContent({ lesson, subject, language }: { lesson: { title: string,
     }[language];
 
     const handleGenerateContent = async () => {
+        if (!planRef) return;
         setIsContentLoading(true);
+        setError(null);
         try {
             const result = await generateLessonContent({ courseTitle: lesson.title, subject, language });
-            setContent(result.lessonContent);
+            const newLessons = [...plan.lessons];
+            newLessons[lessonIndex].content = result.lessonContent;
+            await updateDoc(planRef, { lessons: newLessons });
         } catch (e) {
             console.error(e);
             setError(t.contentError);
@@ -262,15 +261,17 @@ function LessonContent({ lesson, subject, language }: { lesson: { title: string,
     };
 
     const handleGenerateQuiz = async () => {
+        if (!planRef) return;
         setIsLoadingQuiz(true);
         setError(null);
-        setQuiz(null);
         setQuizScore(null);
         setUserAnswers([]);
         try {
             const result = await generateQuiz({ subject, courseTitle: lesson.title });
             if (result && result.questions.length > 0) {
-                setQuiz(result);
+                const newLessons = [...plan.lessons];
+                newLessons[lessonIndex].quiz = result.questions;
+                await updateDoc(planRef, { lessons: newLessons });
             } else {
                 setError(t.quizError);
             }
@@ -284,30 +285,32 @@ function LessonContent({ lesson, subject, language }: { lesson: { title: string,
 
     const handleQuizComplete = (score: number, answers: Answer[]) => {
         setQuizScore(score);
-        setUserAnswers(answers);
     };
 
     const handleRestartQuiz = () => {
-        setQuiz(null);
         setQuizScore(null);
         setUserAnswers([]);
     };
-    
-    if (!content) {
+
+    if (!lesson.content) {
         return (
-            <div className="flex flex-col items-center justify-center p-8 text-center">
+            <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
                 <p className="text-muted-foreground">{lesson.description}</p>
-                <Button onClick={handleGenerateContent} disabled={isContentLoading} className="mt-4">
-                    {isContentLoading ? <Loader2 className="animate-spin" /> : t.generateLesson}
+                <Button onClick={handleGenerateContent} disabled={isContentLoading}>
+                    {isContentLoading ? <Loader2 className="animate-spin mr-2" /> : null}
+                    {isContentLoading ? t.generatingLesson : t.generateLesson}
                 </Button>
+                {error && <p className="text-sm text-destructive">{error}</p>}
             </div>
-        )
+        );
     }
+
+    const quizData = lesson.quiz ? { questions: lesson.quiz } : null;
 
     return (
         <div className="space-y-6">
             <div className="prose dark:prose-invert max-w-none">
-                <ReactMarkdown>{content}</ReactMarkdown>
+                <ReactMarkdown>{lesson.content}</ReactMarkdown>
             </div>
             <Separator />
             <div className="flex flex-col items-center justify-center space-y-4">
@@ -323,20 +326,20 @@ function LessonContent({ lesson, subject, language }: { lesson: { title: string,
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 )}
-                {!isLoadingQuiz && !quiz && quizScore === null && (
+                {!isLoadingQuiz && !quizData && (
                     <Button onClick={handleGenerateQuiz} size="lg">
                         {t.takeQuiz}
                     </Button>
                 )}
-                {quiz && quizScore === null && (
-                    <QuizDisplay quiz={quiz} onComplete={handleQuizComplete} />
+                {quizData && quizScore === null && (
+                    <QuizDisplay quiz={quizData} onComplete={handleQuizComplete} />
                 )}
-                {quiz && quizScore !== null && (
-                    <QuizResults quiz={quiz} score={quizScore} userAnswers={userAnswers} onRestart={handleRestartQuiz} />
+                {quizData && quizScore !== null && (
+                    <QuizResults quiz={quizData} score={quizScore} userAnswers={userAnswers} onRestart={handleRestartQuiz} />
                 )}
             </div>
         </div>
-    )
+    );
 }
 
 export default function StudyPlanDetailPage() {
@@ -349,7 +352,7 @@ export default function StudyPlanDetailPage() {
     () => (user && planId ? doc(firestore, 'users', user.uid, 'studyPlans', planId as string) : null),
     [firestore, user, planId]
   );
-  const { data: plan, isLoading, error } = useDoc<SavedStudyPlan>(planRef);
+  const { data: plan, isLoading, error } = useDoc<WithId<SavedStudyPlan>>(planRef);
 
   const t = {
       fr: {
@@ -423,7 +426,7 @@ export default function StudyPlanDetailPage() {
                         </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                        <LessonContent lesson={lesson} subject={plan.subject} language={language} />
+                        <LessonContent lesson={lesson} subject={plan.subject} language={language} plan={plan} lessonIndex={index} planRef={planRef} />
                     </AccordionContent>
                 </AccordionItem>
             ))}

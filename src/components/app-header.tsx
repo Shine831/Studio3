@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Menu, Search } from 'lucide-react';
+import { Bell, Menu, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,9 +16,39 @@ import { LanguageSwitcher } from './language-switcher';
 import { UserNav } from './user-nav';
 import { AppSidebar } from './app-sidebar';
 import { useLanguage } from '@/context/language-context';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit, doc, deleteDoc } from 'firebase/firestore';
+import type { Notification } from '@/lib/types';
+import { formatDistanceToNow } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
 
 export function AppHeader() {
   const { language } = useLanguage();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const notificationsRef = useMemoFirebase(
+    () =>
+      user
+        ? query(
+            collection(firestore, 'users', user.uid, 'notifications'),
+            orderBy('sentAt', 'desc'),
+            limit(10)
+          )
+        : null,
+    [firestore, user]
+  );
+  const { data: notifications } = useCollection<Notification>(notificationsRef);
+
+  const handleDeleteNotification = async (notificationId: string) => {
+    if (!user) return;
+    const notifDocRef = doc(firestore, 'users', user.uid, 'notifications', notificationId);
+    try {
+        await deleteDoc(notifDocRef);
+    } catch(e) {
+        console.error("Error deleting notification:", e)
+    }
+  }
 
   const content = {
     fr: {
@@ -26,7 +56,7 @@ export function AppHeader() {
       navMenu: 'Menu de navigation',
       navDescription:
         "La navigation principale de l'application, avec des liens vers le tableau de bord, les cours, les répétiteurs, le plan d'étude et les paramètres.",
-      searchPlaceholder: 'Rechercher des cours...',
+      searchPlaceholder: 'Rechercher...',
       toggleNotifications: 'Basculer les notifications',
       notifications: 'Notifications',
       noNotifications: 'Aucune nouvelle notification.',
@@ -35,8 +65,8 @@ export function AppHeader() {
       toggleNav: 'Toggle navigation menu',
       navMenu: 'Navigation Menu',
       navDescription:
-        'The main navigation for the application, with links to dashboard, courses, tutors, study plan, and settings.',
-      searchPlaceholder: 'Search courses...',
+        'The main navigation for the application, with links to dashboard, tutors, study plan, and settings.',
+      searchPlaceholder: 'Search...',
       toggleNotifications: 'Toggle notifications',
       notifications: 'Notifications',
       noNotifications: 'No new notifications.',
@@ -79,8 +109,14 @@ export function AppHeader() {
         <LanguageSwitcher />
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="relative rounded-full">
               <Bell className="h-5 w-5" />
+              {notifications && notifications.length > 0 && (
+                <span className="absolute top-0 right-0 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+              )}
               <span className="sr-only">{t.toggleNotifications}</span>
             </Button>
           </SheetTrigger>
@@ -89,9 +125,27 @@ export function AppHeader() {
               <SheetTitle>{t.notifications}</SheetTitle>
             </SheetHeader>
             <div className="py-4">
-              <p className="text-center text-sm text-muted-foreground">
-                {t.noNotifications}
-              </p>
+              {notifications && notifications.length > 0 ? (
+                <ul className="space-y-4">
+                    {notifications.map(notif => (
+                        <li key={notif.id} className="border-l-4 border-primary pl-4 relative group">
+                             <Link href={notif.targetURL || '#'} className="block">
+                                <p className="font-semibold">{language === 'fr' ? notif.messageFr : notif.messageEn}</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {notif.sentAt?.toDate ? formatDistanceToNow(notif.sentAt.toDate(), { addSuffix: true, locale: language === 'fr' ? fr : enUS }) : ''}
+                                </p>
+                             </Link>
+                             <Button variant="ghost" size="icon" className="absolute top-1/2 right-0 -translate-y-1/2 h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => handleDeleteNotification(notif.id)}>
+                                <X className="h-4 w-4" />
+                             </Button>
+                        </li>
+                    ))}
+                </ul>
+              ) : (
+                <p className="text-center text-sm text-muted-foreground">
+                  {t.noNotifications}
+                </p>
+              )}
             </div>
           </SheetContent>
         </Sheet>

@@ -8,7 +8,7 @@ import {
   updateProfile,
   User,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc, Firestore } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc, Firestore, collection, addDoc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -83,6 +83,18 @@ const createNewUserDocument = async (
       }
 
       await setDoc(userRef, userData);
+
+      // Add a welcome notification
+      const notificationsCollectionRef = collection(firestore, 'users', user.uid, 'notifications');
+      await addDoc(notificationsCollectionRef, {
+        userId: user.uid,
+        type: 'welcome',
+        messageFr: 'Bienvenue sur RéviseCamer ! Commencez par générer votre premier plan d\'étude.',
+        messageEn: 'Welcome to RéviseCamer! Get started by generating your first study plan.',
+        sentAt: serverTimestamp(),
+        targetURL: '/study-plan'
+      });
+
   } else {
       await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
   }

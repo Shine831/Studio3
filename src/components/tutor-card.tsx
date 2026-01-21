@@ -17,13 +17,21 @@ interface TutorCardProps {
   tutor: Tutor;
 }
 
+const getInitials = (name: string | null | undefined) => {
+    if (!name) return 'U';
+    const names = name.trim().split(' ').filter(n => n);
+    if (names.length > 1) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 1).toUpperCase();
+}
+
 export function TutorCard({ tutor }: TutorCardProps) {
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg">
       <CardHeader className="flex flex-row items-center gap-4">
         <Avatar className="h-16 w-16">
-          <AvatarImage src={tutor.avatarUrl} alt={tutor.name} data-ai-hint={tutor.imageHint}/>
-          <AvatarFallback>{tutor.name.charAt(0)}</AvatarFallback>
+          <AvatarFallback>{getInitials(tutor.name)}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <CardTitle className="text-lg font-headline flex items-center gap-2">

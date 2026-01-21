@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -75,11 +75,11 @@ export function UserNav() {
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
-    const names = name.split(' ');
+    const names = name.trim().split(' ').filter(n => n);
     if (names.length > 1) {
         return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
     }
-    return name.substring(0, 2).toUpperCase();
+    return name.substring(0, 1).toUpperCase();
   }
 
   return (
@@ -87,10 +87,6 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage
-              src={user?.photoURL || ''}
-              alt={user?.displayName || 'User'}
-            />
             <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
           </Avatar>
         </Button>

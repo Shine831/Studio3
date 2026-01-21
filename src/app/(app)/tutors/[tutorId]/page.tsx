@@ -16,6 +16,15 @@ import {
 } from '@/components/ui/card';
 import { useLanguage } from '@/context/language-context';
 
+const getInitials = (name: string | null | undefined) => {
+    if (!name) return 'U';
+    const names = name.trim().split(' ').filter(n => n);
+    if (names.length > 1) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 1).toUpperCase();
+}
+
 export default function TutorProfilePage() {
   const params = useParams();
   const { tutorId } = params;
@@ -73,8 +82,7 @@ export default function TutorProfilePage() {
       <Card>
         <CardHeader className="flex flex-col items-center gap-6 text-center md:flex-row md:text-left">
           <Avatar className="h-32 w-32 border-4 border-primary">
-            <AvatarImage src={tutor.avatarUrl} alt={tutor.name} />
-            <AvatarFallback>{tutor.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{getInitials(tutor.name)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
             <CardTitle className="flex items-center justify-center gap-2 text-3xl font-headline md:justify-start">
