@@ -69,10 +69,11 @@ export const tutors: Tutor[] = [
     classes: ['Première S', 'Terminale D'],
     rating: 4.9,
     reviewsCount: 120,
-    rate: 15000,
+    monthlyRate: 50000,
     verified: true,
     whatsapp: '+237612345678',
-    system: 'francophone'
+    system: 'francophone',
+    city: 'Yaoundé',
   },
   {
     id: 'tutor-002',
@@ -83,10 +84,11 @@ export const tutors: Tutor[] = [
     classes: ['Lower Sixth', 'Upper Sixth'],
     rating: 4.8,
     reviewsCount: 98,
-    rate: 12000,
+    monthlyRate: 45000,
     verified: true,
     whatsapp: '+237612345679',
-    system: 'anglophone'
+    system: 'anglophone',
+    city: 'Douala',
   },
   {
     id: 'tutor-003',
@@ -97,10 +99,11 @@ export const tutors: Tutor[] = [
     classes: ['Seconde', 'Première A'],
     rating: 4.7,
     reviewsCount: 75,
-    rate: 10000,
+    monthlyRate: 30000,
     verified: false,
     whatsapp: '+237612345680',
-    system: 'francophone'
+    system: 'francophone',
+    city: 'Bafoussam',
   },
     {
     id: 'tutor-004',
@@ -111,9 +114,10 @@ export const tutors: Tutor[] = [
     classes: ['Form 5', 'Upper Sixth'],
     rating: 5.0,
     reviewsCount: 210,
-    rate: 20000,
+    monthlyRate: 75000,
     verified: true,
     whatsapp: '+237612345681',
-    system: 'both'
+    system: 'both',
+    city: 'Limbe',
   },
 ];

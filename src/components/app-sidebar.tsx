@@ -4,8 +4,8 @@ import Link from 'next/link';
 import {
   Home,
   Settings,
-  Target,
   Users,
+  BookCopy,
 } from 'lucide-react';
 import { Icons } from './icons';
 import { Badge } from './ui/badge';
@@ -19,13 +19,13 @@ export function AppSidebar({ className }: { className?: string }) {
     fr: {
       dashboard: 'Tableau de bord',
       tutors: 'Répétiteurs',
-      studyPlan: 'Plan d\'étude',
+      myCourses: 'Mes Cours',
       settings: 'Paramètres',
     },
     en: {
       dashboard: 'Dashboard',
       tutors: 'Tutors',
-      studyPlan: 'Study Plan',
+      myCourses: 'My Courses',
       settings: 'Settings',
     }
   };
@@ -35,7 +35,7 @@ export function AppSidebar({ className }: { className?: string }) {
   const navItems = [
     { href: '/dashboard', icon: Home, label: t.dashboard },
     { href: '/tutors', icon: Users, label: t.tutors },
-    { href: '/study-plan', icon: Target, label: t.studyPlan },
+    { href: '/study-plan', icon: BookCopy, label: t.myCourses },
     { href: '/settings', icon: Settings, label: t.settings },
   ];
 

@@ -48,8 +48,8 @@ export function TutorCard({ tutor }: TutorCardProps) {
       </CardContent>
       <CardFooter className="flex justify-between items-center bg-muted/50 p-4">
         <div className="text-lg font-bold text-foreground">
-          ${tutor.rate}
-          <span className="text-sm font-normal text-muted-foreground">/hr</span>
+          {tutor.monthlyRate.toLocaleString('fr-FR')} FCFA
+          <span className="text-sm font-normal text-muted-foreground">/mois</span>
         </div>
         <Button asChild>
           <Link href={`/tutors/${tutor.id}`}>View Profile</Link>

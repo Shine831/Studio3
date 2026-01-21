@@ -32,6 +32,7 @@ import { useFirebase, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { cameroonCities } from '@/lib/cameroon-cities';
 
 const createNewUserDocument = async (
   firestore: Firestore,
@@ -40,14 +41,18 @@ const createNewUserDocument = async (
     fullName,
     role,
     system,
+    city,
     whatsapp,
     classes,
+    monthlyRate,
   }: {
     fullName: string;
     role: 'student' | 'tutor';
     system: 'francophone' | 'anglophone';
+    city: string;
     whatsapp?: string;
     classes?: string[];
+    monthlyRate?: number;
   }
 ) => {
   const userRef = doc(firestore, 'users', user.uid);
@@ -64,14 +69,17 @@ const createNewUserDocument = async (
           profilePicture: user.photoURL || null,
           role: role,
           system: system,
+          city: city,
           language: 'fr',
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
+          aiCredits: 5, // Give 5 free credits on signup
       };
       
       if (role === 'tutor') {
         userData.whatsapp = whatsapp;
         userData.classes = classes || [];
+        userData.monthlyRate = monthlyRate || 0;
       }
 
       await setDoc(userRef, userData);
@@ -88,8 +96,10 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'student' | 'tutor'>('student');
   const [system, setSystem] = useState<'francophone' | 'anglophone' | ''>('');
+  const [city, setCity] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [classes, setClasses] = useState('');
+  const [monthlyRate, setMonthlyRate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -111,11 +121,15 @@ export default function SignupPage() {
       systemPlaceholder: 'Choisissez votre système',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
+      cityLabel: 'Ville',
+      cityPlaceholder: 'Choisissez votre ville',
       whatsappLabel: 'Numéro WhatsApp',
       whatsappPlaceholder: '+237 6XX XXX XXX',
       classesLabel: 'Classes Enseignées',
       classesPlaceholder: 'Ex: 6ème, Seconde A, Terminale C',
       classesDescription: 'Séparez les classes par une virgule.',
+      monthlyRateLabel: 'Tarif Mensuel par Matière (FCFA)',
+      monthlyRatePlaceholder: 'Ex: 25000',
       createAccountButton: 'Créer un compte',
       initializing: 'Initialisation...',
       alreadyHaveAccount: 'Vous avez déjà un compte ?',
@@ -129,8 +143,10 @@ export default function SignupPage() {
       signupFailedTitle: 'Échec de l\'inscription',
       errorFillFields: 'Veuillez remplir tous les champs obligatoires.',
       errorSelectSystem: 'Veuillez sélectionner un système éducatif.',
+      errorSelectCity: 'Veuillez sélectionner votre ville.',
       errorWhatsapp: 'Veuillez entrer un numéro WhatsApp.',
       errorClasses: 'Veuillez renseigner les classes que vous enseignez.',
+      errorRate: 'Veuillez renseigner votre tarif mensuel.',
       errorPasswordLength: 'Le mot de passe doit contenir au moins 6 caractères.',
       errorEmailInUse: 'Cette adresse email est déjà utilisée par un autre compte.',
       errorWeakPassword: 'Le mot de passe est trop faible. Veuillez utiliser un mot de passe plus fort.',
@@ -153,11 +169,15 @@ export default function SignupPage() {
       systemPlaceholder: 'Select your system',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
+      cityLabel: 'City',
+      cityPlaceholder: 'Select your city',
       whatsappLabel: 'WhatsApp Number',
       whatsappPlaceholder: '+237 6XX XXX XXX',
       classesLabel: 'Classes Taught',
       classesPlaceholder: 'E.g., Form 1, Form 5, Lower Sixth',
       classesDescription: 'Separate classes with a comma.',
+      monthlyRateLabel: 'Monthly Rate per Subject (FCFA)',
+      monthlyRatePlaceholder: 'E.g., 25000',
       createAccountButton: 'Create account',
       initializing: 'Initializing...',
       alreadyHaveAccount: 'Already have an account?',
@@ -171,8 +191,10 @@ export default function SignupPage() {
       signupFailedTitle: 'Signup Failed',
       errorFillFields: 'Please fill in all required fields.',
       errorSelectSystem: 'Please select an educational system.',
+      errorSelectCity: 'Please select your city.',
       errorWhatsapp: 'Please enter a WhatsApp number.',
       errorClasses: 'Please enter the classes you teach.',
+      errorRate: 'Please enter your monthly rate.',
       errorPasswordLength: 'Password must be at least 6 characters long.',
       errorEmailInUse: 'This email address is already in use by another account.',
       errorWeakPassword: 'The password is too weak. Please use a stronger password.',
@@ -200,9 +222,17 @@ export default function SignupPage() {
       setError(t.errorFirebaseConfig);
       return;
     }
-    if (!fullName || !email || !password || !role || !system) {
+    if (!fullName || !email || !password || !role) {
       setError(t.errorFillFields);
       return;
+    }
+    if (!system) {
+        setError(t.errorSelectSystem);
+        return;
+    }
+    if (!city) {
+        setError(t.errorSelectCity);
+        return;
     }
     if (role === 'tutor' && !whatsapp) {
         setError(t.errorWhatsapp);
@@ -210,6 +240,10 @@ export default function SignupPage() {
     }
     if (role === 'tutor' && !classes) {
         setError(t.errorClasses);
+        return;
+    }
+     if (role === 'tutor' && !monthlyRate) {
+        setError(t.errorRate);
         return;
     }
     if (password.length < 6) {
@@ -223,13 +257,16 @@ export default function SignupPage() {
       await updateProfile(userCredential.user, { displayName: fullName });
       
       const classesArray = role === 'tutor' ? classes.split(',').map(c => c.trim()).filter(Boolean) : [];
+      const rateNumber = role === 'tutor' ? parseInt(monthlyRate, 10) : undefined;
 
       await createNewUserDocument(firestore, userCredential.user, {
           fullName,
           role,
           system: system as 'francophone' | 'anglophone',
+          city,
           whatsapp,
           classes: classesArray,
+          monthlyRate: rateNumber
       });
 
       toast({
@@ -375,17 +412,30 @@ export default function SignupPage() {
                   </RadioGroup>
                </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="system">{t.systemLabel}</Label>
-                    <Select onValueChange={(value: 'francophone' | 'anglophone') => setSystem(value)} disabled={isDisabled} value={system}>
-                        <SelectTrigger id="system">
-                            <SelectValue placeholder={t.systemPlaceholder} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="francophone">{t.francophone}</SelectItem>
-                            <SelectItem value="anglophone">{t.anglophone}</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="system">{t.systemLabel}</Label>
+                        <Select onValueChange={(value: 'francophone' | 'anglophone') => setSystem(value)} disabled={isDisabled} value={system}>
+                            <SelectTrigger id="system">
+                                <SelectValue placeholder={t.systemPlaceholder} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="francophone">{t.francophone}</SelectItem>
+                                <SelectItem value="anglophone">{t.anglophone}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div>
+                        <Label htmlFor="city">{t.cityLabel}</Label>
+                        <Select onValueChange={setCity} disabled={isDisabled} value={city}>
+                            <SelectTrigger id="city">
+                                <SelectValue placeholder={t.cityPlaceholder} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {cameroonCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
                 
                 {role === 'tutor' && (
@@ -400,6 +450,18 @@ export default function SignupPage() {
                         onChange={(e) => setWhatsapp(e.target.value)}
                         disabled={isDisabled}
                       />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="rate">{t.monthlyRateLabel}</Label>
+                        <Input
+                            id="rate"
+                            type="number"
+                            placeholder={t.monthlyRatePlaceholder}
+                            required
+                            value={monthlyRate}
+                            onChange={(e) => setMonthlyRate(e.target.value)}
+                            disabled={isDisabled}
+                        />
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="classes">{t.classesLabel}</Label>

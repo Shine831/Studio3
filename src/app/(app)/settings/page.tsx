@@ -35,19 +35,18 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { francophoneClasses, anglophoneClasses } from '@/lib/cameroon-education';
+import { cameroonCities } from '@/lib/cameroon-cities';
 
 const profileFormSchema = z.object({
   firstName: z.string().min(2, { message: 'First name must be at least 2 characters.' }),
   lastName: z.string().min(2, { message: 'Last name must be at least 2 characters.' }),
   email: z.string().email(),
   system: z.enum(['francophone', 'anglophone']).optional(),
-  // Student-specific fields
-  dateOfBirth: z.string().optional(),
-  classLevel: z.string().optional(),
+  city: z.string().optional(),
   // Tutor-specific fields
   whatsapp: z.string().optional(),
   classes: z.string().optional(),
+  monthlyRate: z.coerce.number().positive().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -71,11 +70,11 @@ export default function SettingsPage() {
       firstName: userProfile?.firstName || '',
       lastName: userProfile?.lastName || '',
       email: userProfile?.email || '',
-      dateOfBirth: userProfile?.dateOfBirth || '',
       system: userProfile?.system,
-      classLevel: userProfile?.classLevel || '',
+      city: userProfile?.city || '',
       whatsapp: userProfile?.whatsapp || '',
       classes: userProfile?.classes?.join(', ') || '',
+      monthlyRate: userProfile?.monthlyRate || 0,
     },
     mode: 'onChange',
   });
@@ -88,6 +87,11 @@ export default function SettingsPage() {
         dataToSave.classes = data.classes.split(',').map(c => c.trim()).filter(Boolean);
       } else {
         delete dataToSave.classes;
+      }
+      
+      if (userProfile?.role !== 'tutor') {
+        delete dataToSave.monthlyRate;
+        delete dataToSave.whatsapp;
       }
 
       await setDoc(userProfileRef, dataToSave, { merge: true });
@@ -113,17 +117,18 @@ export default function SettingsPage() {
       firstName: 'Prénom',
       lastName: 'Nom',
       email: 'Email',
-      dob: 'Date de naissance',
+      city: 'Ville',
+      cityPlaceholder: 'Choisissez votre ville',
       system: 'Système Éducatif',
       systemPlaceholder: 'Choisissez un système',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
-      classLevel: 'Classe',
-      classLevelPlaceholder: 'Choisissez votre classe',
       whatsapp: 'Numéro WhatsApp',
-      whatsappDesc: 'Visible par les étudiants qui réservent une session.',
+      whatsappDesc: 'Visible par les étudiants qui vous contactent.',
       classes: 'Classes Enseignées',
       classesDesc: 'Séparez les classes par une virgule (ex: 6ème, 5ème).',
+      monthlyRate: 'Tarif Mensuel (par matière)',
+      monthlyRatePlaceholder: "Ex: 25000",
       updateButton: 'Mettre à jour le profil',
       updateSuccessTitle: 'Profil mis à jour',
       updateSuccessDesc: 'Vos informations ont été sauvegardées avec succès.',
@@ -136,17 +141,18 @@ export default function SettingsPage() {
       firstName: 'First Name',
       lastName: 'Last Name',
       email: 'Email',
-      dob: 'Date of Birth',
+      city: 'City',
+      cityPlaceholder: 'Select your city',
       system: 'Educational System',
       systemPlaceholder: 'Select a system',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
-      classLevel: 'Class Level',
-      classLevelPlaceholder: 'Select your class',
       whatsapp: 'WhatsApp Number',
-      whatsappDesc: 'Visible to students who book a session.',
+      whatsappDesc: 'Visible to students who contact you.',
       classes: 'Classes Taught',
       classesDesc: 'Separate classes with a comma (e.g., Form 1, Form 2).',
+      monthlyRate: 'Monthly Rate (per subject)',
+      monthlyRatePlaceholder: "E.g., 25000",
       updateButton: 'Update Profile',
       updateSuccessTitle: 'Profile Updated',
       updateSuccessDesc: 'Your information has been successfully saved.',
@@ -155,7 +161,6 @@ export default function SettingsPage() {
   };
 
   const t = content[language];
-  const currentSystem = form.watch('system');
 
   if (isProfileLoading) {
     return (
@@ -224,70 +229,52 @@ export default function SettingsPage() {
             )}
           />
           
-          <FormField
-              control={form.control}
-              name="system"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t.system}</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t.systemPlaceholder} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="francophone">{t.francophone}</SelectItem>
-                      <SelectItem value="anglophone">{t.anglophone}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-          {userProfile?.role === 'student' && (
-            <>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                 <FormField
-                    control={form.control}
-                    name="dateOfBirth"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>{t.dob}</FormLabel>
-                        <FormControl>
-                            <Input type="date" {...field} value={field.value || ''}/>
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                <FormField
-                    control={form.control}
-                    name="classLevel"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>{t.classLevel}</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!currentSystem}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder={t.classLevelPlaceholder} />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {(currentSystem === 'francophone' ? francophoneClasses : anglophoneClasses).map(c => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-              </div>
-            </>
-          )}
-
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <FormField
+                control={form.control}
+                name="system"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.system}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t.systemPlaceholder} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="francophone">{t.francophone}</SelectItem>
+                        <SelectItem value="anglophone">{t.anglophone}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.city}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t.cityPlaceholder} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {cameroonCities.map(c => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+          </div>
+          
           {userProfile?.role === 'tutor' && (
             <>
                 <FormField
@@ -303,6 +290,19 @@ export default function SettingsPage() {
                     <FormMessage />
                     </FormItem>
                 )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="monthlyRate"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>{t.monthlyRate} (FCFA)</FormLabel>
+                        <FormControl>
+                            <Input type="number" placeholder={t.monthlyRatePlaceholder} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
                 />
                 <FormField
                     control={form.control}

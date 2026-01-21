@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { Star, Verified, MessageSquare } from 'lucide-react';
+import { Star, Verified, MessageSquare, MapPin } from 'lucide-react';
 import { tutors } from '@/lib/data'; // Using mock data for now
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -27,8 +27,7 @@ export default function TutorProfilePage() {
     fr: {
       tutorNotFound: 'Répétiteur non trouvé',
       reviews: 'avis',
-      perHour: '/h',
-      bookSession: 'Réserver une session',
+      perMonth: '/mois',
       contactViaWhatsapp: 'Contacter sur WhatsApp',
       subjects: 'Matières enseignées',
       classes: 'Classes enseignées',
@@ -37,13 +36,13 @@ export default function TutorProfilePage() {
           francophone: 'Francophone',
           anglophone: 'Anglophone',
           both: 'Bilingue'
-      }
+      },
+      location: 'Localisation',
     },
     en: {
       tutorNotFound: 'Tutor not found',
       reviews: 'reviews',
-      perHour: '/hr',
-      bookSession: 'Book Session',
+      perMonth: '/month',
       contactViaWhatsapp: 'Contact on WhatsApp',
       subjects: 'Subjects Taught',
       classes: 'Classes Taught',
@@ -52,7 +51,8 @@ export default function TutorProfilePage() {
           francophone: 'Francophone',
           anglophone: 'Anglophone',
           both: 'Bilingual'
-      }
+      },
+      location: 'Location',
     },
   };
 
@@ -86,24 +86,31 @@ export default function TutorProfilePage() {
                 />
               )}
             </CardTitle>
-            <div className="flex items-center justify-center gap-1 text-lg text-muted-foreground md:justify-start">
-              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              <span>{tutor.rating}</span>
-              <span>
-                ({tutor.reviewsCount} {t.reviews})
-              </span>
+            <div className="flex items-center justify-center gap-4 text-lg text-muted-foreground md:justify-start">
+                <div className="flex items-center gap-1">
+                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                    <span>{tutor.rating}</span>
+                    <span>
+                        ({tutor.reviewsCount} {t.reviews})
+                    </span>
+                </div>
+                {tutor.city && (
+                    <div className="flex items-center gap-1">
+                        <MapPin className="h-5 w-5" />
+                        <span>{tutor.city}</span>
+                    </div>
+                )}
             </div>
             <div className="text-2xl font-bold text-foreground">
-              {tutor.rate} FCFA
+              {tutor.monthlyRate.toLocaleString('fr-FR')} FCFA
               <span className="text-base font-normal text-muted-foreground">
-                {t.perHour}
+                {t.perMonth}
               </span>
             </div>
           </div>
           <div className="flex w-full flex-col gap-2 md:w-auto">
-            <Button size="lg">{t.bookSession}</Button>
-            {tutor.whatsapp && (
-                <Button variant="outline" asChild>
+             {tutor.whatsapp && (
+                <Button size="lg" asChild>
                     <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
                         <MessageSquare className="mr-2"/>
                         {t.contactViaWhatsapp}
