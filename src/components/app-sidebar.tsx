@@ -7,6 +7,7 @@ import {
   Users,
   BookCopy,
   LayoutGrid,
+  CalendarClock,
 } from 'lucide-react';
 import { Icons } from './icons';
 import { Badge } from './ui/badge';
@@ -19,7 +20,7 @@ import { Skeleton } from './ui/skeleton';
 
 export function AppSidebar({ className }: { className?: string }) {
   const { language } = useLanguage();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const firestore = useFirestore();
 
   const userProfileRef = useMemoFirebase(
@@ -35,6 +36,7 @@ export function AppSidebar({ className }: { className?: string }) {
       studyPlans: "Plans d'étude",
       settings: 'Paramètres',
       students: 'Mes Élèves',
+      schedule: 'Mon Calendrier',
     },
     en: {
       dashboard: 'Dashboard',
@@ -42,6 +44,7 @@ export function AppSidebar({ className }: { className?: string }) {
       studyPlans: 'Study Plans',
       settings: 'Settings',
       students: 'My Students',
+      schedule: 'My Schedule',
     },
   };
 
@@ -56,6 +59,7 @@ export function AppSidebar({ className }: { className?: string }) {
   const tutorNavItems = [
     { href: '/dashboard', icon: LayoutGrid, label: t.dashboard },
     { href: '/students', icon: Users, label: t.students },
+    { href: '/schedule', icon: CalendarClock, label: t.schedule },
   ]
   
   const commonNavItems = [
@@ -71,7 +75,7 @@ export function AppSidebar({ className }: { className?: string }) {
   }
   
   const navItems = getNavItems();
-  const isLoading = isUserLoading || isProfileLoading;
+  const isLoading = isProfileLoading;
 
 
   return (
@@ -102,13 +106,13 @@ export function AppSidebar({ className }: { className?: string }) {
                     href={href}
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
                 >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                    {badge && (
-                    <Badge className="ml-auto flex h-6 w-12 items-center justify-center rounded-md">
-                        {badge}
-                    </Badge>
-                    )}
+                  <Icon className="h-4 w-4" />
+                  {label}
+                  {badge && (
+                  <Badge className="ml-auto flex h-6 w-12 items-center justify-center rounded-md">
+                      {badge}
+                  </Badge>
+                  )}
                 </Link>
                 ))
             )}
@@ -116,7 +120,6 @@ export function AppSidebar({ className }: { className?: string }) {
         </div>
         <div className="mt-auto p-4 border-t">
           {/* This could be a user profile section */}
-          {/* For now, just a placeholder or could be the UserNav itself */}
         </div>
       </div>
     </div>

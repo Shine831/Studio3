@@ -16,11 +16,13 @@ import {
   Banknote,
 } from 'lucide-react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, limit, orderBy, query } from 'firebase/firestore';
-import type { FollowerRecord, TutorRating } from '@/lib/types';
+import { collection, limit, orderBy, query, where, Timestamp } from 'firebase/firestore'; // Import where and Timestamp
+import type { FollowerRecord, TutorRating, Booking } from '@/lib/types'; // Import Booking
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return '?';
@@ -36,6 +38,7 @@ export function TutorDashboard() {
   const { language } = useLanguage();
   const { user } = useUser();
   const firestore = useFirestore();
+  const locale = language === 'fr' ? fr : enUS;
 
   const content = {
     fr: {
@@ -53,7 +56,7 @@ export function TutorDashboard() {
       currency: 'FCFA',
       basedOn: 'Basé sur',
       reviews: 'avis',
-      inNext7Days: 'Dans les 7 prochains jours',
+      inNext7Days: 'Sessions à venir',
       devFeature: 'Fonctionnalité en développement',
       followers: 'abonnés ce mois-ci',
       noFollowers: "Pas encore d'abonnés",
@@ -73,7 +76,7 @@ export function TutorDashboard() {
       currency: 'XAF',
       basedOn: 'Based on',
       reviews: 'reviews',
-      inNext7Days: 'In the next 7 days',
+      inNext7Days: 'Upcoming sessions',
       devFeature: 'Feature in development',
       followers: 'followers this month',
       noFollowers: 'No followers yet',
@@ -94,11 +97,21 @@ export function TutorDashboard() {
   );
   const { data: ratings, isLoading: isLoadingRatings } = useCollection<TutorRating>(ratingsRef);
 
+  // New query for upcoming bookings
+  const upcomingBookingsQuery = useMemoFirebase(
+    () => (user ? query(collection(firestore, 'tutors', user.uid, 'bookings'), where('startTime', '>=', Timestamp.now()), orderBy('startTime', 'asc'), limit(5)) : null),
+    [firestore, user]
+  );
+  const { data: upcomingBookings, isLoading: isLoadingBookings } = useCollection<Booking>(upcomingBookingsQuery);
+
   const stats = {
       totalStudents: followers?.length || 0,
       avgRating: ratings && ratings.length > 0 ? ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length : 0,
       totalRatings: ratings?.length || 0,
+      upcomingCount: upcomingBookings?.length || 0,
   }
+
+  const isLoading = isLoadingFollowers || isLoadingRatings || isLoadingBookings;
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -142,8 +155,12 @@ export function TutorDashboard() {
                   <CalendarClock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                  <div className="text-2xl font-bold">0</div>
-                  <p className="text-xs text-muted-foreground">{t.devFeature}</p>
+                {isLoadingBookings ? <Skeleton className="h-8 w-1/2" /> : (
+                  <>
+                      <div className="text-2xl font-bold">{stats.upcomingCount}</div>
+                      <p className="text-xs text-muted-foreground">{t.inNext7Days}</p>
+                  </>
+                )}
               </CardContent>
           </Card>
           <Card>
@@ -163,13 +180,34 @@ export function TutorDashboard() {
               <CardHeader className="flex flex-row items-center">
                   <CardTitle>{t.upcomingSessions}</CardTitle>
                    <Button asChild size="sm" className="ml-auto">
-                        <Link href="/students">{t.viewAll}</Link>
+                        <Link href="/schedule">{t.viewAll}</Link>
                    </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                  <div className="flex h-48 flex-col items-center justify-center text-center p-4">
-                    <p className="text-sm text-muted-foreground">{t.noUpcoming}</p>
-                  </div>
+                  {isLoadingBookings ? (
+                    <div className="space-y-4">
+                        {[...Array(2)].map((_,i) => <Skeleton key={i} className="h-14 w-full" />)}
+                    </div>
+                  ) : upcomingBookings && upcomingBookings.length > 0 ? (
+                    <div className="space-y-4">
+                        {upcomingBookings.map(booking => (
+                            <div key={booking.id} className="flex items-center p-3 bg-muted/50 rounded-lg">
+                                <div className="flex flex-col">
+                                  <span className="font-semibold">{booking.subject}</span>
+                                  <span className="text-sm text-muted-foreground">{booking.studentName}</span>
+                                </div>
+                                <div className="ml-auto text-right">
+                                  <div className="font-medium">{format(booking.startTime.toDate(), 'PPP', { locale })}</div>
+                                  <div className="text-sm text-muted-foreground">{format(booking.startTime.toDate(), 'p', { locale })}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="flex h-48 flex-col items-center justify-center text-center p-4">
+                      <p className="text-sm text-muted-foreground">{t.noUpcoming}</p>
+                    </div>
+                  )}
               </CardContent>
           </Card>
           <Card className="lg:col-span-3">
