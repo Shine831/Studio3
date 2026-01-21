@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -96,6 +96,7 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
       generationError: "Une erreur est survenue lors de la génération du plan. Veuillez réessayer.",
       noPlanGenerated: "Impossible de générer un plan pour ce sujet. Veuillez essayer une autre matière.",
       close: "Fermer",
+      unlimitedAccess: "Le paiement de 1200 FCFA vous donne un accès illimité pour la journée."
     },
     en: {
       subjectLabel: 'Subject',
@@ -108,6 +109,7 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
       generationError: "An error occurred while generating the plan. Please try again.",
       noPlanGenerated: "Could not generate a plan for this topic. Please try another subject.",
       close: "Close",
+      unlimitedAccess: "Paying 1200 FCFA gives you unlimited access for the day."
     },
   }[language];
 
@@ -223,13 +225,15 @@ function AiCreditAlert({ language }: { language: 'fr' | 'en' }) {
             noCreditsTitle: "Crédits Quotidiens Épuisés",
             noCreditsDescription: "Vous avez utilisé tous vos crédits pour aujourd'hui. Revenez demain pour en avoir plus !",
             rechargeButton: "Recharger (1200 FCFA)",
-            rechargeDescription: "Payez via Orange Money au 699 477 055 pour un accès illimité pour le reste de la journée."
+            rechargeDescription: "Payez via Orange Money au 699 477 055 pour un accès illimité pour le reste de la journée.",
+            unlimitedAccess: "Le paiement de 1200 FCFA vous donne un accès illimité pour la journée."
         },
         en: {
             noCreditsTitle: "Daily Credits Exhausted",
             noCreditsDescription: "You have used all your credits for today. Check back tomorrow for more!",
             rechargeButton: "Recharge (1200 FCFA)",
-            rechargeDescription: "Pay via Orange Money to 699 477 055 for unlimited access for the rest of the day."
+            rechargeDescription: "Pay via Orange Money to 699 477 055 for unlimited access for the rest of the day.",
+            unlimitedAccess: "Paying 1200 FCFA gives you unlimited access for the day."
         }
     }[language];
 
@@ -270,10 +274,11 @@ export default function StudyPlanPage() {
   
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const hasCheckedCredits = useRef(false);
   const DAILY_CREDIT_LIMIT = 5;
 
   useEffect(() => {
-    if (!user || !firestore || !userProfile || isProfileLoading) return;
+    if (!user || !firestore || !userProfile || isProfileLoading || hasCheckedCredits.current) return;
 
     const checkAndRenewCredits = async () => {
         const now = new Date();
@@ -281,6 +286,7 @@ export default function StudyPlanPage() {
         const lastRenewalDate = lastRenewal?.toDate ? lastRenewal.toDate() : null;
 
         if (!lastRenewalDate || !isSameDay(now, lastRenewalDate)) {
+            hasCheckedCredits.current = true;
             const userDocRef = doc(firestore, 'users', user.uid);
             try {
                 await setDoc(userDocRef, {
@@ -290,6 +296,8 @@ export default function StudyPlanPage() {
             } catch (error) {
                 console.error("Failed to renew credits:", error);
             }
+        } else {
+            hasCheckedCredits.current = true;
         }
     };
 
