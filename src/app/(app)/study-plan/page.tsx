@@ -64,6 +64,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { type SavedStudyPlan, type WithId, type UserProfile } from '@/lib/types';
+import { RoleGuard } from '@/components/role-guard';
 
 
 // Schema for the form
@@ -146,9 +147,19 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
           createdAt: serverTimestamp(),
         });
 
-        // Decrement AI credits
+        // Decrement AI credits or handle unlimited
         const userProfileRef = doc(firestore, 'users', user.uid);
-        await setDoc(userProfileRef, { aiCredits: (userProfile.aiCredits || 0) - 1 }, { merge: true });
+        const userProfileSnap = await getDoc(userProfileRef);
+        const currentProfile = userProfileSnap.data() as UserProfile;
+
+        if (currentProfile) {
+            const lastRenewal = currentProfile.lastCreditRenewal?.toDate();
+            const isUnlimited = lastRenewal && isSameDay(new Date(), lastRenewal) && currentProfile.aiCredits === Infinity;
+
+            if (!isUnlimited) {
+                 await setDoc(userProfileRef, { aiCredits: (currentProfile.aiCredits || 0) - 1 }, { merge: true });
+            }
+        }
 
         onPlanGenerated();
         setOpen(false); // Close dialog on success
@@ -223,17 +234,15 @@ function AiCreditAlert({ language }: { language: 'fr' | 'en' }) {
     const t = {
         fr: {
             noCreditsTitle: "Crédits Quotidiens Épuisés",
-            noCreditsDescription: "Vous avez utilisé tous vos crédits pour aujourd'hui. Revenez demain pour en avoir plus !",
+            noCreditsDescription: "Vous avez utilisé tous vos crédits pour aujourd'hui. Revenez demain pour en avoir plus ou rechargez pour un accès illimité.",
             rechargeButton: "Recharger (1200 FCFA)",
             rechargeDescription: "Payez via Orange Money au 699 477 055 pour un accès illimité pour le reste de la journée.",
-            unlimitedAccess: "Le paiement de 1200 FCFA vous donne un accès illimité pour la journée."
         },
         en: {
             noCreditsTitle: "Daily Credits Exhausted",
-            noCreditsDescription: "You have used all your credits for today. Check back tomorrow for more!",
+            noCreditsDescription: "You have used all your credits for today. Check back tomorrow for more or recharge for unlimited access.",
             rechargeButton: "Recharge (1200 FCFA)",
             rechargeDescription: "Pay via Orange Money to 699 477 055 for unlimited access for the rest of the day.",
-            unlimitedAccess: "Paying 1200 FCFA gives you unlimited access for the day."
         }
     }[language];
 
@@ -282,10 +291,15 @@ export default function StudyPlanPage() {
 
     const checkAndRenewCredits = async () => {
         const now = new Date();
-        const lastRenewal = userProfile.lastCreditRenewal;
-        const lastRenewalDate = lastRenewal?.toDate ? lastRenewal.toDate() : null;
+        const lastRenewal = userProfile.lastCreditRenewal?.toDate();
 
-        if (!lastRenewalDate || !isSameDay(now, lastRenewalDate)) {
+        // Do not renew if credits are unlimited for the day
+        if (lastRenewal && isSameDay(now, lastRenewal) && userProfile.aiCredits === Infinity) {
+            hasCheckedCredits.current = true;
+            return;
+        }
+
+        if (!lastRenewal || !isSameDay(now, lastRenewal)) {
             hasCheckedCredits.current = true;
             const userDocRef = doc(firestore, 'users', user.uid);
             try {
@@ -316,6 +330,7 @@ export default function StudyPlanPage() {
         lessons: "leçons",
         errorLoading: "Une erreur est survenue lors du chargement de vos plans.",
         aiCreditsRemaining: "crédits quotidiens restants",
+        unlimited: "Accès illimité aujourd'hui",
         deletePlan: "Supprimer",
         deleteConfirmTitle: "Êtes-vous sûr ?",
         deleteConfirmDesc: "Cette action est irréversible. Votre plan d'étude sera définitivement supprimé.",
@@ -331,6 +346,7 @@ export default function StudyPlanPage() {
         lessons: "lessons",
         errorLoading: "An error occurred while loading your plans.",
         aiCreditsRemaining: "daily credits remaining",
+        unlimited: "Unlimited access today",
         deletePlan: "Delete",
         deleteConfirmTitle: "Are you sure?",
         deleteConfirmDesc: "This action cannot be undone. This will permanently delete your study plan.",
@@ -340,7 +356,9 @@ export default function StudyPlanPage() {
   const t = content[language];
   
   const isLoading = isUserLoading || isProfileLoading || arePlansLoading;
-  const hasCredits = userProfile ? userProfile.aiCredits > 0 : false;
+  
+  const isUnlimited = userProfile?.aiCredits === Infinity;
+  const hasCredits = userProfile ? isUnlimited || userProfile.aiCredits > 0 : false;
 
   const handleDeletePlan = async (planId: string) => {
     if (!user) return;
@@ -365,96 +383,100 @@ export default function StudyPlanPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-            <h3 className="text-2xl font-bold font-headline">{t.title}</h3>
-            <p className="text-muted-foreground">{t.description}</p>
+    <RoleGuard allowedRoles={['student', 'admin']}>
+        <div className="space-y-6">
+        <div className="flex justify-between items-start">
+            <div>
+                <h3 className="text-2xl font-bold font-headline">{t.title}</h3>
+                <p className="text-muted-foreground">{t.description}</p>
+            </div>
+            {hasCredits && userProfile && (
+                <div className="text-right">
+                    <GeneratePlanDialog userProfile={userProfile} onPlanGenerated={() => setRefreshKey(k => k+1)} />
+                    <p className="text-xs text-muted-foreground mt-1">
+                        {isUnlimited ? t.unlimited : `${userProfile.aiCredits} ${t.aiCreditsRemaining}`}
+                    </p>
+                </div>
+            )}
         </div>
-        {hasCredits && userProfile && (
-            <div className="text-right">
-                <GeneratePlanDialog userProfile={userProfile} onPlanGenerated={() => setRefreshKey(k => k+1)} />
-                <p className="text-xs text-muted-foreground mt-1">
-                    {userProfile.aiCredits} {t.aiCreditsRemaining}
-                </p>
+
+        {!hasCredits && <AiCreditAlert language={language} />}
+        
+        {plansError && (
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>{t.errorLoading}</AlertTitle>
+            </Alert>
+        )}
+
+        {savedPlans && savedPlans.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {savedPlans.map(plan => (
+                    <Card key={plan.id} className="flex flex-col group">
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <CardTitle className="flex items-center gap-3">
+                                    <BookCopy className="h-6 w-6 text-primary" />
+                                    {plan.subject}
+                                </CardTitle>
+                                <AlertDialog>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    {t.deletePlan}
+                                                </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>{t.deleteConfirmTitle}</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            {t.deleteConfirmDesc}
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeletePlan(plan.id)} className="bg-destructive hover:bg-destructive/90">
+                                            {t.deletePlan}
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                            <CardDescription>{plan.learningGoals}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                            <p className="text-sm text-muted-foreground">
+                                {plan.lessons.length} {t.lessons}
+                            </p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button asChild className="w-full">
+                                <Link href={`/study-plan/${plan.id}`}>
+                                    {t.viewPlan} <ArrowRight className="ml-2" />
+                                </Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        ) : (
+            <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                <h4 className="text-lg font-semibold">{t.noPlans}</h4>
+                <p className="text-muted-foreground mt-2">{t.noPlansDesc}</p>
             </div>
         )}
-      </div>
-
-      {!hasCredits && <AiCreditAlert language={language} />}
-      
-      {plansError && (
-          <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>{t.errorLoading}</AlertTitle>
-          </Alert>
-      )}
-
-      {savedPlans && savedPlans.length > 0 ? (
-         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-             {savedPlans.map(plan => (
-                <Card key={plan.id} className="flex flex-col group">
-                    <CardHeader>
-                        <div className="flex justify-between items-start">
-                             <CardTitle className="flex items-center gap-3">
-                                <BookCopy className="h-6 w-6 text-primary" />
-                                {plan.subject}
-                            </CardTitle>
-                            <AlertDialog>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <AlertDialogTrigger asChild>
-                                            <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                {t.deletePlan}
-                                            </DropdownMenuItem>
-                                        </AlertDialogTrigger>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>{t.deleteConfirmTitle}</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        {t.deleteConfirmDesc}
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeletePlan(plan.id)} className="bg-destructive hover:bg-destructive/90">
-                                        {t.deletePlan}
-                                    </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                        <CardDescription>{plan.learningGoals}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                        <p className="text-sm text-muted-foreground">
-                            {plan.lessons.length} {t.lessons}
-                        </p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button asChild className="w-full">
-                            <Link href={`/study-plan/${plan.id}`}>
-                                {t.viewPlan} <ArrowRight className="ml-2" />
-                            </Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-             ))}
-         </div>
-      ) : (
-        <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <h4 className="text-lg font-semibold">{t.noPlans}</h4>
-            <p className="text-muted-foreground mt-2">{t.noPlansDesc}</p>
         </div>
-      )}
-    </div>
+    </RoleGuard>
   );
 }
+
+    

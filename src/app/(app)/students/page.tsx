@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { RoleGuard } from '@/components/role-guard';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -90,55 +92,59 @@ export default function MyStudentsPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
-                <p className="text-muted-foreground">{t.description}</p>
-            </div>
+        <RoleGuard allowedRoles={['tutor', 'admin']}>
+            <div className="space-y-6">
+                <div>
+                    <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
+                    <p className="text-muted-foreground">{t.description}</p>
+                </div>
 
-            <Card>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>{t.name}</TableHead>
-                                <TableHead>{t.followedOn}</TableHead>
-                                <TableHead className="text-right">{t.actions}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {followers && followers.length > 0 ? (
-                                followers.map(follower => (
-                                    <TableRow key={follower.id}>
-                                        <TableCell className="font-medium">
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-9 w-9">
-                                                    <AvatarImage src={follower.studentAvatar} />
-                                                    <AvatarFallback>{getInitials(follower.studentName)}</AvatarFallback>
-                                                </Avatar>
-                                                {follower.studentName}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {follower.followedAt?.toDate().toLocaleDateString(language)}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="outline" size="sm" disabled>{t.schedule}</Button>
+                <Card>
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>{t.name}</TableHead>
+                                    <TableHead>{t.followedOn}</TableHead>
+                                    <TableHead className="text-right">{t.actions}</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {followers && followers.length > 0 ? (
+                                    followers.map(follower => (
+                                        <TableRow key={follower.id}>
+                                            <TableCell className="font-medium">
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-9 w-9">
+                                                        <AvatarImage src={follower.studentAvatar} />
+                                                        <AvatarFallback>{getInitials(follower.studentName)}</AvatarFallback>
+                                                    </Avatar>
+                                                    {follower.studentName}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {follower.followedAt?.toDate().toLocaleDateString(language)}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button asChild variant="outline" size="sm">
+                                                    <Link href="/schedule">{t.schedule}</Link>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="h-24 text-center">
+                                            {t.noStudents}
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center">
-                                        {t.noStudents}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </div>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
+        </RoleGuard>
     );
 }
 

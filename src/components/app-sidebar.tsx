@@ -32,7 +32,7 @@ export function AppSidebar({ className }: { className?: string }) {
     fr: {
       dashboard: 'Tableau de bord',
       tutors: 'Répétiteurs',
-      myCourses: 'Mes Cours',
+      studyPlans: "Plans d'étude",
       settings: 'Paramètres',
       schedule: 'Mon Calendrier',
       students: 'Mes Élèves',
@@ -40,7 +40,7 @@ export function AppSidebar({ className }: { className?: string }) {
     en: {
       dashboard: 'Dashboard',
       tutors: 'Tutors',
-      myCourses: 'My Courses',
+      studyPlans: 'Study Plans',
       settings: 'Settings',
       schedule: 'My Schedule',
       students: 'My Students',
@@ -52,7 +52,7 @@ export function AppSidebar({ className }: { className?: string }) {
   const studentNavItems = [
     { href: '/dashboard', icon: Home, label: t.dashboard },
     { href: '/tutors', icon: Users, label: t.tutors },
-    { href: '/study-plan', icon: BookCopy, label: t.myCourses },
+    { href: '/study-plan', icon: BookCopy, label: t.studyPlans },
   ];
   
   const tutorNavItems = [
@@ -112,3 +112,5 @@ export function AppSidebar({ className }: { className?: string }) {
     </div>
   );
 }
+
+    

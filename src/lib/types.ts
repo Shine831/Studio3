@@ -111,3 +111,17 @@ export interface FollowerRecord {
     studentAvatar?: string;
     followedAt: any; // Firestore Timestamp
 }
+
+export interface Booking {
+  id: string;
+  studentId: string;
+  tutorId: string;
+  studentName: string;
+  subject: string;
+  startTime: any; // Firestore Timestamp
+  endTime: any; // Firestore Timestamp
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  notes?: string;
+}
+
+    

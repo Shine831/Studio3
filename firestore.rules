@@ -19,7 +19,7 @@
  * - `/subjects/{subjectId}`: A hierarchical structure for all public educational content, including
  *   courses, lessons, and quizzes nested within.
  * - `/tutors/{tutorId}`: Publicly-listed tutor profiles, which can be modified only by the tutor owner or an admin.
- * - `/bookings/{bookingId}`: A collection for tutoring sessions, with access restricted to the involved participants.
+ * - `/tutors/{tutorId}/bookings/{bookingId}`: A subcollection for a tutor's sessions, securable by the parent tutor ID.
  * - `/payments/{paymentId}`: A private collection for payment records, accessible only by the user who paid.
  * - `/roles_admin/{userId}`: A restricted collection where the existence of a document signifies admin status.
  *
@@ -28,9 +28,9 @@
  * - Denormalization for Authorization: To ensure fast and secure access checks, authorization-critical data
  *   (like `userId` on a tutor profile or `studentId` on a booking) is stored directly on the documents
  *   being secured. This avoids slow and costly `get()` calls in rules.
- * - Default to Secure: Collections containing sensitive or mixed-privacy data (e.g., `/bookings`, `/payments`)
+ * - Default to Secure: Collections containing sensitive or mixed-privacy data
  *   have `list` operations disabled by default to prevent data leakage. Clients must build specific, authenticated
- *   queries (e.g., `where('studentId', '==', auth.uid)`) to retrieve data.
+ *   queries to retrieve data.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -82,8 +82,9 @@ service cloud.firestore {
      * Checks if the currently authenticated user is the tutor who owns this subcollection.
      */
     function isSubcollectionOfTutor(tutorId) {
-        let tutorProfile = get(/databases/$(database)/documents/tutors/$(tutorId));
-        return isOwner(tutorProfile.data.userId);
+        // This function assumes the user's UID is the same as the tutorId,
+        // which is true for our structure where /tutors/{userId}
+        return isOwner(tutorId);
     }
 
     /**
@@ -260,23 +261,24 @@ service cloud.firestore {
           allow delete: if isOwner(studentId);
           allow update: if false;
        }
-    }
 
-    /**
-     * @description Manages private bookings between students and tutors.
-     * @path /bookings/{bookingId}
-     * @allow (get) The student with UID 'student123' reads a booking where their ID is in the `studentId` field.
-     * @deny (list) Any user tries to list all bookings in the system, preventing data leakage.
-     * @principle Shared access for a closed set of collaborators listed on the document.
-     */
-    match /bookings/{bookingId} {
-      allow get: if isBookingParticipant(resource.data) || isAdmin();
-      allow list: if false;
-      allow create: if isOwner(request.resource.data.studentId);
-      allow update: if (isBookingParticipant(resource.data) || isAdmin()) && isExistingDoc();
-      allow delete: if (isBookingParticipant(resource.data) || isAdmin()) && isExistingDoc();
-    }
+      /**
+       * @description Manages bookings for a tutor. A tutor has full control. A student can create bookings
+       * and read bookings they are a part of.
+       * @path /tutors/{tutorId}/bookings/{bookingId}
+       * @principle Subcollection ownership combined with document data for participant access.
+       */
+      match /bookings/{bookingId} {
+        // The tutor who owns the schedule has full read/write access.
+        allow read, write: if isSubcollectionOfTutor(tutorId) || isAdmin();
+        
+        // A student can create a booking for themselves, ensuring data integrity.
+        allow create: if isOwner(request.resource.data.studentId) && request.resource.data.tutorId == tutorId;
 
+        // The involved student can read and update their own booking details.
+        allow get, update: if isOwner(resource.data.studentId);
+      }
+    }
 
     // --------------------------------------------------------------------
     // Financial Collections (/payments)

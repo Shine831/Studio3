@@ -33,6 +33,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
+import { RoleGuard } from '@/components/role-guard';
 
 interface Answer {
   questionIndex: number;
@@ -419,41 +420,45 @@ export default function StudyPlanDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
-        <div>
-            <Button asChild variant="ghost" className="mb-4">
-                <Link href="/study-plan">
-                    <ArrowLeft className="mr-2" />
-                    {t.back}
-                </Link>
-            </Button>
-            <h1 className="text-3xl font-bold font-headline flex items-center gap-3">
-                <BookCopy className="h-8 w-8 text-primary" />
-                {plan.subject}
-            </h1>
-            <p className="text-muted-foreground mt-2">{plan.learningGoals}</p>
-        </div>
-        <Separator />
+    <RoleGuard allowedRoles={['student', 'admin']}>
+        <div className="space-y-6">
+            <div>
+                <Button asChild variant="ghost" className="mb-4">
+                    <Link href="/study-plan">
+                        <ArrowLeft className="mr-2" />
+                        {t.back}
+                    </Link>
+                </Button>
+                <h1 className="text-3xl font-bold font-headline flex items-center gap-3">
+                    <BookCopy className="h-8 w-8 text-primary" />
+                    {plan.subject}
+                </h1>
+                <p className="text-muted-foreground mt-2">{plan.learningGoals}</p>
+            </div>
+            <Separator />
 
-         <Accordion type="single" collapsible className="w-full">
-            {plan.lessons.map((lesson, index) => (
-                <AccordionItem value={`item-${index}`} key={index}>
-                    <AccordionTrigger>
-                        <div className='flex items-center gap-4 text-left'>
-                             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">{index + 1}</span>
-                            <div>
-                                <p className='font-semibold'>{lesson.title}</p>
-                                <p className='text-sm text-muted-foreground font-normal'>{lesson.description}</p>
+            <Accordion type="single" collapsible className="w-full">
+                {plan.lessons.map((lesson, index) => (
+                    <AccordionItem value={`item-${index}`} key={index}>
+                        <AccordionTrigger>
+                            <div className='flex items-center gap-4 text-left'>
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">{index + 1}</span>
+                                <div>
+                                    <p className='font-semibold'>{lesson.title}</p>
+                                    <p className='text-sm text-muted-foreground font-normal'>{lesson.description}</p>
+                                </div>
                             </div>
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <LessonContent lesson={lesson} subject={plan.subject} language={language} plan={plan} lessonIndex={index} planRef={planRef} user={user} firestore={firestore} />
-                    </AccordionContent>
-                </AccordionItem>
-            ))}
-         </Accordion>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <LessonContent lesson={lesson} subject={plan.subject} language={language} plan={plan} lessonIndex={index} planRef={planRef} user={user} firestore={firestore} />
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
+            </Accordion>
 
-    </div>
+        </div>
+    </RoleGuard>
   );
 }
+
+    
