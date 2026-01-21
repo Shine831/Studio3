@@ -29,6 +29,7 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/context/language-context';
 
 export function UserNav() {
   const { setTheme } = useTheme();
@@ -36,13 +37,44 @@ export function UserNav() {
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+
+  const content = {
+    fr: {
+      profile: 'Profil',
+      billing: 'Facturation',
+      settings: 'Paramètres',
+      toggleTheme: 'Changer de thème',
+      light: 'Clair',
+      dark: 'Sombre',
+      system: 'Système',
+      logOut: 'Se déconnecter',
+      loggedOutTitle: 'Déconnecté',
+      loggedOutDesc: 'Vous avez été déconnecté avec succès.',
+      noEmail: 'Pas d\'email'
+    },
+    en: {
+      profile: 'Profile',
+      billing: 'Billing',
+      settings: 'Settings',
+      toggleTheme: 'Toggle theme',
+      light: 'Light',
+      dark: 'Dark',
+      system: 'System',
+      logOut: 'Log out',
+      loggedOutTitle: 'Logged Out',
+      loggedOutDesc: 'You have been successfully logged out.',
+      noEmail: 'No email'
+    }
+  };
+  const t = content[language];
 
   const handleLogout = async () => {
     if (!auth) return;
     await signOut(auth);
     toast({
-      title: 'Logged Out',
-      description: 'You have been successfully logged out.',
+      title: t.loggedOutTitle,
+      description: t.loggedOutDesc,
     });
     router.push('/');
   };
@@ -74,7 +106,7 @@ export function UserNav() {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user?.displayName || 'User'}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user?.email || 'No email'}
+              {user?.email || t.noEmail}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -83,19 +115,19 @@ export function UserNav() {
           <DropdownMenuItem asChild>
             <Link href="/settings">
               <UserIcon className="mr-2 h-4 w-4" />
-              <span>Profile</span>
+              <span>{t.profile}</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/settings">
               <CreditCard className="mr-2 h-4 w-4" />
-              <span>Billing</span>
+              <span>{t.billing}</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/settings">
               <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
+              <span>{t.settings}</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -104,24 +136,24 @@ export function UserNav() {
           <DropdownMenuSubTrigger>
             <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="pl-2">Toggle theme</span>
+            <span className="pl-2">{t.toggleTheme}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuItem onClick={() => setTheme("light")}>
-              Light
+              {t.light}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("dark")}>
-              Dark
+              {t.dark}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("system")}>
-              System
+              {t.system}
             </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
+            <span>{t.logOut}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

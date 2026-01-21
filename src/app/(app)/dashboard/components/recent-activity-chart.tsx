@@ -7,6 +7,7 @@ import {
   ChartContainer,
 } from '@/components/ui/chart';
 import { CardDescription } from '@/components/ui/card';
+import { useLanguage } from '@/context/language-context';
 
 const data = [
   { name: 'Mon', total: 0 },
@@ -26,12 +27,33 @@ const chartConfig = {
 };
 
 export function RecentActivityChart() {
-  const totalMinutes = data.reduce((acc, item) => acc + item.total, 0);
+  const { language } = useLanguage();
+
+  const content = {
+    fr: {
+      noActivity: 'Aucune activité pour le moment.',
+      studyTimeAppear: 'Votre temps d\'étude apparaîtra ici.',
+      days: { Mon: 'Lun', Tue: 'Mar', Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven', Sat: 'Sam', Sun: 'Dim' },
+      minutes: 'Minutes'
+    },
+    en: {
+      noActivity: 'No activity yet.',
+      studyTimeAppear: 'Your study time will appear here.',
+      days: { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat', Sun: 'Sun' },
+      minutes: 'Minutes'
+    }
+  };
+
+  const t = content[language];
+  const translatedData = data.map(d => ({ ...d, name: t.days[d.name as keyof typeof t.days] }));
+  chartConfig.total.label = t.minutes;
+
+  const totalMinutes = translatedData.reduce((acc, item) => acc + item.total, 0);
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
       {totalMinutes > 0 ? (
-        <BarChart accessibilityLayer data={data}>
+        <BarChart accessibilityLayer data={translatedData}>
           <XAxis
             dataKey="name"
             stroke="#888888"
@@ -54,8 +76,8 @@ export function RecentActivityChart() {
         </BarChart>
       ) : (
         <div className="flex h-full w-full flex-col items-center justify-center">
-            <p className="text-muted-foreground">No activity yet.</p>
-            <CardDescription>Your study time will appear here.</CardDescription>
+            <p className="text-muted-foreground">{t.noActivity}</p>
+            <CardDescription>{t.studyTimeAppear}</CardDescription>
         </div>
       )}
     </ChartContainer>

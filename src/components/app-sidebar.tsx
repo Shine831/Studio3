@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import {
   BookCopy,
@@ -9,16 +11,40 @@ import {
 import { Icons } from './icons';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
-
-const navItems = [
-  { href: '/dashboard', icon: Home, label: 'Dashboard' },
-  { href: '/courses', icon: BookCopy, label: 'Courses' },
-  { href: '/tutors', icon: Users, label: 'Tutors' },
-  { href: '/study-plan', icon: Target, label: 'Study Plan', badge: 'Pro' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
-];
+import { useLanguage } from '@/context/language-context';
 
 export function AppSidebar({ className }: { className?: string }) {
+  const { language } = useLanguage();
+
+  const content = {
+    fr: {
+      dashboard: 'Tableau de bord',
+      courses: 'Cours',
+      tutors: 'Répétiteurs',
+      studyPlan: 'Plan d\'étude',
+      settings: 'Paramètres',
+      pro: 'Pro'
+    },
+    en: {
+      dashboard: 'Dashboard',
+      courses: 'Courses',
+      tutors: 'Tutors',
+      studyPlan: 'Study Plan',
+      settings: 'Settings',
+      pro: 'Pro'
+    }
+  };
+
+  const t = content[language];
+
+  const navItems = [
+    { href: '/dashboard', icon: Home, label: t.dashboard },
+    { href: '/courses', icon: BookCopy, label: t.courses },
+    { href: '/tutors', icon: Users, label: t.tutors },
+    { href: '/study-plan', icon: Target, label: t.studyPlan, badge: t.pro },
+    { href: '/settings', icon: Settings, label: t.settings },
+  ];
+
   return (
     <div className={cn("hidden border-r bg-card md:block", className)}>
       <div className="flex h-full max-h-screen flex-col gap-2">

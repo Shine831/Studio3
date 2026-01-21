@@ -1,3 +1,5 @@
+'use client';
+
 import { BookCheck, Brain, Clock, Medal } from 'lucide-react';
 import {
   Card,
@@ -6,33 +8,61 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { useLanguage } from '@/context/language-context';
 
 export function Overview() {
+  const { language } = useLanguage();
+
+  const content = {
+    fr: {
+      coursesInProgress: 'Cours en cours',
+      startCourse: 'Commencez un cours pour débuter',
+      averageScore: 'Score moyen',
+      completeQuizzes: 'Terminez des quiz pour voir votre score',
+      totalStudyTime: 'Temps d\'étude total',
+      thisMonth: 'Ce mois-ci',
+      quizzesPassed: 'Quiz réussis',
+      passRate: 'taux de réussite',
+    },
+    en: {
+      coursesInProgress: 'Courses in Progress',
+      startCourse: 'Start a course to begin',
+      averageScore: 'Average Score',
+      completeQuizzes: 'Complete quizzes to see your score',
+      totalStudyTime: 'Total Study Time',
+      thisMonth: 'This month',
+      quizzesPassed: 'Quizzes Passed',
+      passRate: 'pass rate',
+    }
+  };
+
+  const t = content[language];
+
   const stats = [
     {
       icon: <BookCheck className="h-4 w-4 text-muted-foreground" />,
-      title: 'Courses in Progress',
+      title: t.coursesInProgress,
       value: '0',
-      description: 'Start a course to begin',
+      description: t.startCourse,
     },
     {
       icon: <Medal className="h-4 w-4 text-muted-foreground" />,
-      title: 'Average Score',
+      title: t.averageScore,
       value: 'N/A',
-      description: 'Complete quizzes to see your score',
+      description: t.completeQuizzes,
       progress: 0,
     },
     {
       icon: <Clock className="h-4 w-4 text-muted-foreground" />,
-      title: 'Total Study Time',
+      title: t.totalStudyTime,
       value: '0h 0m',
-      description: 'This month',
+      description: t.thisMonth,
     },
     {
       icon: <Brain className="h-4 w-4 text-muted-foreground" />,
-      title: 'Quizzes Passed',
+      title: t.quizzesPassed,
       value: '0',
-      description: '0% pass rate',
+      description: `0% ${t.passRate}`,
       progress: 0
     },
   ];

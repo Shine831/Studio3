@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Select,
   SelectContent,
@@ -7,16 +9,46 @@ import {
 } from '@/components/ui/select';
 import { CourseCard } from '@/components/course-card';
 import { courses } from '@/lib/data';
+import { useLanguage } from '@/context/language-context';
 
 export default function CoursesPage() {
+  const { language } = useLanguage();
+
+  const content = {
+    fr: {
+      title: 'Cours',
+      filterLevel: 'Filtrer par niveau',
+      filterSubject: 'Filtrer par matière',
+      subjects: {
+        math: 'Mathématiques',
+        physics: 'Physique',
+        chemistry: 'Chimie',
+        biology: 'Biologie',
+      }
+    },
+    en: {
+      title: 'Courses',
+      filterLevel: 'Filter by Level',
+      filterSubject: 'Filter by Subject',
+      subjects: {
+        math: 'Mathematics',
+        physics: 'Physics',
+        chemistry: 'Chemistry',
+        biology: 'Biology',
+      }
+    }
+  };
+
+  const t = content[language];
+
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold font-headline">Courses</h1>
+        <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
         <div className="flex items-center gap-2">
           <Select>
             <SelectTrigger className="w-[180px] bg-card">
-              <SelectValue placeholder="Filter by Level" />
+              <SelectValue placeholder={t.filterLevel} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="seconde">Seconde</SelectItem>
@@ -26,13 +58,13 @@ export default function CoursesPage() {
           </Select>
           <Select>
             <SelectTrigger className="w-[180px] bg-card">
-              <SelectValue placeholder="Filter by Subject" />
+              <SelectValue placeholder={t.filterSubject} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="math">Mathematics</SelectItem>
-              <SelectItem value="physics">Physics</SelectItem>
-              <SelectItem value="chemistry">Chemistry</SelectItem>
-              <SelectItem value="biology">Biology</SelectItem>
+              <SelectItem value="math">{t.subjects.math}</SelectItem>
+              <SelectItem value="physics">{t.subjects.physics}</SelectItem>
+              <SelectItem value="chemistry">{t.subjects.chemistry}</SelectItem>
+              <SelectItem value="biology">{t.subjects.biology}</SelectItem>
             </SelectContent>
           </Select>
         </div>
