@@ -1,13 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { useParams } from 'next/navigation';
-import { courses } from '@/lib/data';
+import { useState, useEffect, useMemo } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
 import {
   generateQuiz,
   type GenerateQuizOutput,
   type Question,
 } from '@/ai/flows/generate-quiz';
+import {
+  generateLessonContent,
+  type GenerateLessonContentOutput,
+} from '@/ai/flows/generate-lesson-content';
 import { useLanguage } from '@/context/language-context';
 
 import {
@@ -25,6 +29,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Answer {
   questionIndex: number;
@@ -213,10 +218,26 @@ function QuizResults({
 
 export default function CourseDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const { courseId } = params;
   const { language } = useLanguage();
-  const course = courses.find((c) => c.id === courseId);
+  
+  const course = useMemo(() => {
+    if (!searchParams.get('title')) {
+        return null;
+    }
+    return {
+        id: courseId as string,
+        title: searchParams.get('title') || '',
+        subject: searchParams.get('subject') || '',
+        level: searchParams.get('level') || '',
+        language: (searchParams.get('language') as 'fr' | 'en') || 'fr',
+        description: searchParams.get('description') || '',
+    };
+  }, [courseId, searchParams]);
 
+  const [lessonContent, setLessonContent] = useState<string | null>(null);
+  const [isContentLoading, setIsContentLoading] = useState(true);
   const [quiz, setQuiz] = useState<GenerateQuizOutput | null>(null);
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -227,21 +248,45 @@ export default function CourseDetailPage() {
     fr: {
         courseNotFound: "Cours non trouvé",
         lessonContent: "Contenu de la leçon",
-        lessonPlaceholder: "Ceci est une représentation du contenu d'une leçon pour ce cours. Dans une version future, ce contenu sera riche et interactif. Lisez attentivement pour vous préparer au quiz !",
         takeQuiz: "Faire le Quiz",
         generatingQuiz: "Génération du quiz...",
-        quizError: "Une erreur est survenue lors de la génération du quiz. Veuillez réessayer."
-
+        quizError: "Une erreur est survenue lors de la génération du quiz. Veuillez réessayer.",
+        contentError: "Impossible de charger le contenu de la leçon. Veuillez réessayer.",
     },
     en: {
         courseNotFound: "Course not found",
         lessonContent: "Lesson Content",
-        lessonPlaceholder: "This is a placeholder for a lesson's content within this course. In a future version, this will be rich and interactive. Read carefully to prepare for the quiz!",
         takeQuiz: "Take the Quiz",
         generatingQuiz: "Generating quiz...",
-        quizError: "An error occurred while generating the quiz. Please try again."
+        quizError: "An error occurred while generating the quiz. Please try again.",
+        contentError: "Could not load lesson content. Please try again.",
     }
   }[language];
+
+  useEffect(() => {
+    if (!course) return;
+
+    const fetchContent = async () => {
+        setIsContentLoading(true);
+        try {
+            const result = await generateLessonContent({
+                courseTitle: course.title,
+                subject: course.subject,
+                level: course.level,
+                language: course.language,
+            });
+            setLessonContent(result.lessonContent);
+        } catch (e) {
+            console.error(e);
+            setLessonContent(t.contentError);
+        } finally {
+            setIsContentLoading(false);
+        }
+    };
+
+    fetchContent();
+  }, [course, language, t.contentError]);
+
 
   if (!course) {
     return (
@@ -286,6 +331,7 @@ export default function CourseDetailPage() {
       setQuiz(null);
       setQuizScore(null);
       setUserAnswers([]);
+      // Optional: re-fetch lesson content or just show quiz button again
   }
 
   return (
@@ -312,7 +358,22 @@ export default function CourseDetailPage() {
 
       <div className="space-y-4">
         <h2 className="text-2xl font-bold font-headline">{t.lessonContent}</h2>
-        <p className="text-muted-foreground">{t.lessonPlaceholder}</p>
+        {isContentLoading ? (
+             <div className="space-y-4">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <br/>
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+             </div>
+        ) : (
+            <div className="prose dark:prose-invert max-w-none">
+                <ReactMarkdown>{lessonContent || ''}</ReactMarkdown>
+            </div>
+        )}
       </div>
       
       <Separator />
@@ -332,8 +393,8 @@ export default function CourseDetailPage() {
             </Alert>
         )}
         
-        {!quiz && quizScore === null && (
-            <Button onClick={handleGenerateQuiz} disabled={isLoadingQuiz} size="lg">
+        {!isLoadingQuiz && !quiz && quizScore === null && (
+            <Button onClick={handleGenerateQuiz} disabled={isContentLoading} size="lg">
                 {t.takeQuiz}
             </Button>
         )}

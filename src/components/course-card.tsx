@@ -18,7 +18,19 @@ interface CourseCardProps {
 
 export function CourseCard({ course }: CourseCardProps) {
   return (
-    <Link href={`/courses/${course.id}`}>
+    <Link
+      href={{
+        pathname: `/courses/${course.id}`,
+        query: {
+          title: course.title,
+          subject: course.subject,
+          level: course.level,
+          language: course.language,
+          description: course.description,
+          lessonsCount: course.lessonsCount,
+        },
+      }}
+    >
       <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
         <CardHeader className="p-0">
           <div className="relative h-48 w-full">

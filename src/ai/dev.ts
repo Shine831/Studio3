@@ -7,3 +7,4 @@ import '@/ai/flows/generate-personalized-study-plan.ts';
 import '@/ai/flows/generate-quiz-explanation.ts';
 import '@/ai/flows/generate-quiz.ts';
 import '@/ai/flows/generate-course-list.ts';
+import '@/ai/flows/generate-lesson-content.ts';
