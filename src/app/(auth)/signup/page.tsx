@@ -40,11 +40,13 @@ const createNewUserDocument = async (
     role,
     system,
     classLevel,
+    whatsapp,
   }: {
     fullName: string;
     role: 'student' | 'tutor';
     system: 'francophone' | 'anglophone';
     classLevel?: string;
+    whatsapp?: string;
   }
 ) => {
   const userRef = doc(firestore, 'users', user.uid);
@@ -53,7 +55,7 @@ const createNewUserDocument = async (
   if (!docSnap.exists()) {
       const [firstName, ...lastNameParts] = (user.displayName || fullName || '').split(' ');
       const lastName = lastNameParts.join(' ');
-      const userData = {
+      const userData: { [key: string]: any } = {
           id: user.uid,
           email: user.email,
           firstName: firstName || '',
@@ -61,11 +63,18 @@ const createNewUserDocument = async (
           profilePicture: user.photoURL || null,
           role: role,
           system: system,
-          classLevel: role === 'student' ? classLevel : null,
           language: 'fr',
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
       };
+      
+      if (role === 'student') {
+        userData.classLevel = classLevel;
+      }
+      if (role === 'tutor') {
+        userData.whatsapp = whatsapp;
+      }
+
       await setDoc(userRef, userData);
   } else {
       await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
@@ -81,6 +90,7 @@ export default function SignupPage() {
   const [role, setRole] = useState<'student' | 'tutor'>('student');
   const [system, setSystem] = useState<'francophone' | 'anglophone' | ''>('');
   const [classLevel, setClassLevel] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { auth, firestore, isUserLoading } = useFirebase();
@@ -103,6 +113,8 @@ export default function SignupPage() {
       anglophone: 'Anglophone',
       classLevelLabel: 'Classe',
       classLevelPlaceholder: 'Choisissez votre classe',
+      whatsappLabel: 'Numéro WhatsApp',
+      whatsappPlaceholder: '+237 6XX XXX XXX',
       createAccountButton: 'Créer un compte',
       initializing: 'Initialisation...',
       alreadyHaveAccount: 'Vous avez déjà un compte ?',
@@ -117,6 +129,7 @@ export default function SignupPage() {
       errorFillFields: 'Veuillez remplir tous les champs.',
       errorSelectSystem: 'Veuillez sélectionner un système éducatif.',
       errorSelectClass: 'Veuillez sélectionner votre classe.',
+      errorWhatsapp: 'Veuillez entrer un numéro WhatsApp.',
       errorPasswordLength: 'Le mot de passe doit contenir au moins 6 caractères.',
       errorEmailInUse: 'Cette adresse email est déjà utilisée par un autre compte.',
       errorWeakPassword: 'Le mot de passe est trop faible. Veuillez utiliser un mot de passe plus fort.',
@@ -141,6 +154,8 @@ export default function SignupPage() {
       anglophone: 'Anglophone',
       classLevelLabel: 'Class Level',
       classLevelPlaceholder: 'Select your class',
+      whatsappLabel: 'WhatsApp Number',
+      whatsappPlaceholder: '+237 6XX XXX XXX',
       createAccountButton: 'Create account',
       initializing: 'Initializing...',
       alreadyHaveAccount: 'Already have an account?',
@@ -155,6 +170,7 @@ export default function SignupPage() {
       errorFillFields: 'Please fill in all fields.',
       errorSelectSystem: 'Please select an educational system.',
       errorSelectClass: 'Please select your class level.',
+      errorWhatsapp: 'Please enter a WhatsApp number.',
       errorPasswordLength: 'Password must be at least 6 characters long.',
       errorEmailInUse: 'This email address is already in use by another account.',
       errorWeakPassword: 'The password is too weak. Please use a stronger password.',
@@ -184,6 +200,10 @@ export default function SignupPage() {
       setError(t.errorSelectClass);
       return;
     }
+    if (role === 'tutor' && !whatsapp) {
+        setError(t.errorWhatsapp);
+        return;
+    }
     if (password.length < 6) {
         setError(t.errorPasswordLength);
         return;
@@ -198,7 +218,8 @@ export default function SignupPage() {
           fullName,
           role,
           system: system as 'francophone' | 'anglophone',
-          classLevel
+          classLevel,
+          whatsapp,
       });
 
       toast({
@@ -353,6 +374,21 @@ export default function SignupPage() {
                         </Select>
                     </div>
                 )}
+                
+                {role === 'tutor' && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="whatsapp">{t.whatsappLabel}</Label>
+                    <Input
+                      id="whatsapp"
+                      placeholder={t.whatsappPlaceholder}
+                      required
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
+                      disabled={isDisabled}
+                    />
+                  </div>
+                )}
+
 
               <Button type="submit" className="w-full" disabled={isDisabled}>
                 {isDisabled ? t.initializing : t.createAccountButton}
