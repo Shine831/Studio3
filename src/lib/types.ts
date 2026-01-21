@@ -81,3 +81,11 @@ export interface QuizResult {
     completionDate: any; // Firestore Timestamp
     answers: { questionIndex: number; answer: string }[];
 }
+
+export interface TutorRating {
+  id: string;
+  tutorId: string;
+  studentId: string;
+  rating: number;
+  createdAt: any; // Firestore Timestamp
+}

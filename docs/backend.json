@@ -377,6 +377,42 @@
         "city"
       ]
     },
+    "TutorRating": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TutorRating",
+      "type": "object",
+      "description": "Represents a rating given by a student to a tutor.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the rating, same as the student's UID."
+        },
+        "tutorId": {
+          "type": "string",
+          "description": "Reference to TutorProfile."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to UserProfile of Student."
+        },
+        "rating": {
+          "type": "number",
+          "description": "The rating value (e.g., 1-5)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the rating was submitted.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "tutorId",
+        "studentId",
+        "rating",
+        "createdAt"
+      ]
+    },
     "Booking": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Booking",
@@ -812,6 +848,26 @@
             {
               "name": "tutorId",
               "description": "The unique identifier of the tutor profile."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tutors/{tutorId}/ratings/{ratingId}",
+        "definition": {
+          "entityName": "TutorRating",
+          "schema": {
+            "$ref": "#/backend/entities/TutorRating"
+          },
+          "description": "Stores individual ratings for a tutor. Each student can only create one rating per tutor, using their UID as the ratingId.",
+          "params": [
+            {
+              "name": "tutorId",
+              "description": "The unique identifier of the tutor profile."
+            },
+            {
+              "name": "ratingId",
+              "description": "The unique identifier for the rating, which should be the student's UID."
             }
           ]
         }

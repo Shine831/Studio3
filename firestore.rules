@@ -219,6 +219,22 @@ service cloud.firestore {
       allow create: if isSignedIn() && isNewTutorProfileValid() && request.resource.data.userId == request.auth.uid;
       allow update: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc() && isUserIdImmutable();
       allow delete: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
+
+       /**
+       * @description Manages ratings for a tutor.
+       * @path /tutors/{tutorId}/ratings/{studentId}
+       * @allow (create) A student 'student123' can create a single rating document at /tutors/tutorABC/ratings/student123.
+       * @deny (create) The same student tries to create a second rating for the same tutor, which fails because the document already exists.
+       * @deny (update) Any user tries to change an existing rating.
+       * @principle Enforces a "rate only once" policy by using the student's UID as the document ID.
+       */
+      match /ratings/{studentId} {
+        allow get, list: if true;
+        allow create: if isOwner(studentId)
+                      && request.resource.data.studentId == studentId
+                      && request.resource.data.tutorId == tutorId;
+        allow update, delete: if false;
+      }
     }
 
     /**

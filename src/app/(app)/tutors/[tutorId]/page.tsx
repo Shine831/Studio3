@@ -15,8 +15,11 @@ import {
 import { useLanguage } from '@/context/language-context';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import type { TutorRating } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -29,15 +32,23 @@ const getInitials = (name: string | null | undefined) => {
 
 export default function TutorProfilePage() {
   const params = useParams();
-  const { tutorId } = params;
+  const { tutorId } = params as { tutorId: string };
   const { language } = useLanguage();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [hasRated, setHasRated] = useState(false);
   const { user } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
 
   const tutor = tutors.find((t) => t.id === tutorId);
+
+  const userRatingRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !tutorId) return null;
+    return doc(firestore, 'tutors', tutorId, 'ratings', user.uid);
+  }, [firestore, user?.uid, tutorId]);
+
+  const { data: userRating, isLoading: isRatingLoading } = useDoc<TutorRating>(userRatingRef);
+  const hasRated = !!userRating;
 
   const content = {
     fr: {
@@ -61,6 +72,7 @@ export default function TutorProfilePage() {
       loginToRate: 'Connectez-vous pour noter',
       loginToRateDesc: 'Vous devez être connecté pour laisser une évaluation.',
       alreadyRated: 'Déjà évalué',
+      ratingError: "Échec de l'envoi de l'évaluation. Veuillez réessayer.",
     },
     en: {
       tutorNotFound: 'Tutor not found',
@@ -83,13 +95,14 @@ export default function TutorProfilePage() {
       loginToRate: 'Login to Rate',
       loginToRateDesc: 'You must be logged in to leave a rating.',
       alreadyRated: 'Already Rated',
+      ratingError: 'Failed to submit rating. Please try again.',
     },
   };
 
   const t = content[language];
   
-  const handleSubmitRating = () => {
-    if (!user) {
+  const handleSubmitRating = async () => {
+    if (!user || !firestore) {
       toast({
         variant: 'destructive',
         title: t.loginToRate,
@@ -97,13 +110,31 @@ export default function TutorProfilePage() {
       });
       return;
     }
-    // In a real app, you would save this to a database and recalculate the average.
-    // For now, we just show a confirmation toast.
-    toast({
-      title: t.ratingSubmitted,
-      description: `${t.ratingSubmittedDesc} (${rating}/5)`,
-    });
-    setHasRated(true);
+    if (!tutorId) return;
+
+    const ratingDocRef = doc(firestore, 'tutors', tutorId, 'ratings', user.uid);
+
+    try {
+      await setDoc(ratingDocRef, {
+        id: user.uid,
+        tutorId: tutorId,
+        studentId: user.uid,
+        rating: rating,
+        createdAt: serverTimestamp(),
+      });
+
+      toast({
+        title: t.ratingSubmitted,
+        description: `${t.ratingSubmittedDesc} (${rating}/5)`,
+      });
+    } catch (error: any) {
+      console.error("Error submitting rating: ", error);
+      toast({
+        variant: "destructive",
+        title: language === 'fr' ? 'Erreur' : 'Error',
+        description: error.message.includes('permission-denied') ? (language === 'fr' ? 'Vous avez déjà noté ce tuteur.' : 'You have already rated this tutor.') : t.ratingError,
+      });
+    }
   };
 
 
@@ -200,26 +231,32 @@ export default function TutorProfilePage() {
             )}
              <div className="border-t pt-6 mt-6">
               <h4 className="font-semibold">{t.leaveRating}</h4>
-              <div className="flex items-center gap-1 mt-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={cn(
-                      "h-7 w-7",
-                      hasRated ? "text-muted-foreground cursor-not-allowed" : "cursor-pointer",
-                      (hoverRating || rating) >= star
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-muted-foreground"
-                    )}
-                    onMouseEnter={() => !hasRated && setHoverRating(star)}
-                    onMouseLeave={() => !hasRated && setHoverRating(0)}
-                    onClick={() => !hasRated && setRating(star)}
-                  />
-                ))}
-              </div>
-              <Button className="mt-4" disabled={rating === 0 || hasRated} onClick={handleSubmitRating}>
-                {hasRated ? t.alreadyRated : t.submitRating}
-              </Button>
+              {isRatingLoading ? (
+                  <Skeleton className="h-16 w-full" />
+              ) : (
+                <>
+                  <div className="flex items-center gap-1 mt-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={cn(
+                          "h-7 w-7",
+                          hasRated ? "text-muted-foreground cursor-not-allowed" : "cursor-pointer",
+                          (hoverRating || rating || userRating?.rating) >= star
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-muted-foreground"
+                        )}
+                        onMouseEnter={() => !hasRated && setHoverRating(star)}
+                        onMouseLeave={() => !hasRated && setHoverRating(0)}
+                        onClick={() => !hasRated && setRating(star)}
+                      />
+                    ))}
+                  </div>
+                  <Button className="mt-4" disabled={(rating === 0 && !hasRated) || hasRated} onClick={handleSubmitRating}>
+                    {hasRated ? t.alreadyRated : t.submitRating}
+                  </Button>
+                </>
+              )}
             </div>
         </CardContent>
       </Card>
