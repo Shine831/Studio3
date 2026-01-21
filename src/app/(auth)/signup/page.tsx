@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Terminal } from 'lucide-react';
+import { Terminal, Eye, EyeOff } from 'lucide-react';
 import { useFirebase, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -107,6 +107,9 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [role, setRole] = useState<'student' | 'tutor'>('student');
   const [system, setSystem] = useState<'francophone' | 'anglophone' | ''>('');
   const [city, setCity] = useState('');
@@ -127,6 +130,7 @@ export default function SignupPage() {
       fullNamePlaceholder: 'Votre Nom',
       emailLabel: 'Email',
       passwordLabel: 'Mot de passe',
+      confirmPasswordLabel: 'Confirmer le mot de passe',
       iAmA: 'Je suis un(e)',
       student: 'Élève',
       tutor: 'Répétiteur',
@@ -161,6 +165,7 @@ export default function SignupPage() {
       errorClasses: 'Veuillez renseigner les classes que vous enseignez.',
       errorRate: 'Veuillez renseigner votre tarif mensuel.',
       errorPasswordLength: 'Le mot de passe doit contenir au moins 6 caractères.',
+      errorPasswordMismatch: 'Les mots de passe ne correspondent pas.',
       errorEmailInUse: 'Cette adresse email est déjà utilisée par un autre compte.',
       errorWeakPassword: 'Le mot de passe est trop faible. Veuillez utiliser un mot de passe plus fort.',
       errorInvalidEmail: 'L\'adresse email n\'est pas valide.',
@@ -175,6 +180,7 @@ export default function SignupPage() {
       fullNamePlaceholder: 'Your Name',
       emailLabel: 'Email',
       passwordLabel: 'Password',
+      confirmPasswordLabel: 'Confirm Password',
       iAmA: 'I am a',
       student: 'Student',
       tutor: 'Tutor',
@@ -209,6 +215,7 @@ export default function SignupPage() {
       errorClasses: 'Please enter the classes you teach.',
       errorRate: 'Please enter your monthly rate.',
       errorPasswordLength: 'Password must be at least 6 characters long.',
+      errorPasswordMismatch: 'Passwords do not match.',
       errorEmailInUse: 'This email address is already in use by another account.',
       errorWeakPassword: 'The password is too weak. Please use a stronger password.',
       errorInvalidEmail: 'The email address is not valid.',
@@ -237,6 +244,10 @@ export default function SignupPage() {
     }
     if (!fullName || !email || !password || !role) {
       setError(t.errorFillFields);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError(t.errorPasswordMismatch);
       return;
     }
     if (!system) {
@@ -386,14 +397,49 @@ export default function SignupPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">{t.passwordLabel}</Label>
-                <Input 
-                    id="password" 
-                    type="password" 
-                    required
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    disabled={isDisabled}
-                />
+                <div className="relative">
+                  <Input 
+                      id="password" 
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      disabled={isDisabled}
+                  />
+                  <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={isDisabled}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="confirm-password">{t.confirmPasswordLabel}</Label>
+                <div className="relative">
+                  <Input 
+                      id="confirm-password" 
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      required
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      disabled={isDisabled}
+                  />
+                  <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      disabled={isDisabled}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
 
                <div className="grid gap-2">
