@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal } from 'lucide-react';
 import { useFirebase } from '@/firebase';
+import { useLanguage } from '@/context/language-context';
 
 const createNewUserDocument = async (
   firestore: Firestore,
@@ -59,19 +60,80 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { auth, firestore, isUserLoading } = useFirebase();
+  const { language } = useLanguage();
+
+  const content = {
+    fr: {
+      createAccount: 'Créer un compte',
+      enterInfo: 'Entrez vos informations pour créer un compte',
+      fullNameLabel: 'Nom complet',
+      fullNamePlaceholder: 'Votre Nom',
+      emailLabel: 'Email',
+      passwordLabel: 'Mot de passe',
+      createAccountButton: 'Créer un compte',
+      initializing: 'Initialisation...',
+      alreadyHaveAccount: 'Vous avez déjà un compte ?',
+      login: 'Se connecter',
+      terms: 'Conditions d\'utilisation',
+      privacy: 'Politique de confidentialité',
+      byClicking: 'En cliquant sur continuer, vous acceptez nos',
+      and: 'et',
+      accountCreatedTitle: 'Compte créé',
+      accountCreatedDesc: 'Bienvenue ! Votre inscription est terminée.',
+      signupFailedTitle: 'Échec de l\'inscription',
+      errorFillFields: 'Veuillez remplir tous les champs.',
+      errorPasswordLength: 'Le mot de passe doit contenir au moins 6 caractères.',
+      errorEmailInUse: 'Cette adresse email est déjà utilisée par un autre compte.',
+      errorWeakPassword: 'Le mot de passe est trop faible. Veuillez utiliser un mot de passe plus fort.',
+      errorInvalidEmail: 'L\'adresse email n\'est pas valide.',
+      errorFirebaseConfig: 'La configuration de Firebase est manquante. L\'application n\'est pas correctement connectée à Firebase.',
+      errorUnexpected: "Une erreur inattendue s'est produite. Veuillez réessayer.",
+      headsUp: 'Attention !',
+    },
+    en: {
+      createAccount: 'Create an account',
+      enterInfo: 'Enter your information to create an account',
+      fullNameLabel: 'Full Name',
+      fullNamePlaceholder: 'Your Name',
+      emailLabel: 'Email',
+      passwordLabel: 'Password',
+      createAccountButton: 'Create account',
+      initializing: 'Initializing...',
+      alreadyHaveAccount: 'Already have an account?',
+      login: 'Log in',
+      terms: 'Terms of Service',
+      privacy: 'Privacy Policy',
+      byClicking: 'By clicking continue, you agree to our',
+      and: 'and',
+      accountCreatedTitle: 'Account Created',
+      accountCreatedDesc: "Welcome! You're now signed up.",
+      signupFailedTitle: 'Signup Failed',
+      errorFillFields: 'Please fill in all fields.',
+      errorPasswordLength: 'Password must be at least 6 characters long.',
+      errorEmailInUse: 'This email address is already in use by another account.',
+      errorWeakPassword: 'The password is too weak. Please use a stronger password.',
+      errorInvalidEmail: 'The email address is not valid.',
+      errorFirebaseConfig: 'Firebase configuration is missing. The app is not properly connected to Firebase.',
+      errorUnexpected: 'An unexpected error occurred. Please try again.',
+      headsUp: 'Heads up!',
+    }
+  };
+
+  const t = content[language];
+
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth || !firestore) {
-        setError('Firebase is not initialized correctly.');
+        setError(t.errorFirebaseConfig);
         return;
     }
     if (!fullName || !email || !password) {
-      setError('Please fill in all fields.');
+      setError(t.errorFillFields);
       return;
     }
     if (password.length < 6) {
-        setError('Password must be at least 6 characters long.');
+        setError(t.errorPasswordLength);
         return;
     }
     setLoading(true);
@@ -83,33 +145,33 @@ export default function SignupPage() {
       await createNewUserDocument(firestore, userCredential.user, fullName);
 
       toast({
-        title: 'Account Created',
-        description: "Welcome! You're now signed up.",
+        title: t.accountCreatedTitle,
+        description: t.accountCreatedDesc,
       });
       router.push('/dashboard');
     } catch (err: any) {
       console.error("Email/Password signup error:", err);
-      let friendlyMessage = err.message || "An unexpected error occurred. Please try again.";
+      let friendlyMessage = err.message || t.errorUnexpected;
       if (err.code) {
         switch (err.code) {
           case 'auth/email-already-in-use':
-            friendlyMessage = "This email address is already in use by another account.";
+            friendlyMessage = t.errorEmailInUse;
             break;
           case 'auth/weak-password':
-            friendlyMessage = "The password is too weak. Please use a stronger password.";
+            friendlyMessage = t.errorWeakPassword;
             break;
           case 'auth/invalid-email':
-            friendlyMessage = "The email address is not valid.";
+            friendlyMessage = t.errorInvalidEmail;
             break;
           case 'auth/configuration-not-found':
-            friendlyMessage = "Firebase configuration is missing. The app is not properly connected to Firebase.";
+            friendlyMessage = t.errorFirebaseConfig;
             break;
         }
       }
       setError(friendlyMessage);
       toast({
         variant: 'destructive',
-        title: 'Signup Failed',
+        title: t.signupFailedTitle,
         description: friendlyMessage,
       });
     } finally {
@@ -123,10 +185,10 @@ export default function SignupPage() {
     <>
       <div className="flex flex-col space-y-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight font-headline">
-          Create an account
+          {t.createAccount}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Enter your information to create an account
+          {t.enterInfo}
         </p>
       </div>
       <Card>
@@ -134,7 +196,7 @@ export default function SignupPage() {
           {error && (
              <Alert variant="destructive" className="mb-4">
                 <Terminal className="h-4 w-4" />
-                <AlertTitle>Heads up!</AlertTitle>
+                <AlertTitle>{t.headsUp}</AlertTitle>
                 <AlertDescription>
                     {error}
                 </AlertDescription>
@@ -143,10 +205,10 @@ export default function SignupPage() {
           <form onSubmit={handleSignup}>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="full-name">Full Name</Label>
+                <Label htmlFor="full-name">{t.fullNameLabel}</Label>
                 <Input 
                     id="full-name" 
-                    placeholder="Your Name" 
+                    placeholder={t.fullNamePlaceholder} 
                     required 
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
@@ -154,7 +216,7 @@ export default function SignupPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t.emailLabel}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -166,7 +228,7 @@ export default function SignupPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t.passwordLabel}</Label>
                 <Input 
                     id="password" 
                     type="password" 
@@ -177,32 +239,32 @@ export default function SignupPage() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isDisabled}>
-                {isDisabled ? 'Initializing...' : 'Create account'}
+                {isDisabled ? t.initializing : t.createAccountButton}
               </Button>
             </div>
           </form>
           <div className="mt-4 text-center text-sm">
-            Already have an account?{' '}
+            {t.alreadyHaveAccount}{' '}
             <Link href="/login" className="underline">
-              Log in
+              {t.login}
             </Link>
           </div>
         </CardContent>
       </Card>
       <p className="px-8 text-center text-sm text-muted-foreground">
-        By clicking continue, you agree to our{' '}
+        {t.byClicking}{' '}
         <Link
           href="/terms"
           className="underline underline-offset-4 hover:text-primary"
         >
-          Terms of Service
+          {t.terms}
         </Link>{' '}
-        and{' '}
+        {t.and}{' '}
         <Link
           href="/privacy"
           className="underline underline-offset-4 hover:text-primary"
         >
-          Privacy Policy
+          {t.privacy}
         </Link>
         .
       </p>
