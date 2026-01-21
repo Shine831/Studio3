@@ -10,7 +10,7 @@ export type Course = {
   id: string;
   title: string;
   subject: string;
-  level: 'Seconde' | 'Première' | 'Terminale';
+  level: string;
   language: 'fr' | 'en';
   description: string;
   imageUrl: string;
