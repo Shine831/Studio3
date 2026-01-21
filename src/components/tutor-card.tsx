@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -43,11 +42,6 @@ export function TutorCard({ tutor }: TutorCardProps) {
           {tutor.subjects.map((subject) => (
             <Badge key={subject} variant="secondary">
               {subject}
-            </Badge>
-          ))}
-          {tutor.level.map((lvl) => (
-            <Badge key={lvl} variant="outline">
-              {lvl}
             </Badge>
           ))}
         </div>

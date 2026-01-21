@@ -31,7 +31,6 @@ export default function TutorProfilePage() {
       bookSession: 'Réserver une session',
       contactViaWhatsapp: 'Contacter sur WhatsApp',
       subjects: 'Matières enseignées',
-      levels: 'Niveaux',
       system: 'Système',
       systems: {
           francophone: 'Francophone',
@@ -46,7 +45,6 @@ export default function TutorProfilePage() {
       bookSession: 'Book Session',
       contactViaWhatsapp: 'Contact on WhatsApp',
       subjects: 'Subjects Taught',
-      levels: 'Levels',
       system: 'System',
       systems: {
           francophone: 'Francophone',
@@ -119,16 +117,6 @@ export default function TutorProfilePage() {
                 {tutor.subjects.map((subject) => (
                     <Badge key={subject} variant="secondary" className="text-sm">
                     {subject}
-                    </Badge>
-                ))}
-                </div>
-            </div>
-             <div>
-                <h4 className="font-semibold">{t.levels}</h4>
-                <div className="mt-2 flex flex-wrap gap-2">
-                {tutor.level.map((lvl) => (
-                    <Badge key={lvl} variant="outline" className="text-sm">
-                    {lvl}
                     </Badge>
                 ))}
                 </div>

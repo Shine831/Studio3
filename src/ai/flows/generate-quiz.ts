@@ -13,11 +13,6 @@ import { z } from 'zod';
 
 const GenerateQuizInputSchema = z.object({
   subject: z.string().describe('The subject of the course.'),
-  level: z
-    .string()
-    .describe(
-      "The student's grade level (e.g., Seconde, Première, Terminale)."
-    ),
   courseTitle: z
     .string()
     .describe('The title of the course/lesson to generate a quiz for.'),
@@ -59,7 +54,6 @@ const prompt = ai.definePrompt({
     The number of questions should be between 3 and 5.
 
     Subject: {{{subject}}}
-    Level: {{{level}}}
     Course Title: {{{courseTitle}}}
 
     Generate the quiz now in the specified JSON format.`,

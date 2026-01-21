@@ -230,7 +230,6 @@ export default function CourseDetailPage() {
         id: courseId as string,
         title: searchParams.get('title') || '',
         subject: searchParams.get('subject') || '',
-        level: searchParams.get('level') || '',
         language: (searchParams.get('language') as 'fr' | 'en') || 'fr',
         description: searchParams.get('description') || '',
     };
@@ -272,7 +271,6 @@ export default function CourseDetailPage() {
             const result = await generateLessonContent({
                 courseTitle: course.title,
                 subject: course.subject,
-                level: course.level,
                 language: course.language,
             });
             setLessonContent(result.lessonContent);
@@ -306,7 +304,6 @@ export default function CourseDetailPage() {
     try {
       const result = await generateQuiz({
         subject: course.subject,
-        level: course.level,
         courseTitle: course.title,
       });
       if (result && result.questions.length > 0) {
@@ -331,7 +328,6 @@ export default function CourseDetailPage() {
       setQuiz(null);
       setQuizScore(null);
       setUserAnswers([]);
-      // Optional: re-fetch lesson content or just show quiz button again
   }
 
   return (
@@ -344,9 +340,6 @@ export default function CourseDetailPage() {
         <CardContent>
           <Badge variant="secondary" className="mb-2">
             {course.subject}
-          </Badge>
-          <Badge variant="outline" className="ml-2">
-            {course.level}
           </Badge>
           <Badge variant="outline" className="ml-2">
             {course.language.toUpperCase()}

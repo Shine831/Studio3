@@ -13,7 +13,6 @@ import {
 } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { useToast } from '@/hooks/use-toast';
-import { francophoneClasses, anglophoneClasses } from '@/lib/cameroon-education';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -42,7 +41,6 @@ const profileFormSchema = z.object({
   email: z.string().email(),
   // Student-specific fields
   dateOfBirth: z.string().optional(),
-  classLevel: z.string().optional(),
   system: z.enum(['francophone', 'anglophone']).optional(),
   // Tutor-specific fields
   whatsapp: z.string().optional(),
@@ -70,14 +68,11 @@ export default function SettingsPage() {
       lastName: userProfile?.lastName || '',
       email: userProfile?.email || '',
       dateOfBirth: userProfile?.dateOfBirth || '',
-      classLevel: userProfile?.classLevel || '',
       system: userProfile?.system,
       whatsapp: userProfile?.whatsapp || '',
     },
     mode: 'onChange',
   });
-
-  const selectedSystem = form.watch('system');
 
   async function onSubmit(data: ProfileFormValues) {
     if (!userProfileRef) return;
@@ -106,8 +101,6 @@ export default function SettingsPage() {
       lastName: 'Nom',
       email: 'Email',
       dob: 'Date de naissance',
-      classLevel: 'Classe',
-      classLevelPlaceholder: 'Choisissez votre classe',
       system: 'Système Éducatif',
       systemPlaceholder: 'Choisissez un système',
       francophone: 'Francophone',
@@ -127,8 +120,6 @@ export default function SettingsPage() {
       lastName: 'Last Name',
       email: 'Email',
       dob: 'Date of Birth',
-      classLevel: 'Class Level',
-      classLevelPlaceholder: 'Select your class',
       system: 'Educational System',
       systemPlaceholder: 'Select a system',
       francophone: 'Francophone',
@@ -249,28 +240,6 @@ export default function SettingsPage() {
                         </FormItem>
                     )}
                     />
-                <FormField
-                  control={form.control}
-                  name="classLevel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.classLevel}</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={!selectedSystem}>
-                            <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder={t.classLevelPlaceholder} />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {(selectedSystem === 'francophone' ? francophoneClasses : anglophoneClasses).map(c => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
             </>
           )}

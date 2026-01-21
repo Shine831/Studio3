@@ -24,7 +24,6 @@ export function CourseCard({ course }: CourseCardProps) {
         query: {
           title: course.title,
           subject: course.subject,
-          level: course.level,
           language: course.language,
           description: course.description,
           lessonsCount: course.lessonsCount,
@@ -58,7 +57,6 @@ export function CourseCard({ course }: CourseCardProps) {
             <span>{course.lessonsCount} lessons</span>
           </div>
           <div className="flex gap-1">
-            <Badge variant="outline">{course.level}</Badge>
             <Badge variant="outline">{course.language.toUpperCase()}</Badge>
           </div>
         </CardFooter>

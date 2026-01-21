@@ -22,7 +22,6 @@ const CourseSchema = z.object({
     id: z.string().describe("A unique slug-like ID for the course, e.g., 'algebra-fundamentals'."),
     title: z.string().describe("The engaging title of the course."),
     subject: z.string().describe("The academic subject (e.g., Mathematics, Physics, History)."),
-    level: z.string().describe("The class level in the Cameroonian system (e.g., Seconde, Première, Terminale, Form 5, Lower Sixth)."),
     language: z.enum(['fr', 'en']).describe("The language of the course, must match the input language."),
     description: z.string().describe("A brief, one-sentence description of the course content."),
     lessonsCount: z.number().min(8).max(20).describe("The number of lessons in the course."),
@@ -52,12 +51,11 @@ const prompt = ai.definePrompt({
   - A unique, slug-style 'id'.
   - A compelling 'title'.
   - A relevant academic 'subject'.
-  - A specific 'level' from the Cameroonian system.
   - The course 'language' (must be '{{{language}}}').
   - A concise 'description'.
   - A realistic 'lessonsCount' between 8 and 20.
 
-  Ensure the list is varied in subjects and levels. Do not repeat courses. Generate the list now in the specified JSON format.`,
+  Ensure the list is varied in subjects. Do not repeat courses. Generate the list now in the specified JSON format.`,
 });
 
 const generateCourseListFlow = ai.defineFlow(

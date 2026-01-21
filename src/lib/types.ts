@@ -10,7 +10,6 @@ export type Course = {
   id: string;
   title: string;
   subject: string;
-  level: string;
   language: 'fr' | 'en';
   description: string;
   imageUrl: string;
@@ -24,7 +23,6 @@ export type Tutor = {
   avatarUrl: string;
   imageHint: string;
   subjects: string[];
-  level: string[];
   rating: number;
   reviewsCount: number;
   rate: number;

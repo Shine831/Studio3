@@ -14,7 +14,6 @@ import { z } from 'zod';
 const GenerateLessonContentInputSchema = z.object({
   courseTitle: z.string().describe("The title of the course."),
   subject: z.string().describe("The subject of the course."),
-  level: z.string().describe("The student's grade level in the Cameroonian system."),
   language: z.enum(['fr', 'en']).describe("The language for the lesson content."),
 });
 
@@ -36,7 +35,7 @@ const prompt = ai.definePrompt({
   name: 'generateLessonContentPrompt',
   input: { schema: GenerateLessonContentInputSchema },
   output: { schema: GenerateLessonContentOutputSchema },
-  prompt: `You are an expert teacher creating a detailed lesson for a student in the Cameroonian education system. The lesson should be comprehensive, well-structured, and follow a clear pedagogical approach suitable for the specified level. The entire output must be in valid Markdown format.
+  prompt: `You are an expert teacher creating a detailed lesson for a student in the Cameroonian education system. The lesson should be comprehensive, well-structured, and follow a clear pedagogical approach. The entire output must be in valid Markdown format.
 
 The lesson structure should be as follows:
 1.  **# Main Title of the Lesson**
@@ -47,7 +46,6 @@ The lesson structure should be as follows:
 
 Generate the lesson content for:
   - Subject: {{{subject}}}
-  - Level: {{{level}}}
   - Course Title: {{{courseTitle}}}
   - Language: {{{language}}}
 

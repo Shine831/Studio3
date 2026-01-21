@@ -30,7 +30,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal } from 'lucide-react';
 import { useFirebase, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
-import { francophoneClasses, anglophoneClasses } from '@/lib/cameroon-education';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const createNewUserDocument = async (
@@ -40,13 +39,11 @@ const createNewUserDocument = async (
     fullName,
     role,
     system,
-    classLevel,
     whatsapp,
   }: {
     fullName: string;
     role: 'student' | 'tutor';
     system: 'francophone' | 'anglophone';
-    classLevel?: string;
     whatsapp?: string;
   }
 ) => {
@@ -69,9 +66,6 @@ const createNewUserDocument = async (
           lastLogin: serverTimestamp(),
       };
       
-      if (role === 'student') {
-        userData.classLevel = classLevel;
-      }
       if (role === 'tutor') {
         userData.whatsapp = whatsapp;
       }
@@ -90,7 +84,6 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'student' | 'tutor'>('student');
   const [system, setSystem] = useState<'francophone' | 'anglophone' | ''>('');
-  const [classLevel, setClassLevel] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -113,8 +106,6 @@ export default function SignupPage() {
       systemPlaceholder: 'Choisissez votre système',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
-      classLevelLabel: 'Classe',
-      classLevelPlaceholder: 'Choisissez votre classe',
       whatsappLabel: 'Numéro WhatsApp',
       whatsappPlaceholder: '+237 6XX XXX XXX',
       createAccountButton: 'Créer un compte',
@@ -130,7 +121,6 @@ export default function SignupPage() {
       signupFailedTitle: 'Échec de l\'inscription',
       errorFillFields: 'Veuillez remplir tous les champs.',
       errorSelectSystem: 'Veuillez sélectionner un système éducatif.',
-      errorSelectClass: 'Veuillez sélectionner votre classe.',
       errorWhatsapp: 'Veuillez entrer un numéro WhatsApp.',
       errorPasswordLength: 'Le mot de passe doit contenir au moins 6 caractères.',
       errorEmailInUse: 'Cette adresse email est déjà utilisée par un autre compte.',
@@ -154,8 +144,6 @@ export default function SignupPage() {
       systemPlaceholder: 'Select your system',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
-      classLevelLabel: 'Class Level',
-      classLevelPlaceholder: 'Select your class',
       whatsappLabel: 'WhatsApp Number',
       whatsappPlaceholder: '+237 6XX XXX XXX',
       createAccountButton: 'Create account',
@@ -171,7 +159,6 @@ export default function SignupPage() {
       signupFailedTitle: 'Signup Failed',
       errorFillFields: 'Please fill in all fields.',
       errorSelectSystem: 'Please select an educational system.',
-      errorSelectClass: 'Please select your class level.',
       errorWhatsapp: 'Please enter a WhatsApp number.',
       errorPasswordLength: 'Password must be at least 6 characters long.',
       errorEmailInUse: 'This email address is already in use by another account.',
@@ -204,10 +191,6 @@ export default function SignupPage() {
       setError(t.errorFillFields);
       return;
     }
-    if (role === 'student' && !classLevel) {
-      setError(t.errorSelectClass);
-      return;
-    }
     if (role === 'tutor' && !whatsapp) {
         setError(t.errorWhatsapp);
         return;
@@ -226,7 +209,6 @@ export default function SignupPage() {
           fullName,
           role,
           system: system as 'francophone' | 'anglophone',
-          classLevel,
           whatsapp,
       });
 
@@ -385,22 +367,6 @@ export default function SignupPage() {
                         </SelectContent>
                     </Select>
                 </div>
-
-                {role === 'student' && system && (
-                    <div className="grid gap-2">
-                        <Label htmlFor="class-level">{t.classLevelLabel}</Label>
-                        <Select onValueChange={setClassLevel} disabled={isDisabled || !system} value={classLevel}>
-                            <SelectTrigger id="class-level">
-                                <SelectValue placeholder={t.classLevelPlaceholder} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {(system === 'francophone' ? francophoneClasses : anglophoneClasses).map(c => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                )}
                 
                 {role === 'tutor' && (
                   <div className="grid gap-2">

@@ -13,7 +13,6 @@ import {z} from 'zod';
 const GeneratePersonalizedStudyPlanInputSchema = z.object({
   studentId: z.string().describe('The ID of the student.'),
   subject: z.string().describe('The subject the student wants to study.'),
-  gradeLevel: z.string().describe('The grade level of the student (e.g., Seconde, Premiere, Terminale).'),
   learningGoals: z.string().describe('Specific learning goals or areas the student wants to improve in.'),
 });
 export type GeneratePersonalizedStudyPlanInput = z.infer<typeof GeneratePersonalizedStudyPlanInputSchema>;
@@ -49,14 +48,13 @@ const prompt = ai.definePrompt({
   output: {schema: GeneratePersonalizedStudyPlanOutputSchema},
   prompt: `You are an expert instructional designer creating a study plan for a high school student in Cameroon. Your response must be in the structured JSON format.
 
-First, evaluate if the requested 'subject' is a valid academic topic for the specified 'gradeLevel' within the Cameroonian curriculum.
+First, evaluate if the requested 'subject' is a valid academic topic within the Cameroonian curriculum.
 - If the subject IS NOT academic or relevant (e.g., 'learning to cook', 'sports', 'video games'), you MUST set 'isRefusal' to true and provide a polite 'refusalMessage' in French. The message should state that plans can only be generated for academic subjects. The 'plan' array must be empty.
 - If the subject IS academic, set 'isRefusal' to false and proceed.
 
 Generate a realistic, actionable study plan based on the student's information. The plan should be a sequence of lessons. For each item, provide a title, a short description, and an estimated duration in minutes.
 
 Student Information:
-- Grade Level: {{{gradeLevel}}}
 - Subject: {{{subject}}}
 - Learning Goals: {{{learningGoals}}}
 

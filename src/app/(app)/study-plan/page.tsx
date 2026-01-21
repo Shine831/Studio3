@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -11,8 +11,7 @@ import {
   type GeneratePersonalizedStudyPlanOutput,
 } from '@/ai/flows/generate-personalized-study-plan';
 import { useLanguage } from '@/context/language-context';
-import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -24,13 +23,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -42,12 +34,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Clock, BookCopy } from 'lucide-react';
-import { anglophoneClasses, francophoneClasses } from '@/lib/cameroon-education';
 
 // Schema for the form
 const StudyPlanFormSchema = z.object({
   subject: z.string().min(2, { message: 'Please enter a subject.' }),
-  gradeLevel: z.string({ required_error: 'Please select your grade level.' }),
   learningGoals: z
     .string()
     .min(10, { message: 'Please describe your goals in at least 10 characters.' })
@@ -55,22 +45,9 @@ const StudyPlanFormSchema = z.object({
 });
 type StudyPlanFormValues = z.infer<typeof StudyPlanFormSchema>;
 
-interface UserProfile {
-  system?: 'francophone' | 'anglophone';
-  classLevel?: string;
-}
-
 export default function StudyPlanPage() {
   const { language } = useLanguage();
-  const { user } = useUser();
-  const firestore = useFirestore();
-
-  // Fetch user profile to get their system and class level
-  const userProfileRef = useMemoFirebase(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
-    [firestore, user]
-  );
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const { user, isUserLoading } = useUser();
 
   const [isLoading, setIsLoading] = useState(false);
   const [studyPlan, setStudyPlan] = useState<GeneratePersonalizedStudyPlanOutput | null>(null);
@@ -81,20 +58,9 @@ export default function StudyPlanPage() {
     defaultValues: {
       subject: '',
       learningGoals: '',
-      gradeLevel: '',
     },
     mode: 'onChange',
   });
-
-  useEffect(() => {
-    // When the user profile is loaded, set the grade level in the form.
-    // The form field will then be pre-filled for the user.
-    if (userProfile?.classLevel) {
-      form.setValue('gradeLevel', userProfile.classLevel);
-    }
-  }, [userProfile, form]);
-
-  const availableClasses = userProfile?.system === 'anglophone' ? anglophoneClasses : francophoneClasses;
 
   async function onSubmit(data: StudyPlanFormValues) {
     if (!user) return;
@@ -106,7 +72,6 @@ export default function StudyPlanPage() {
       const result = await generatePersonalizedStudyPlan({
         studentId: user.uid,
         subject: data.subject,
-        gradeLevel: data.gradeLevel,
         learningGoals: data.learningGoals,
       });
       
@@ -133,8 +98,6 @@ export default function StudyPlanPage() {
         description: "Décrivez vos objectifs pour une matière et obtenez un plan d'étude sur mesure.",
         subjectLabel: 'Matière',
         subjectPlaceholder: 'Ex: Mathématiques, Physique, etc.',
-        gradeLevelLabel: 'Niveau Scolaire',
-        gradeLevelPlaceholder: 'Confirmez votre classe',
         goalsLabel: 'Mes Objectifs d\'Apprentissage',
         goalsPlaceholder: "Ex: Je veux maîtriser les équations différentielles pour mon examen...",
         goalsDescription: "Décrivez ce que vous voulez accomplir.",
@@ -152,8 +115,6 @@ export default function StudyPlanPage() {
         description: "Describe your goals for a subject and get a custom-made study plan.",
         subjectLabel: 'Subject',
         subjectPlaceholder: 'E.g., Mathematics, Physics, etc.',
-        gradeLevelLabel: 'Grade Level',
-        gradeLevelPlaceholder: 'Confirm your class',
         goalsLabel: 'My Learning Goals',
         goalsPlaceholder: "E.g., I want to master differential equations for my exam...",
         goalsDescription: "Describe what you want to achieve.",
@@ -170,7 +131,7 @@ export default function StudyPlanPage() {
   const t = content[language];
 
 
-  if (isProfileLoading) {
+  if (isUserLoading) {
     return (
         <div className="space-y-4">
             <Skeleton className="h-8 w-1/3" />
@@ -256,29 +217,6 @@ export default function StudyPlanPage() {
                         <FormMessage />
                         </FormItem>
                     )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="gradeLevel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.gradeLevelLabel}</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={!userProfile?.system}>
-                            <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder={t.gradeLevelPlaceholder} />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {availableClasses.map(c => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
                 />
 
                 <FormField
