@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -16,7 +17,7 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, deleteDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, serverTimestamp, collection, addDoc, updateDoc, increment } from 'firebase/firestore';
 import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -127,12 +128,15 @@ export default function TutorProfilePage() {
   
   // --- Handlers ---
   const handleFollowToggle = async () => {
-    if (!followerRef || !followingRef || !user || !userProfile || !tutor || !firestore) return;
+    if (!followerRef || !followingRef || !user || !userProfile || !tutor || !firestore || !tutorProfileRef) return;
     
+    const tutorDocRef = doc(firestore, 'tutors', tutorId);
+
     if (isFollowing) {
         // Unfollow action
         await deleteDoc(followerRef);
         await deleteDoc(followingRef);
+        await updateDoc(tutorDocRef, { followersCount: increment(-1) });
     } else {
         // Follow action
         const now = serverTimestamp();
@@ -152,6 +156,8 @@ export default function TutorProfilePage() {
             tutorAvatar: tutor.avatarUrl || null,
             followedAt: now,
         });
+        
+        await updateDoc(tutorDocRef, { followersCount: increment(1) });
 
         // Send notification to the tutor
         const tutorNotificationsRef = collection(firestore, 'users', tutorId, 'notifications');
@@ -227,6 +233,7 @@ export default function TutorProfilePage() {
   }
 
   const whatsappLink = `https://wa.me/${tutor.whatsapp?.replace(/[^0-9]/g, '')}`;
+  const isVerified = tutor.adminVerified || (tutor.followersCount && tutor.followersCount >= 20);
 
   return (
     <div className="container mx-auto max-w-4xl py-8">
@@ -239,7 +246,7 @@ export default function TutorProfilePage() {
           <div className="flex-1 space-y-2">
             <CardTitle className="flex items-center justify-center gap-2 text-3xl font-headline md:justify-start">
               {tutor.name}
-              {tutor.adminVerified && (
+              {isVerified && (
                 <Verified
                   className="h-7 w-7 text-primary"
                   aria-label="Verified Tutor"
@@ -359,4 +366,3 @@ export default function TutorProfilePage() {
   );
 }
 
-    

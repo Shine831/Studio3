@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
 
 import {
   useFirestore,
@@ -111,24 +112,22 @@ export default function SettingsPage() {
         firstName: userProfile.firstName || '',
         lastName: userProfile.lastName || '',
         email: userProfile.email || '',
-        system: userProfile.system,
+        system: userProfile.system || undefined, // Ensure undefined if falsy
         city: userProfile.city || '',
         profilePicture: userProfile.profilePicture || '',
       };
 
-      // If user is a tutor, always add the tutor fields to the reset values.
-      // Use the loaded tutorProfile data if available, otherwise use safe defaults.
       if (userProfile.role === 'tutor') {
         defaultVals.subjects = (tutorProfile && Array.isArray(tutorProfile.subjects)) ? tutorProfile.subjects.join(', ') : '';
         defaultVals.whatsapp = tutorProfile?.whatsapp || '';
         defaultVals.classes = (tutorProfile && Array.isArray(tutorProfile.classes)) ? tutorProfile.classes.join(', ') : '';
-        defaultVals.monthlyRate = tutorProfile?.monthlyRate || 0;
+        defaultVals.monthlyRate = tutorProfile?.monthlyRate ?? 0;
       }
       
       form.reset(defaultVals);
       setPreview(userProfile.profilePicture || null);
     }
-  }, [userProfile, tutorProfile, form]);
+  }, [userProfile, tutorProfile]);
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -145,7 +144,7 @@ export default function SettingsPage() {
 
 
   async function onSubmit(data: ProfileFormValues) {
-    if (!userProfileRef || !user) return;
+    if (!userProfileRef || !user || !firestore) return;
     
     const userProfileData: Partial<UserProfile> = {
         firstName: data.firstName,
@@ -156,7 +155,7 @@ export default function SettingsPage() {
     };
 
     try {
-      await updateDoc(userProfileRef, userProfileData);
+      await updateDoc(userProfileRef, { ...userProfileData });
 
       if (userProfile?.role === 'tutor' && tutorProfileRef) {
         const tutorDoc = await getDoc(tutorProfileRef);
@@ -181,6 +180,7 @@ export default function SettingsPage() {
                 availability: 'Non définie',
                 rating: 0,
                 reviewsCount: 0,
+                followersCount: 0,
                 adminVerified: false,
              });
         }
@@ -191,26 +191,6 @@ export default function SettingsPage() {
         description: content[language].updateSuccessDesc,
       });
 
-      // Refetch data to reset form state with fresh data
-       const updatedUser = await getDoc(userProfileRef);
-       const updatedTutor = userProfile?.role === 'tutor' && tutorProfileRef ? await getDoc(tutorProfileRef) : null;
-       
-       const newDefaultVals: Partial<ProfileFormValues> = {
-         firstName: updatedUser.data()?.firstName || '',
-         lastName: updatedUser.data()?.lastName || '',
-         email: updatedUser.data()?.email || '',
-         system: updatedUser.data()?.system,
-         city: updatedUser.data()?.city || '',
-         profilePicture: updatedUser.data()?.profilePicture || '',
-       };
-       if (userProfile?.role === 'tutor' && updatedTutor?.exists()) {
-         newDefaultVals.subjects = Array.isArray(updatedTutor.data()?.subjects) ? updatedTutor.data()?.subjects.join(', ') : '';
-         newDefaultVals.whatsapp = updatedTutor.data()?.whatsapp || '';
-         newDefaultVals.classes = Array.isArray(updatedTutor.data()?.classes) ? updatedTutor.data()?.classes.join(', ') : '';
-         newDefaultVals.monthlyRate = updatedTutor.data()?.monthlyRate || 0;
-       }
-
-      form.reset(newDefaultVals); 
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({

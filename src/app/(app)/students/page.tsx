@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { useLanguage } from '@/context/language-context';
@@ -97,10 +98,6 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
         if (!user || !firestore) return;
         
         try {
-            const [startHour, startMinute] = data.startTime.split(':').map(Number);
-            const [endHour, endMinute] = data.endTime.split(':').map(Number);
-            
-            // Combine date string and time string for robust Date object creation
             const startDate = new Date(`${data.date}T${data.startTime}`);
             const endDate = new Date(`${data.date}T${data.endTime}`);
 
@@ -160,7 +157,7 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>{t.dateLabel}</FormLabel>
-                                    <FormControl><Input type="date" {...field} /></FormControl>
+                                    <FormControl><Input type="date" {...field} min={new Date().toISOString().split("T")[0]} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -331,4 +328,3 @@ export default function MyStudentsPage() {
     );
 }
 
-    

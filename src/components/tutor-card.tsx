@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -44,6 +45,8 @@ export function TutorCard({ tutor }: TutorCardProps) {
       viewProfile: 'View Profile'
     }
   }[language];
+  
+  const isVerified = tutor.adminVerified || (tutor.followersCount && tutor.followersCount >= 20);
 
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg">
@@ -55,7 +58,7 @@ export function TutorCard({ tutor }: TutorCardProps) {
         <div className="flex-1">
           <CardTitle className="text-lg font-headline flex items-center gap-2">
             {tutor.name}
-            {tutor.adminVerified && <Verified className="h-5 w-5 text-primary" />}
+            {isVerified && <Verified className="h-5 w-5 text-primary" />}
           </CardTitle>
           <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -85,3 +88,4 @@ export function TutorCard({ tutor }: TutorCardProps) {
     </Card>
   );
 }
+

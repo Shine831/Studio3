@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -93,6 +94,7 @@ const createNewUserDocument = async (
             availability: 'Non définie', // Default value
             rating: 0,
             reviewsCount: 0,
+            followersCount: 0,
             adminVerified: false,
             whatsapp: whatsapp,
             system: system,

@@ -1,3 +1,4 @@
+
 export type Tutor = {
   id: string;
   name: string;
@@ -78,6 +79,7 @@ export interface TutorProfile {
     availability: string;
     rating: number;
     reviewsCount: number;
+    followersCount: number;
     adminVerified: boolean;
     cvUrl?: string;
     identificationDocumentUrl?: string;
