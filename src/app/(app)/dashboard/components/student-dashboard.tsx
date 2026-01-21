@@ -16,7 +16,7 @@ import { RecentActivityChart } from './recent-activity-chart';
 import { useLanguage } from '@/context/language-context';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import type { SavedStudyPlan, QuizResult, FollowingRecord } from '@/lib/types';
+import type { SavedStudyPlan, QuizResult, FollowingRecord, WithId } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const getInitials = (name: string | null | undefined) => {
@@ -110,8 +110,8 @@ export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardPr
                     <Skeleton className="h-12 w-full" />
                 </div>
             ) : followedTutors && followedTutors.length > 0 ? (
-                followedTutors.map(tutor => (
-                    <Link href={`/tutors/${tutor.tutorId}`} key={tutor.tutorId} className="flex items-center gap-4 hover:bg-accent p-2 rounded-md transition-colors">
+                followedTutors.map((tutor: WithId<FollowingRecord>) => (
+                    <Link href={`/tutors/${tutor.id}`} key={tutor.id} className="flex items-center gap-4 hover:bg-accent p-2 rounded-md transition-colors">
                         <Avatar className="h-10 w-10 border">
                             <AvatarImage src={tutor.tutorAvatar} />
                             <AvatarFallback>{getInitials(tutor.tutorName)}</AvatarFallback>
@@ -136,5 +136,3 @@ export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardPr
     </div>
   );
 }
-
-    

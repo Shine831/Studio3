@@ -112,22 +112,22 @@ export default function SettingsPage() {
         firstName: userProfile.firstName || '',
         lastName: userProfile.lastName || '',
         email: userProfile.email || '',
-        system: userProfile.system || undefined, // Ensure undefined if falsy
+        system: userProfile.system || '',
         city: userProfile.city || '',
         profilePicture: userProfile.profilePicture || '',
       };
 
-      if (userProfile.role === 'tutor') {
-        defaultVals.subjects = (tutorProfile && Array.isArray(tutorProfile.subjects)) ? tutorProfile.subjects.join(', ') : '';
-        defaultVals.whatsapp = tutorProfile?.whatsapp || '';
-        defaultVals.classes = (tutorProfile && Array.isArray(tutorProfile.classes)) ? tutorProfile.classes.join(', ') : '';
-        defaultVals.monthlyRate = tutorProfile?.monthlyRate ?? 0;
+      if (userProfile.role === 'tutor' && tutorProfile) {
+        defaultVals.subjects = Array.isArray(tutorProfile.subjects) ? tutorProfile.subjects.join(', ') : '';
+        defaultVals.whatsapp = tutorProfile.whatsapp || '';
+        defaultVals.classes = Array.isArray(tutorProfile.classes) ? tutorProfile.classes.join(', ') : '';
+        defaultVals.monthlyRate = tutorProfile.monthlyRate ?? 0;
       }
       
-      form.reset(defaultVals);
+      form.reset(defaultVals as ProfileFormValues);
       setPreview(userProfile.profilePicture || null);
     }
-  }, [userProfile, tutorProfile]);
+  }, [userProfile, tutorProfile, form]);
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -185,6 +185,8 @@ export default function SettingsPage() {
              });
         }
       }
+      
+      form.reset(data);
 
       toast({
         title: content[language].updateSuccessTitle,
@@ -365,7 +367,7 @@ export default function SettingsPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.system}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t.systemPlaceholder} />
@@ -386,7 +388,7 @@ export default function SettingsPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.city}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t.cityPlaceholder} />
@@ -413,7 +415,7 @@ export default function SettingsPage() {
                     <FormItem>
                     <FormLabel>{t.whatsapp}</FormLabel>
                     <FormControl>
-                        <Input placeholder="+237 6XX XXX XXX" {...field} />
+                        <Input placeholder="+237 6XX XXX XXX" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormDescription>{t.whatsappDesc}</FormDescription>
                     <FormMessage />
@@ -427,7 +429,7 @@ export default function SettingsPage() {
                         <FormItem>
                         <FormLabel>{t.monthlyRate} (FCFA)</FormLabel>
                         <FormControl>
-                            <Input type="number" placeholder={t.monthlyRatePlaceholder} {...field} />
+                            <Input type="number" placeholder={t.monthlyRatePlaceholder} {...field} value={field.value || 0} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -440,7 +442,7 @@ export default function SettingsPage() {
                         <FormItem>
                         <FormLabel>{t.subjectsLabel}</FormLabel>
                         <FormControl>
-                            <Textarea placeholder={t.subjectsPlaceholder} {...field} />
+                            <Textarea placeholder={t.subjectsPlaceholder} {...field} value={field.value || ''} />
                         </FormControl>
                          <FormDescription>{t.subjectsDesc}</FormDescription>
                         <FormMessage />
@@ -454,7 +456,7 @@ export default function SettingsPage() {
                         <FormItem>
                         <FormLabel>{t.classes}</FormLabel>
                         <FormControl>
-                            <Textarea placeholder="e.g., 6ème, 5ème, Form 1, Form 2" {...field} />
+                            <Textarea placeholder="e.g., 6ème, 5ème, Form 1, Form 2" {...field} value={field.value || ''} />
                         </FormControl>
                          <FormDescription>{t.classesDesc}</FormDescription>
                         <FormMessage />

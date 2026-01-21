@@ -1,9 +1,9 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useLanguage } from '@/context/language-context';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, writeBatch } from 'firebase/firestore';
 import type { Booking, FollowerRecord, WithId } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,6 +18,7 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -28,13 +29,14 @@ const getInitials = (name: string | null | undefined) => {
     return name.substring(0, 1).toUpperCase();
 }
 
-function ScheduleSessionDialog({ student, language, user, firestore }: { student: WithId<FollowerRecord>, language: 'fr' | 'en', user: any, firestore: any }) {
+function GroupScheduleDialog({ students, language, user, firestore, onSessionCreated }: { students: WithId<FollowerRecord>[], language: 'fr' | 'en', user: any, firestore: any, onSessionCreated: () => void }) {
     const [open, setOpen] = useState(false);
     const { toast } = useToast();
 
     const t = {
         fr: {
-            dialogTitle: "Planifier une session pour",
+            dialogTitle: "Planifier une session de groupe",
+            studentCount: "élèves sélectionnés",
             subjectLabel: "Matière",
             dateLabel: "Date",
             startTimeLabel: "Heure de début",
@@ -43,7 +45,7 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
             submit: "Créer la session",
             cancel: "Annuler",
             bookingSuccessTitle: "Session créée !",
-            bookingSuccessDesc: "La session a été ajoutée à votre calendrier.",
+            bookingSuccessDesc: "La session a été ajoutée pour tous les élèves sélectionnés.",
             bookingErrorTitle: "Erreur",
             bookingErrorDesc: "Impossible de créer la session.",
             formErrors: {
@@ -54,7 +56,8 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
             }
         },
         en: {
-            dialogTitle: "Schedule a Session for",
+            dialogTitle: "Schedule Group Session",
+            studentCount: "students selected",
             subjectLabel: "Subject",
             dateLabel: "Date",
             startTimeLabel: "Start Time",
@@ -63,7 +66,7 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
             submit: "Create Session",
             cancel: "Cancel",
             bookingSuccessTitle: "Session Created!",
-            bookingSuccessDesc: "The session has been added to your calendar.",
+            bookingSuccessDesc: "The session has been added for all selected students.",
             bookingErrorTitle: "Error",
             bookingErrorDesc: "Could not create the session.",
             formErrors: {
@@ -95,7 +98,7 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
     });
 
     async function onSubmit(data: z.infer<typeof bookingFormSchema>) {
-        if (!user || !firestore) return;
+        if (!user || !firestore || students.length === 0) return;
         
         try {
             const startDate = new Date(`${data.date}T${data.startTime}`);
@@ -104,24 +107,30 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
             if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
                 throw new Error("Invalid date or time value");
             }
+            
+            const batch = writeBatch(firestore);
 
-            const newBooking: Omit<Booking, 'id'> = {
-                studentId: student.id,
-                tutorId: user.uid,
-                studentName: student.studentName,
-                subject: data.subject,
-                startTime: Timestamp.fromDate(startDate),
-                endTime: Timestamp.fromDate(endDate),
-                status: 'confirmed',
-                notes: data.notes || '',
-            };
+            students.forEach(student => {
+                const newBooking: Omit<Booking, 'id'> = {
+                    studentId: student.id,
+                    tutorId: user.uid,
+                    studentName: student.studentName,
+                    subject: data.subject,
+                    startTime: Timestamp.fromDate(startDate),
+                    endTime: Timestamp.fromDate(endDate),
+                    status: 'confirmed',
+                    notes: data.notes || '',
+                };
+                const newBookingRef = addDoc(collection(firestore, 'tutors', user.uid, 'bookings'), newBooking).withConverter(null);
+                batch.set(newBookingRef, newBooking);
+            })
 
-            const bookingsCollectionRef = collection(firestore, 'tutors', user.uid, 'bookings');
-            await addDoc(bookingsCollectionRef, newBooking);
+            await batch.commit();
 
             toast({ title: t.bookingSuccessTitle, description: t.bookingSuccessDesc });
             setOpen(false);
             form.reset();
+            onSessionCreated();
         } catch (error) {
             console.error(error);
             toast({ variant: 'destructive', title: t.bookingErrorTitle, description: t.bookingErrorDesc });
@@ -132,11 +141,12 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm">{language === 'fr' ? 'Planifier' : 'Schedule'}</Button>
+                <Button disabled={students.length === 0}>{language === 'fr' ? 'Planifier une session' : 'Schedule Session'}</Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{t.dialogTitle} {student.studentName}</DialogTitle>
+                    <DialogTitle>{t.dialogTitle}</DialogTitle>
+                    <p className="text-sm text-muted-foreground">{students.length} {t.studentCount}</p>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -213,11 +223,12 @@ export default function MyStudentsPage() {
     const { language } = useLanguage();
     const { user } = useUser();
     const firestore = useFirestore();
+    const [selectedStudents, setSelectedStudents] = useState<WithId<FollowerRecord>[]>([]);
 
     const t = {
         fr: {
             title: "Mes Élèves",
-            description: "Voici la liste des élèves qui vous suivent.",
+            description: "Voici la liste des élèves qui vous suivent. Cochez les cases pour planifier une session de groupe.",
             name: "Nom",
             followedOn: "Suivi le",
             actions: "Actions",
@@ -226,7 +237,7 @@ export default function MyStudentsPage() {
         },
         en: {
             title: "My Students",
-            description: "Here is the list of students who are following you.",
+            description: "Here is the list of students who are following you. Select checkboxes to schedule a group session.",
             name: "Name",
             followedOn: "Followed On",
             actions: "Actions",
@@ -241,6 +252,22 @@ export default function MyStudentsPage() {
     );
 
     const { data: followers, isLoading } = useCollection<FollowerRecord>(followersRef);
+
+    const handleSelectStudent = (student: WithId<FollowerRecord>, isSelected: boolean) => {
+        if (isSelected) {
+            setSelectedStudents(prev => [...prev, student]);
+        } else {
+            setSelectedStudents(prev => prev.filter(s => s.id !== student.id));
+        }
+    };
+    
+    const handleSelectAll = (isSelected: boolean) => {
+        if (isSelected && followers) {
+            setSelectedStudents(followers);
+        } else {
+            setSelectedStudents([]);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -276,9 +303,18 @@ export default function MyStudentsPage() {
     return (
         <RoleGuard allowedRoles={['tutor', 'admin']}>
             <div className="space-y-6">
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
-                    <p className="text-muted-foreground">{t.description}</p>
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
+                        <p className="text-muted-foreground">{t.description}</p>
+                    </div>
+                     <GroupScheduleDialog 
+                        students={selectedStudents} 
+                        language={language} 
+                        user={user} 
+                        firestore={firestore} 
+                        onSessionCreated={() => setSelectedStudents([])}
+                    />
                 </div>
 
                 <Card>
@@ -286,15 +322,28 @@ export default function MyStudentsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[50px]">
+                                        <Checkbox 
+                                            onCheckedChange={handleSelectAll}
+                                            checked={followers ? selectedStudents.length === followers.length : false}
+                                            aria-label="Select all"
+                                        />
+                                    </TableHead>
                                     <TableHead>{t.name}</TableHead>
                                     <TableHead>{t.followedOn}</TableHead>
-                                    <TableHead className="text-right">{t.actions}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {followers && followers.length > 0 ? (
                                     followers.map(follower => (
-                                        <TableRow key={follower.id}>
+                                        <TableRow key={follower.id} data-state={selectedStudents.some(s => s.id === follower.id) && "selected"}>
+                                            <TableCell>
+                                                <Checkbox 
+                                                    onCheckedChange={(checked) => handleSelectStudent(follower, !!checked)}
+                                                    checked={selectedStudents.some(s => s.id === follower.id)}
+                                                    aria-label={`Select ${follower.studentName}`}
+                                                />
+                                            </TableCell>
                                             <TableCell className="font-medium">
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-9 w-9">
@@ -306,9 +355,6 @@ export default function MyStudentsPage() {
                                             </TableCell>
                                             <TableCell>
                                                 {follower.followedAt?.toDate().toLocaleDateString(language)}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                               <ScheduleSessionDialog student={follower} language={language} user={user} firestore={firestore} />
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -327,4 +373,3 @@ export default function MyStudentsPage() {
         </RoleGuard>
     );
 }
-

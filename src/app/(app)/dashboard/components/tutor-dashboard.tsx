@@ -13,11 +13,10 @@ import {
   Star,
   CalendarClock,
   Users,
-  Banknote,
 } from 'lucide-react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, limit, orderBy, query, where, Timestamp } from 'firebase/firestore'; // Import where and Timestamp
-import type { FollowerRecord, TutorRating, Booking } from '@/lib/types'; // Import Booking
+import { collection, limit, orderBy, query, where, Timestamp } from 'firebase/firestore'; 
+import type { FollowerRecord, TutorRating, Booking } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -47,7 +46,6 @@ export function TutorDashboard() {
       totalStudents: 'Total Élèves',
       avgRating: 'Note Moyenne',
       upcomingSessions: 'Sessions à Venir',
-      totalEarnings: 'Revenus (30 jours)',
       viewAll: 'Voir tout',
       recentActivity: 'Avis Récents',
       noUpcoming: 'Aucune session à venir.',
@@ -67,7 +65,6 @@ export function TutorDashboard() {
       totalStudents: 'Total Students',
       avgRating: 'Average Rating',
       upcomingSessions: 'Upcoming Sessions',
-      totalEarnings: 'Earnings (30 days)',
       viewAll: 'View all',
       recentActivity: 'Recent Reviews',
       noUpcoming: 'No upcoming sessions.',
@@ -97,7 +94,6 @@ export function TutorDashboard() {
   );
   const { data: ratings, isLoading: isLoadingRatings } = useCollection<TutorRating>(ratingsRef);
 
-  // New query for upcoming bookings
   const upcomingBookingsQuery = useMemoFirebase(
     () => (user ? query(collection(firestore, 'tutors', user.uid, 'bookings'), where('startTime', '>=', Timestamp.now()), orderBy('startTime', 'asc'), limit(5)) : null),
     [firestore, user]
@@ -118,7 +114,7 @@ export function TutorDashboard() {
       <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
       <p className="text-muted-foreground">{t.description}</p>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">{t.totalStudents}</CardTitle>
@@ -161,16 +157,6 @@ export function TutorDashboard() {
                       <p className="text-xs text-muted-foreground">{t.inNext7Days}</p>
                   </>
                 )}
-              </CardContent>
-          </Card>
-          <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{t.totalEarnings}</CardTitle>
-                  <Banknote className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                  <div className="text-2xl font-bold">0 <span className="text-sm">{t.currency}</span></div>
-                  <p className="text-xs text-muted-foreground">{t.devFeature}</p>
               </CardContent>
           </Card>
       </div>

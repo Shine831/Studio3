@@ -307,8 +307,8 @@ export default function SchedulePage() {
         }
     };
     
-    const isFutureSession = (booking: WithId<Booking>) => {
-        return booking.startTime.toDate() > new Date();
+    const showActions = (booking: WithId<Booking>) => {
+        return booking.status === 'confirmed' || booking.status === 'pending';
     }
 
     if (isLoading) {
@@ -370,7 +370,7 @@ export default function SchedulePage() {
                                                 <Badge variant={getStatusVariant(booking.status)}>{t.statuses[booking.status]}</Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                               {isFutureSession(booking) && booking.status !== 'cancelled' ? (
+                                               {showActions(booking) ? (
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -406,4 +406,3 @@ export default function SchedulePage() {
         </RoleGuard>
     );
 }
-
