@@ -65,6 +65,10 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth || !firestore) {
+        setError('Firebase is not initialized correctly.');
+        return;
+    }
     if (!fullName || !email || !password) {
       setError('Please fill in all fields.');
       return;
@@ -117,6 +121,10 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignup = async () => {
+    if (!auth || !firestore) {
+        setError('Firebase is not initialized correctly.');
+        return;
+    }
     setLoading(true);
     setError(null);
     const provider = new GoogleAuthProvider();
@@ -138,6 +146,9 @@ export default function SignupPage() {
                     break;
                 case 'auth/account-exists-with-different-credential':
                     friendlyMessage = 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
+                    break;
+                case 'auth/operation-not-allowed':
+                    friendlyMessage = "Google Sign-In is not enabled for this project. Please enable it in the Firebase Console under Authentication > Sign-in method.";
                     break;
                 case 'auth/configuration-not-found':
                   friendlyMessage = "Firebase configuration is missing. The app is not properly connected to Firebase.";
