@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/command';
 import { tutors } from '@/lib/data';
 import { useRouter } from 'next/navigation';
+import { AppSidebar } from './app-sidebar';
 
 export function AppHeader() {
   const router = useRouter();
