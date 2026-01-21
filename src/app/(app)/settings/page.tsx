@@ -116,10 +116,12 @@ export default function SettingsPage() {
         profilePicture: userProfile.profilePicture || '',
       };
 
-      if (userProfile.role === 'tutor' && tutorProfile) {
-        defaultVals.subjects = Array.isArray(tutorProfile?.subjects) ? tutorProfile.subjects.join(', ') : '';
+      // If user is a tutor, always add the tutor fields to the reset values.
+      // Use the loaded tutorProfile data if available, otherwise use safe defaults.
+      if (userProfile.role === 'tutor') {
+        defaultVals.subjects = (tutorProfile && Array.isArray(tutorProfile.subjects)) ? tutorProfile.subjects.join(', ') : '';
         defaultVals.whatsapp = tutorProfile?.whatsapp || '';
-        defaultVals.classes = Array.isArray(tutorProfile?.classes) ? tutorProfile.classes.join(', ') : '';
+        defaultVals.classes = (tutorProfile && Array.isArray(tutorProfile.classes)) ? tutorProfile.classes.join(', ') : '';
         defaultVals.monthlyRate = tutorProfile?.monthlyRate || 0;
       }
       
