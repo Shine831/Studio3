@@ -1,4 +1,3 @@
-// src/ai/flows/generate-personalized-study-plan.ts
 'use server';
 /**
  * @fileOverview Generates a personalized study plan for a student based on their diagnostic pre-test results.
@@ -9,7 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const GeneratePersonalizedStudyPlanInputSchema = z.object({
   studentId: z.string().describe('The ID of the student.'),
@@ -20,9 +19,16 @@ const GeneratePersonalizedStudyPlanInputSchema = z.object({
 });
 export type GeneratePersonalizedStudyPlanInput = z.infer<typeof GeneratePersonalizedStudyPlanInputSchema>;
 
-const GeneratePersonalizedStudyPlanOutputSchema = z.object({
-  studyPlan: z.string().describe('A personalized study plan for the student.'),
+const StudyPlanItemSchema = z.object({
+    title: z.string().describe("The concise title of the lesson or chapter."),
+    description: z.string().describe("A brief, one-sentence description of what this lesson covers."),
+    duration: z.number().describe("Estimated time in minutes to complete the lesson."),
 });
+
+const GeneratePersonalizedStudyPlanOutputSchema = z.object({
+  plan: z.array(StudyPlanItemSchema).describe("The array of lessons in the study plan, ordered logically."),
+});
+
 export type GeneratePersonalizedStudyPlanOutput = z.infer<typeof GeneratePersonalizedStudyPlanOutputSchema>;
 
 export async function generatePersonalizedStudyPlan(input: GeneratePersonalizedStudyPlanInput): Promise<GeneratePersonalizedStudyPlanOutput> {
@@ -33,15 +39,19 @@ const prompt = ai.definePrompt({
   name: 'generatePersonalizedStudyPlanPrompt',
   input: {schema: GeneratePersonalizedStudyPlanInputSchema},
   output: {schema: GeneratePersonalizedStudyPlanOutputSchema},
-  prompt: `You are an AI study plan generator. Generate a personalized study plan for a high school student in Cameroon, based on their pre-test results, grade level, subjects, and learning goals. The study plan should be detailed, actionable, and include specific topics to study, resources to use, and practice quizzes or exercises. Consider the Cameroonian curriculum and educational context.
+  prompt: `You are an expert instructional designer tasked with creating a personalized study plan for a high school student in Cameroon. Your response must be in the structured JSON format defined in the output schema.
 
-Student ID: {{{studentId}}}
-Pre-Test Results: {{{preTestResults}}}
-Subjects: {{{subjects}}}
-Grade Level: {{{gradeLevel}}}
-Learning Goals: {{{learningGoals}}}
+Based on the provided information, generate a realistic and actionable study plan. The plan should be a sequence of lessons or topics. For each item in the plan, provide a title, a short description, and an estimated duration in minutes.
 
-Here is the study plan:
+The plan should be tailored to the Cameroonian curriculum for the specified grade level and subjects. The student's learning goals should be the primary driver for the plan's content.
+
+Student Information:
+- Grade Level: {{{gradeLevel}}}
+- Subject(s): {{#each subjects}}{{{this}}}{{/each}}
+- Learning Goals: {{{learningGoals}}}
+- Pre-Test Results (for context, may be empty): {{{preTestResults}}}
+
+Generate the study plan now.
 `,
 });
 

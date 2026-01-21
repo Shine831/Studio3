@@ -2,10 +2,8 @@
 
 import Link from 'next/link';
 import {
-  CreditCard,
   LogOut,
   Moon,
-  Settings,
   Sun,
   User as UserIcon,
 } from 'lucide-react';
@@ -42,8 +40,6 @@ export function UserNav() {
   const content = {
     fr: {
       profile: 'Profil',
-      billing: 'Facturation',
-      settings: 'Paramètres',
       toggleTheme: 'Changer de thème',
       light: 'Clair',
       dark: 'Sombre',
@@ -55,8 +51,6 @@ export function UserNav() {
     },
     en: {
       profile: 'Profile',
-      billing: 'Billing',
-      settings: 'Settings',
       toggleTheme: 'Toggle theme',
       light: 'Light',
       dark: 'Dark',
@@ -116,18 +110,6 @@ export function UserNav() {
             <Link href="/settings">
               <UserIcon className="mr-2 h-4 w-4" />
               <span>{t.profile}</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/settings">
-              <CreditCard className="mr-2 h-4 w-4" />
-              <span>{t.billing}</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/settings">
-              <Settings className="mr-2 h-4 w-4" />
-              <span>{t.settings}</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
