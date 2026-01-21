@@ -70,3 +70,14 @@ export interface UserProfile {
   classes?: string[];
   monthlyRate?: number;
 }
+
+export interface QuizResult {
+    id: string;
+    studentId: string;
+    planId: string;
+    planSubject: string;
+    lessonTitle: string;
+    score: number;
+    completionDate: any; // Firestore Timestamp
+    answers: { questionIndex: number; answer: string }[];
+}

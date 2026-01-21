@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
-import { doc, updateDoc, DocumentReference } from 'firebase/firestore';
+import { doc, updateDoc, DocumentReference, addDoc, collection, serverTimestamp, Firestore } from 'firebase/firestore';
+import type { User } from 'firebase/auth';
+
 import {
   generateQuiz,
   type GenerateQuizOutput,
@@ -217,7 +219,7 @@ function QuizResults({
   )
 }
 
-function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef }: { lesson: Lesson, subject: string, language: 'fr' | 'en', plan: WithId<SavedStudyPlan>, lessonIndex: number, planRef: DocumentReference | null }) {
+function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, user, firestore }: { lesson: Lesson, subject: string, language: 'fr' | 'en', plan: WithId<SavedStudyPlan>, lessonIndex: number, planRef: DocumentReference | null, user: User | null, firestore: Firestore | null }) {
     const [isContentLoading, setIsContentLoading] = useState(false);
     const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -283,8 +285,28 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef }
         }
     };
 
-    const handleQuizComplete = (score: number, answers: Answer[]) => {
+    const handleQuizComplete = async (score: number, answers: Answer[]) => {
         setQuizScore(score);
+        setUserAnswers(answers);
+    
+        if (!planRef || !user || !firestore) return;
+    
+        const quizResultData = {
+          studentId: user.uid,
+          planId: plan.id,
+          planSubject: plan.subject,
+          lessonTitle: lesson.title,
+          score: score,
+          completionDate: serverTimestamp(),
+          answers: answers,
+        };
+    
+        try {
+          const quizResultsCollectionRef = collection(firestore, 'users', user.uid, 'quizResults');
+          await addDoc(quizResultsCollectionRef, quizResultData);
+        } catch (error) {
+          console.error("Failed to save quiz result: ", error);
+        }
     };
 
     const handleRestartQuiz = () => {
@@ -426,7 +448,7 @@ export default function StudyPlanDetailPage() {
                         </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                        <LessonContent lesson={lesson} subject={plan.subject} language={language} plan={plan} lessonIndex={index} planRef={planRef} />
+                        <LessonContent lesson={lesson} subject={plan.subject} language={language} plan={plan} lessonIndex={index} planRef={planRef} user={user} firestore={firestore} />
                     </AccordionContent>
                 </AccordionItem>
             ))}

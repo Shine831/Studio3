@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -23,19 +23,29 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/language-context';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+
 
 export function UserNav() {
   const { setTheme } = useTheme();
   const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { language } = useLanguage();
+
+  const userProfileRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
+  );
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const content = {
     fr: {
@@ -87,6 +97,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
+            <AvatarImage src={userProfile?.profilePicture} alt="User avatar" />
             <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
           </Avatar>
         </Button>

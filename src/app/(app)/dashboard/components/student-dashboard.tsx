@@ -13,15 +13,21 @@ import {
 import { Overview } from './overview';
 import { RecentActivityChart } from './recent-activity-chart';
 import { useLanguage } from '@/context/language-context';
+import type { SavedStudyPlan, QuizResult } from '@/lib/types';
 
-export function StudentDashboard() {
+interface StudentDashboardProps {
+  studyPlans: SavedStudyPlan[] | null;
+  quizResults: QuizResult[] | null;
+}
+
+export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardProps) {
   const { language } = useLanguage();
 
   const content = {
     fr: {
       dashboard: 'Tableau de bord de l\'élève',
       recentActivity: 'Activité récente',
-      activityDescription: 'Votre temps d\'étude des 7 derniers jours.',
+      activityDescription: 'Vos quiz terminés des 7 derniers jours.',
       upcomingSessions: 'Prochaines sessions',
       sessionsDescription: 'Vos prochaines sessions de tutorat.',
       bookNow: 'Réserver maintenant',
@@ -31,7 +37,7 @@ export function StudentDashboard() {
     en: {
       dashboard: 'Student Dashboard',
       recentActivity: 'Recent Activity',
-      activityDescription: 'Your study time over the last 7 days.',
+      activityDescription: 'Your completed quizzes over the last 7 days.',
       upcomingSessions: 'Upcoming Sessions',
       sessionsDescription: 'Your next tutoring sessions.',
       bookNow: 'Book Now',
@@ -45,7 +51,7 @@ export function StudentDashboard() {
     <div className="flex flex-1 flex-col gap-4">
       <h1 className="text-3xl font-bold font-headline">{t.dashboard}</h1>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Overview />
+        <Overview studyPlans={studyPlans} quizResults={quizResults} />
       </div>
       <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
         <Card className="xl:col-span-2">
@@ -56,7 +62,7 @@ export function StudentDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <RecentActivityChart />
+            <RecentActivityChart quizResults={quizResults} />
           </CardContent>
         </Card>
         <Card>

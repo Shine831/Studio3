@@ -1,12 +1,12 @@
 'use client';
 
-import { doc, DocumentData } from 'firebase/firestore';
-import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc, DocumentData, query, where } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StudentDashboard } from './components/student-dashboard';
 import { TutorDashboard } from './components/tutor-dashboard';
 import { useLanguage } from '@/context/language-context';
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, SavedStudyPlan, QuizResult } from '@/lib/types';
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser();
@@ -33,14 +33,29 @@ export default function Dashboard() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user?.uid]);
 
+  const studyPlansRef = useMemoFirebase(
+    () => (user ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
+    [firestore, user]
+  );
+  
+  const quizResultsRef = useMemoFirebase(
+    () => (user ? collection(firestore, 'users', user.uid, 'quizResults') : null),
+    [firestore, user]
+  );
+
   const {
     data: userProfile,
     isLoading: isProfileLoading,
     error,
   } = useDoc<UserProfile>(userProfileRef);
 
+  const { data: studyPlans, isLoading: arePlansLoading } = useCollection<SavedStudyPlan>(studyPlansRef);
+  const { data: quizResults, isLoading: areResultsLoading } = useCollection<QuizResult>(quizResultsRef);
+  
+  const isLoading = isUserLoading || isProfileLoading || arePlansLoading || areResultsLoading;
+
   // Show a loading state while fetching user or profile data
-  if (isUserLoading || isProfileLoading) {
+  if (isLoading) {
     return (
       <div className="flex flex-1 flex-col gap-4">
         <Skeleton className="h-8 w-48" />
@@ -75,11 +90,11 @@ export default function Dashboard() {
     
     case 'student':
     case 'admin':
-      return <StudentDashboard />;
+      return <StudentDashboard studyPlans={studyPlans} quizResults={quizResults} />;
 
     default:
       // This handles cases where `userProfile` is null, or `role` is not set.
       // This defaults to the student dashboard as a safe fallback for new users.
-      return <StudentDashboard />;
+      return <StudentDashboard studyPlans={studyPlans} quizResults={quizResults} />;
   }
 }

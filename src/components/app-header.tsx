@@ -1,9 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Menu, Search, X } from 'lucide-react';
+import { Bell, Menu, Search, X, BookCopy, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -14,18 +13,31 @@ import {
 } from '@/components/ui/sheet';
 import { LanguageSwitcher } from './language-switcher';
 import { UserNav } from './user-nav';
-import { AppSidebar } from './app-sidebar';
 import { useLanguage } from '@/context/language-context';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, doc, deleteDoc } from 'firebase/firestore';
-import type { Notification } from '@/lib/types';
+import type { Notification, SavedStudyPlan } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
+import React, { useState, useEffect } from 'react';
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { tutors } from '@/lib/data';
+import { useRouter } from 'next/navigation';
 
 export function AppHeader() {
+  const router = useRouter();
   const { language } = useLanguage();
   const { user } = useUser();
   const firestore = useFirestore();
+
+  const [openSearch, setOpenSearch] = useState(false);
 
   const notificationsRef = useMemoFirebase(
     () =>
@@ -39,6 +51,29 @@ export function AppHeader() {
     [firestore, user]
   );
   const { data: notifications } = useCollection<Notification>(notificationsRef);
+
+  const studyPlansRef = useMemoFirebase(
+    () => (user ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
+    [firestore, user]
+  );
+  const { data: savedPlans } = useCollection<SavedStudyPlan>(studyPlansRef);
+
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setOpenSearch((open) => !open)
+      }
+    }
+    document.addEventListener("keydown", down)
+    return () => document.removeEventListener("keydown", down)
+  }, [])
+
+  const runCommand = (command: () => unknown) => {
+    setOpenSearch(false);
+    command();
+  }
 
   const handleDeleteNotification = async (notificationId: string) => {
     if (!user) return;
@@ -60,6 +95,10 @@ export function AppHeader() {
       toggleNotifications: 'Basculer les notifications',
       notifications: 'Notifications',
       noNotifications: 'Aucune nouvelle notification.',
+      searchCommandPlaceholder: 'Taper une commande ou rechercher...',
+      noResults: 'Aucun résultat trouvé.',
+      tutorsGroup: 'Répétiteurs',
+      studyPlansGroup: 'Mes Plans d\'Étude',
     },
     en: {
       toggleNav: 'Toggle navigation menu',
@@ -70,6 +109,10 @@ export function AppHeader() {
       toggleNotifications: 'Toggle notifications',
       notifications: 'Notifications',
       noNotifications: 'No new notifications.',
+      searchCommandPlaceholder: 'Type a command or search...',
+      noResults: 'No results found.',
+      tutorsGroup: 'Tutors',
+      studyPlansGroup: 'My Study Plans',
     },
   };
 
@@ -96,16 +139,20 @@ export function AppHeader() {
         </SheetContent>
       </Sheet>
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <form className="ml-auto flex-1 sm:flex-initial">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={t.searchPlaceholder}
-              className="bg-background pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-            />
-          </div>
-        </form>
+        <div className="ml-auto flex-1 sm:flex-initial">
+           <Button
+              variant="outline"
+              className="relative h-9 w-full justify-start rounded-[0.5rem] bg-background text-sm font-normal text-muted-foreground shadow-none sm:w-64"
+              onClick={() => setOpenSearch(true)}
+            >
+              <Search className="mr-2 h-4 w-4" />
+              <span className="hidden lg:inline-flex">{t.searchPlaceholder}</span>
+              <span className="inline-flex lg:hidden">{t.searchPlaceholder}</span>
+              <kbd className="pointer-events-none absolute right-[0.3rem] top-[0.3rem] hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </Button>
+        </div>
         <LanguageSwitcher />
         <Sheet>
           <SheetTrigger asChild>
@@ -150,6 +197,36 @@ export function AppHeader() {
           </SheetContent>
         </Sheet>
         <UserNav />
+        <CommandDialog open={openSearch} onOpenChange={setOpenSearch}>
+          <CommandInput placeholder={t.searchCommandPlaceholder} />
+          <CommandList>
+            <CommandEmpty>{t.noResults}</CommandEmpty>
+            <CommandGroup heading={t.tutorsGroup}>
+              {tutors.map((tutor) => (
+                <CommandItem
+                  key={tutor.id}
+                  value={`tutor-${tutor.name}-${tutor.subjects.join(' ')}`}
+                  onSelect={() => runCommand(() => router.push(`/tutors/${tutor.id}`))}
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>{tutor.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandGroup heading={t.studyPlansGroup}>
+              {savedPlans?.map((plan) => (
+                 <CommandItem
+                    key={plan.id}
+                    value={`plan-${plan.subject}-${plan.learningGoals}`}
+                    onSelect={() => runCommand(() => router.push(`/study-plan/${plan.id}`))}
+                >
+                    <BookCopy className="mr-2 h-4 w-4" />
+                    <span>{plan.subject}</span>
+                 </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </CommandDialog>
       </div>
     </header>
   );

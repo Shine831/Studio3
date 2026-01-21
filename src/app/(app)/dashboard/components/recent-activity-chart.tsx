@@ -8,52 +8,66 @@ import {
 } from '@/components/ui/chart';
 import { CardDescription } from '@/components/ui/card';
 import { useLanguage } from '@/context/language-context';
+import type { QuizResult } from '@/lib/types';
+import { useMemo } from 'react';
+import { subDays, format, isWithinInterval } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
 
-const data = [
-  { name: 'Mon', total: 0 },
-  { name: 'Tue', total: 0 },
-  { name: 'Wed', total: 0 },
-  { name: 'Thu', total: 0 },
-  { name: 'Fri', total: 0 },
-  { name: 'Sat', total: 0 },
-  { name: 'Sun', total: 0 },
-];
 
 const chartConfig = {
-  total: {
-    label: "Minutes",
+  quizzes: {
+    label: "Quizzes",
     color: "hsl(var(--primary))",
   },
 };
 
-export function RecentActivityChart() {
+interface RecentActivityChartProps {
+    quizResults: QuizResult[] | null;
+}
+
+export function RecentActivityChart({ quizResults }: RecentActivityChartProps) {
   const { language } = useLanguage();
 
-  const content = {
+  const t = {
     fr: {
-      noActivity: 'Aucune activité pour le moment.',
-      studyTimeAppear: 'Votre temps d\'étude apparaîtra ici.',
-      days: { Mon: 'Lun', Tue: 'Mar', Wed: 'Mer', Thu: 'Jeu', Fri: 'Ven', Sat: 'Sam', Sun: 'Dim' },
-      minutes: 'Minutes'
+      noActivity: 'Aucune activité récente.',
+      studyTimeAppear: 'Vos quiz terminés apparaîtront ici.',
+      quizzes: 'Quiz terminés',
     },
     en: {
-      noActivity: 'No activity yet.',
-      studyTimeAppear: 'Your study time will appear here.',
-      days: { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat', Sun: 'Sun' },
-      minutes: 'Minutes'
+      noActivity: 'No recent activity.',
+      studyTimeAppear: 'Your completed quizzes will appear here.',
+      quizzes: 'Quizzes Completed',
     }
-  };
+  }[language];
+  
+  chartConfig.quizzes.label = t.quizzes;
+  
+  const chartData = useMemo(() => {
+    const data = [];
+    const today = new Date();
+    const locale = language === 'fr' ? fr : enUS;
 
-  const t = content[language];
-  const translatedData = data.map(d => ({ ...d, name: t.days[d.name as keyof typeof t.days] }));
-  chartConfig.total.label = t.minutes;
+    for (let i = 6; i >= 0; i--) {
+        const date = subDays(today, i);
+        const dayName = format(date, 'eee', { locale });
+        
+        const quizzesOnDay = quizResults?.filter(result => {
+            const completionDate = result.completionDate?.toDate();
+            return completionDate && isWithinInterval(completionDate, { start: date, end: date });
+        }).length || 0;
 
-  const totalMinutes = translatedData.reduce((acc, item) => acc + item.total, 0);
+        data.push({ name: dayName, quizzes: quizzesOnDay });
+    }
+    return data;
+  }, [quizResults, language]);
+
+  const totalQuizzes = useMemo(() => chartData.reduce((acc, item) => acc + item.quizzes, 0), [chartData]);
 
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-      {totalMinutes > 0 ? (
-        <BarChart accessibilityLayer data={translatedData}>
+      {totalQuizzes > 0 ? (
+        <BarChart accessibilityLayer data={chartData}>
           <XAxis
             dataKey="name"
             stroke="#888888"
@@ -66,13 +80,14 @@ export function RecentActivityChart() {
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `${value}m`}
+            allowDecimals={false}
+            tickFormatter={(value) => `${value}`}
           />
           <ChartTooltip 
             cursor={false} 
             content={<ChartTooltipContent indicator="dot" />} 
           />
-          <Bar dataKey="total" fill="var(--color-total)" radius={4} />
+          <Bar dataKey="quizzes" fill="var(--color-quizzes)" radius={4} />
         </BarChart>
       ) : (
         <div className="flex h-full w-full flex-col items-center justify-center">

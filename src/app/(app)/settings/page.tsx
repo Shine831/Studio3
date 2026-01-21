@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -15,6 +15,7 @@ import {
 import { useLanguage } from '@/context/language-context';
 import { useToast } from '@/hooks/use-toast';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -38,8 +39,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { cameroonCities } from '@/lib/cameroon-cities';
 import type { UserProfile } from '@/lib/types';
+import { Camera } from 'lucide-react';
 
 const profileFormSchema = z.object({
+  profilePicture: z.string().optional(),
   firstName: z.string().min(2, { message: 'First name must be at least 2 characters.' }),
   lastName: z.string().min(2, { message: 'Last name must be at least 2 characters.' }),
   email: z.string().email(),
@@ -53,11 +56,24 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
+const getInitials = (name: string) => {
+    if (!name) return 'U';
+    const names = name.trim().split(' ').filter(n => n);
+    if (names.length > 1) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 1).toUpperCase();
+}
+
+
 export default function SettingsPage() {
   const { language } = useLanguage();
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -77,6 +93,7 @@ export default function SettingsPage() {
       whatsapp: '',
       classes: '',
       monthlyRate: 0,
+      profilePicture: '',
     },
     mode: 'onChange',
   });
@@ -92,9 +109,25 @@ export default function SettingsPage() {
         whatsapp: userProfile.whatsapp || '',
         classes: Array.isArray(userProfile.classes) ? userProfile.classes.join(', ') : '',
         monthlyRate: userProfile.monthlyRate || 0,
+        profilePicture: userProfile.profilePicture || '',
       });
+       setPreview(userProfile.profilePicture || null);
     }
   }, [userProfile, form]);
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setPreview(result);
+        form.setValue('profilePicture', result, { shouldDirty: true });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   async function onSubmit(data: ProfileFormValues) {
     if (!userProfileRef) return;
@@ -116,6 +149,7 @@ export default function SettingsPage() {
         title: content[language].updateSuccessTitle,
         description: content[language].updateSuccessDesc,
       });
+      form.reset(data, { keepValues: true }); // Resets dirty state
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
@@ -203,7 +237,34 @@ export default function SettingsPage() {
       <Separator />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <h4 className="text-md font-medium">{t.formTitle}</h4>
+            <div className="flex items-center gap-6">
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/png, image/jpeg"
+                />
+                <div className="relative">
+                    <Avatar className="h-24 w-24">
+                        <AvatarImage src={preview || undefined} />
+                        <AvatarFallback className="text-3xl">
+                            {getInitials(form.watch('firstName') + ' ' + form.watch('lastName'))}
+                        </AvatarFallback>
+                    </Avatar>
+                     <Button
+                        type="button"
+                        size="icon"
+                        variant="secondary"
+                        className="absolute bottom-0 right-0 rounded-full h-8 w-8"
+                        onClick={() => fileInputRef.current?.click()}
+                        >
+                        <Camera className="h-4 w-4" />
+                    </Button>
+                </div>
+                 <h4 className="text-md font-medium">{t.formTitle}</h4>
+            </div>
+
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <FormField
               control={form.control}
@@ -338,7 +399,7 @@ export default function SettingsPage() {
             </>
           )}
 
-          <Button type="submit" disabled={form.formState.isSubmitting}>{t.updateButton}</Button>
+          <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>{t.updateButton}</Button>
         </form>
       </Form>
     </div>
