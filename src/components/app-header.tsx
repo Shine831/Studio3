@@ -28,7 +28,6 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { tutors } from '@/lib/data';
 import { useRouter } from 'next/navigation';
 import { AppSidebar } from './app-sidebar';
 
@@ -202,18 +201,6 @@ export function AppHeader() {
           <CommandInput placeholder={t.searchCommandPlaceholder} />
           <CommandList>
             <CommandEmpty>{t.noResults}</CommandEmpty>
-            <CommandGroup heading={t.tutorsGroup}>
-              {tutors.map((tutor) => (
-                <CommandItem
-                  key={tutor.id}
-                  value={`tutor-${tutor.name}-${tutor.subjects.join(' ')}`}
-                  onSelect={() => runCommand(() => router.push(`/tutors/${tutor.id}`))}
-                >
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>{tutor.name}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
             <CommandGroup heading={t.studyPlansGroup}>
               {savedPlans?.map((plan) => (
                  <CommandItem

@@ -49,6 +49,7 @@ const profileFormSchema = z.object({
   system: z.enum(['francophone', 'anglophone']).optional(),
   city: z.string().optional(),
   // Tutor-specific fields
+  subjects: z.string().optional(),
   whatsapp: z.string().optional(),
   classes: z.string().optional(),
   monthlyRate: z.coerce.number().positive().optional(),
@@ -95,6 +96,7 @@ export default function SettingsPage() {
       email: '',
       system: undefined,
       city: '',
+      subjects: '',
       whatsapp: '',
       classes: '',
       monthlyRate: 0,
@@ -114,7 +116,8 @@ export default function SettingsPage() {
         profilePicture: userProfile.profilePicture || '',
       };
 
-      if (userProfile.role === 'tutor') {
+      if (userProfile.role === 'tutor' && tutorProfile) {
+        defaultVals.subjects = Array.isArray(tutorProfile?.subjects) ? tutorProfile.subjects.join(', ') : '';
         defaultVals.whatsapp = tutorProfile?.whatsapp || '';
         defaultVals.classes = Array.isArray(tutorProfile?.classes) ? tutorProfile.classes.join(', ') : '';
         defaultVals.monthlyRate = tutorProfile?.monthlyRate || 0;
@@ -154,7 +157,6 @@ export default function SettingsPage() {
       await updateDoc(userProfileRef, userProfileData);
 
       if (userProfile?.role === 'tutor' && tutorProfileRef) {
-         // Check if tutor profile exists, if not, create it
         const tutorDoc = await getDoc(tutorProfileRef);
         const tutorDataToUpdate: Partial<TutorProfile> = {
           userId: user.uid,
@@ -162,6 +164,7 @@ export default function SettingsPage() {
           avatarUrl: data.profilePicture,
           whatsapp: data.whatsapp,
           monthlyRate: data.monthlyRate,
+          subjects: data.subjects?.split(',').map(s => s.trim()).filter(Boolean),
           classes: data.classes?.split(',').map(c => c.trim()).filter(Boolean),
           city: data.city,
           system: data.system as 'francophone' | 'anglophone' | 'both' | undefined,
@@ -173,7 +176,6 @@ export default function SettingsPage() {
              await setDoc(tutorProfileRef, {
                 ...tutorDataToUpdate,
                 id: user.uid,
-                subjects: [],
                 availability: 'Non définie',
                 rating: 0,
                 reviewsCount: 0,
@@ -200,6 +202,7 @@ export default function SettingsPage() {
          profilePicture: updatedUser.data()?.profilePicture || '',
        };
        if (userProfile?.role === 'tutor' && updatedTutor?.exists()) {
+         newDefaultVals.subjects = Array.isArray(updatedTutor.data()?.subjects) ? updatedTutor.data()?.subjects.join(', ') : '';
          newDefaultVals.whatsapp = updatedTutor.data()?.whatsapp || '';
          newDefaultVals.classes = Array.isArray(updatedTutor.data()?.classes) ? updatedTutor.data()?.classes.join(', ') : '';
          newDefaultVals.monthlyRate = updatedTutor.data()?.monthlyRate || 0;
@@ -232,6 +235,9 @@ export default function SettingsPage() {
       anglophone: 'Anglophone',
       whatsapp: 'Numéro WhatsApp',
       whatsappDesc: 'Visible par les étudiants qui vous contactent.',
+      subjectsLabel: 'Matières Enseignées',
+      subjectsPlaceholder: 'Ex: Mathématiques, Physique...',
+      subjectsDesc: 'Séparez les matières par une virgule.',
       classes: 'Classes Enseignées',
       classesDesc: 'Séparez les classes par une virgule (ex: 6ème, 5ème).',
       monthlyRate: 'Tarif Mensuel (par matière)',
@@ -256,6 +262,9 @@ export default function SettingsPage() {
       anglophone: 'Anglophone',
       whatsapp: 'WhatsApp Number',
       whatsappDesc: 'Visible to students who contact you.',
+      subjectsLabel: 'Subjects Taught',
+      subjectsPlaceholder: 'E.g., Mathematics, Physics...',
+      subjectsDesc: 'Separate subjects with a comma.',
       classes: 'Classes Taught',
       classesDesc: 'Separate classes with a comma (e.g., Form 1, Form 2).',
       monthlyRate: 'Monthly Rate (per subject)',
@@ -438,6 +447,20 @@ export default function SettingsPage() {
                         <FormControl>
                             <Input type="number" placeholder={t.monthlyRatePlaceholder} {...field} />
                         </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="subjects"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>{t.subjectsLabel}</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder={t.subjectsPlaceholder} {...field} />
+                        </FormControl>
+                         <FormDescription>{t.subjectsDesc}</FormDescription>
                         <FormMessage />
                         </FormItem>
                     )}

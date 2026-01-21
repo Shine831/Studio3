@@ -109,27 +109,6 @@ service cloud.firestore {
       return request.resource.data.adminVerified == false;
     }
 
-    /**
-     * Enforces immutability of the 'id' field in user profiles.
-     */
-    function isProfileIdImmutable() {
-      return request.resource.data.id == resource.data.id;
-    }
-
-    /**
-     * Enforces immutability of the 'userId' field in various documents.
-     */
-    function isUserIdImmutable() {
-      return request.resource.data.userId == resource.data.userId;
-    }
-
-    /**
-     * Enforces immutability of the 'studentId' field in various documents.
-     */
-    function isStudentIdImmutable() {
-      return request.resource.data.studentId == resource.data.studentId;
-    }
-
 
     // --------------------------------------------------------------------
     // User Data Collections (/users)
@@ -146,7 +125,7 @@ service cloud.firestore {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isProfileIdImmutable();
+      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc();
       allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
     }
 
@@ -160,7 +139,7 @@ service cloud.firestore {
     match /users/{userId}/studyPlans/{studyPlanId} {
       allow get, list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && request.resource.data.studentId == userId;
-      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isStudentIdImmutable();
+      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc();
       allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
     }
 
@@ -174,7 +153,7 @@ service cloud.firestore {
     match /users/{userId}/quizResults/{quizResultId} {
       allow get, list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && request.resource.data.studentId == userId;
-      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isStudentIdImmutable();
+      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc();
       allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
     }
 
@@ -188,7 +167,7 @@ service cloud.firestore {
     match /users/{userId}/notifications/{notificationId} {
       allow get, list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && isUserIdImmutable();
+      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc();
       allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
     }
 
@@ -224,7 +203,7 @@ service cloud.firestore {
     match /tutors/{tutorId} {
       allow get, list: if true;
       allow create: if isSignedIn() && isNewTutorProfileValid() && request.resource.data.userId == request.auth.uid;
-      allow update: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc() && isUserIdImmutable();
+      allow update: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
       allow delete: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
 
        /**
@@ -293,7 +272,7 @@ service cloud.firestore {
       allow get: if isPaymentOwner(resource.data) || isAdmin();
       allow list: if false;
       allow create: if isPaymentOwner(request.resource.data);
-      allow update: if (isPaymentOwner(resource.data) || isAdmin()) && isExistingDoc() && isUserIdImmutable();
+      allow update: if (isPaymentOwner(resource.data) || isAdmin()) && isExistingDoc();
       allow delete: if (isPaymentOwner(resource.data) || isAdmin()) && isExistingDoc();
     }
 
