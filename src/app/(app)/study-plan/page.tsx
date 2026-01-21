@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Accordion,
@@ -44,7 +45,7 @@ import { anglophoneClasses, francophoneClasses } from '@/lib/cameroon-education'
 
 // Schema for the form
 const StudyPlanFormSchema = z.object({
-  subject: z.string({ required_error: 'Please select a subject.' }),
+  subject: z.string().min(2, { message: 'Please enter a subject.' }),
   gradeLevel: z.string({ required_error: 'Please select your grade level.' }),
   learningGoals: z
     .string()
@@ -103,12 +104,20 @@ export default function StudyPlanPage() {
     try {
       const result = await generatePersonalizedStudyPlan({
         studentId: user.uid,
-        subjects: [data.subject],
+        subject: data.subject,
         gradeLevel: data.gradeLevel,
         learningGoals: data.learningGoals,
-        preTestResults: {},
       });
-      setStudyPlan(result);
+      
+      if (result.isRefusal) {
+        setError(result.refusalMessage || content[language].generationError);
+      } else if (result.plan.length === 0) {
+        setError(content[language].noPlanGenerated);
+      }
+      else {
+        setStudyPlan(result);
+      }
+
     } catch (e) {
       console.error(e);
       setError(content[language].generationError);
@@ -119,16 +128,10 @@ export default function StudyPlanPage() {
   
   const content = {
     fr: {
-        title: "Mon Plan d'Étude Personnalisé",
-        description: "Utilisez l'IA pour générer un plan d'étude sur mesure basé sur vos objectifs.",
+        title: "Générateur de Plan d'Étude",
+        description: "Décrivez vos objectifs pour une matière et obtenez un plan d'étude sur mesure.",
         subjectLabel: 'Matière',
-        subjectPlaceholder: 'Choisissez une matière',
-        math: 'Mathématiques',
-        physics: 'Physique',
-        chemistry: 'Chimie',
-        biology: 'Biologie',
-        history: 'Histoire',
-        geography: 'Géographie',
+        subjectPlaceholder: 'Ex: Mathématiques, Physique, etc.',
         gradeLevelLabel: 'Niveau Scolaire',
         gradeLevelPlaceholder: 'Confirmez votre classe',
         goalsLabel: 'Mes Objectifs d\'Apprentissage',
@@ -140,19 +143,14 @@ export default function StudyPlanPage() {
         startLesson: "Commencer la leçon",
         minutes: "minutes",
         generationError: "Une erreur est survenue lors de la génération du plan. Veuillez réessayer.",
+        noPlanGenerated: "Impossible de générer un plan pour ce sujet. Veuillez essayer une autre matière.",
         backToForm: "Modifier mes objectifs",
     },
     en: {
-        title: "My Personalized Study Plan",
-        description: "Use AI to generate a custom study plan based on your goals.",
+        title: "Study Plan Generator",
+        description: "Describe your goals for a subject and get a custom-made study plan.",
         subjectLabel: 'Subject',
-        subjectPlaceholder: 'Select a subject',
-        math: 'Mathematics',
-        physics: 'Physics',
-        chemistry: 'Chemistry',
-        biology: 'Biology',
-        history: 'History',
-        geography: 'Geography',
+        subjectPlaceholder: 'E.g., Mathematics, Physics, etc.',
         gradeLevelLabel: 'Grade Level',
         gradeLevelPlaceholder: 'Confirm your class',
         goalsLabel: 'My Learning Goals',
@@ -164,19 +162,12 @@ export default function StudyPlanPage() {
         startLesson: "Start Lesson",
         minutes: "minutes",
         generationError: "An error occurred while generating the plan. Please try again.",
+        noPlanGenerated: "Could not generate a plan for this topic. Please try another subject.",
         backToForm: "Edit my goals",
     },
   };
   const t = content[language];
 
-  const subjects = [
-    { value: "math", label: t.math },
-    { value: "physics", label: t.physics },
-    { value: "chemistry", label: t.chemistry },
-    { value: "biology", label: t.biology },
-    { value: "history", label: t.history },
-    { value: "geography", label: t.geography },
-  ];
 
   if (isProfileLoading) {
     return (
@@ -233,7 +224,7 @@ export default function StudyPlanPage() {
                     ))}
                  </Accordion>
             ) : (
-                <p>Could not generate a plan.</p>
+                <p>{t.noPlanGenerated}</p>
             )}
         </div>
     );
@@ -256,16 +247,9 @@ export default function StudyPlanPage() {
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>{t.subjectLabel}</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder={t.subjectPlaceholder} />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {subjects.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                        <FormControl>
+                            <Input placeholder={t.subjectPlaceholder} {...field} />
+                        </FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
