@@ -29,4 +29,6 @@ export type Tutor = {
   reviewsCount: number;
   rate: number;
   verified: boolean;
+  whatsapp?: string;
+  system?: 'francophone' | 'anglophone' | 'both';
 };

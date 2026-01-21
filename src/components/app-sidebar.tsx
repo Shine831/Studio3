@@ -23,7 +23,6 @@ export function AppSidebar({ className }: { className?: string }) {
       tutors: 'Répétiteurs',
       studyPlan: 'Plan d\'étude',
       settings: 'Paramètres',
-      pro: 'Pro'
     },
     en: {
       dashboard: 'Dashboard',
@@ -31,7 +30,6 @@ export function AppSidebar({ className }: { className?: string }) {
       tutors: 'Tutors',
       studyPlan: 'Study Plan',
       settings: 'Settings',
-      pro: 'Pro'
     }
   };
 
@@ -41,7 +39,7 @@ export function AppSidebar({ className }: { className?: string }) {
     { href: '/dashboard', icon: Home, label: t.dashboard },
     { href: '/courses', icon: BookCopy, label: t.courses },
     { href: '/tutors', icon: Users, label: t.tutors },
-    { href: '/study-plan', icon: Target, label: t.studyPlan, badge: t.pro },
+    { href: '/study-plan', icon: Target, label: t.studyPlan },
     { href: '/settings', icon: Settings, label: t.settings },
   ];
 

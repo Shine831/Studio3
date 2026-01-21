@@ -139,6 +139,8 @@ export const tutors: Tutor[] = [
     reviewsCount: 120,
     rate: 25,
     verified: true,
+    whatsapp: '+237612345678',
+    system: 'francophone'
   },
   {
     id: 'tutor-002',
@@ -151,6 +153,8 @@ export const tutors: Tutor[] = [
     reviewsCount: 98,
     rate: 22,
     verified: true,
+    whatsapp: '+237612345679',
+    system: 'anglophone'
   },
   {
     id: 'tutor-003',
@@ -163,6 +167,8 @@ export const tutors: Tutor[] = [
     reviewsCount: 75,
     rate: 20,
     verified: false,
+    whatsapp: '+237612345680',
+    system: 'francophone'
   },
     {
     id: 'tutor-004',
@@ -175,5 +181,7 @@ export const tutors: Tutor[] = [
     reviewsCount: 210,
     rate: 30,
     verified: true,
+    whatsapp: '+237612345681',
+    system: 'both'
   },
 ];

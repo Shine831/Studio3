@@ -49,6 +49,20 @@
           "type": "string",
           "description": "Timestamp of the user's last login.",
           "format": "date-time"
+        },
+        "dateOfBirth": {
+            "type": "string",
+            "description": "User's date of birth.",
+            "format": "date"
+        },
+        "classLevel": {
+            "type": "string",
+            "description": "The class level of the student, specific to the Cameroonian system."
+        },
+        "system": {
+            "type": "string",
+            "description": "The educational system the user belongs to.",
+            "enum": ["francophone", "anglophone"]
         }
       },
       "required": [
@@ -343,6 +357,15 @@
           "type": "string",
           "description": "URL to the tutor's identification document.",
           "format": "uri"
+        },
+        "whatsapp": {
+            "type": "string",
+            "description": "Tutor's WhatsApp number for easy contact."
+        },
+        "system": {
+            "type": "string",
+            "description": "The educational system the tutor teaches in.",
+            "enum": ["francophone", "anglophone", "both"]
         }
       },
       "required": [
@@ -593,7 +616,8 @@
   "auth": {
     "providers": [
       "password",
-      "phone"
+      "phone",
+      "google.com"
     ]
   },
   "firestore": {

@@ -1,89 +1,79 @@
 'use client';
 
-import Link from 'next/link';
-import { ArrowUpRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Overview } from './components/overview';
-import { RecentActivityChart } from './components/recent-activity-chart';
+import { doc, DocumentData } from 'firebase/firestore';
+import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StudentDashboard } from './components/student-dashboard';
+import { TutorDashboard } from './components/tutor-dashboard';
 import { useLanguage } from '@/context/language-context';
 
+// Define a type for the user profile for better type safety
+interface UserProfile {
+  role?: 'student' | 'tutor' | 'admin';
+  // Add other profile fields as needed
+}
+
 export default function Dashboard() {
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const { language } = useLanguage();
 
   const content = {
     fr: {
-      dashboard: 'Tableau de bord',
-      recentActivity: 'Activité récente',
-      activityDescription: 'Votre temps d\'étude des 7 derniers jours.',
-      upcomingSessions: 'Prochaines sessions',
-      sessionsDescription: 'Vos prochaines sessions de tutorat.',
-      bookNow: 'Réserver maintenant',
-      noSessions: 'Aucune session à venir.',
-      bookFirstSession: 'Réservez une session avec un tuteur pour commencer.',
+      loading: 'Chargement du tableau de bord...',
+      notStudentOrTutor: 'Rôle utilisateur non défini. Impossible d\'afficher le tableau de bord.',
     },
     en: {
-      dashboard: 'Dashboard',
-      recentActivity: 'Recent Activity',
-      activityDescription: 'Your study time over the last 7 days.',
-      upcomingSessions: 'Upcoming Sessions',
-      sessionsDescription: 'Your next tutoring sessions.',
-      bookNow: 'Book Now',
-      noSessions: 'No upcoming sessions.',
-      bookFirstSession: 'Book a session with a tutor to get started.',
+      loading: 'Loading dashboard...',
+      notStudentOrTutor: 'User role not set. Cannot display dashboard.',
     }
   };
   const t = content[language];
 
-  return (
-    <div className="flex flex-1 flex-col gap-4">
-      <h1 className="text-3xl font-bold font-headline">{t.dashboard}</h1>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Overview />
+  // Memoize the document reference to prevent re-renders
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const {
+    data: userProfile,
+    isLoading: isProfileLoading,
+    error,
+  } = useDoc<UserProfile & DocumentData>(userProfileRef);
+
+  // Show a loading state while fetching user or profile data
+  if (isUserLoading || isProfileLoading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
+        </div>
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+          <Skeleton className="h-80 xl:col-span-2" />
+          <Skeleton className="h-80" />
+        </div>
       </div>
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <CardTitle>{t.recentActivity}</CardTitle>
-            <CardDescription>
-              {t.activityDescription}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <RecentActivityChart />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center">
-            <div className="grid gap-2">
-              <CardTitle>{t.upcomingSessions}</CardTitle>
-              <CardDescription>
-                {t.sessionsDescription}
-              </CardDescription>
-            </div>
-            <Button asChild size="sm" className="ml-auto gap-1">
-              <Link href="/tutors">
-                {t.bookNow}
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="flex flex-col items-center justify-center text-center p-4 h-full">
-                <p className="text-muted-foreground">{t.noSessions}</p>
-                <p className="text-sm text-muted-foreground">{t.bookFirstSession}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-       {/* "Continue Learning" section is removed to ensure a clean slate for new users, as requested.
-           It can be added back later when course progress data is available. */}
-    </div>
-  );
+    );
+  }
+  
+  if (error) {
+    console.error("Error fetching user profile:", error);
+  }
+
+
+  // Render the appropriate dashboard based on the user's role
+  if (userProfile?.role === 'tutor') {
+    return <TutorDashboard />;
+  }
+  
+  if (userProfile?.role === 'student' || userProfile?.role === 'admin' || !userProfile?.role) {
+    return <StudentDashboard />;
+  }
+
+  return <div>{t.notStudentOrTutor}</div>;
 }
