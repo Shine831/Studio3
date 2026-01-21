@@ -204,11 +204,9 @@ service cloud.firestore {
      * @deny (create) A non-admin user tries to create a new subject.
      * @principle Public read access for general content, with write access restricted to administrators to maintain quality.
      */
-    match /subjects/{subjectId}/{path=**} {
+    match /subjects/{path=**} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow write: if isAdmin();
     }
 
 
@@ -255,8 +253,8 @@ service cloud.firestore {
        * @principle The student owns their "follow" relationship. The tutor can read who follows them.
        */
        match /followers/{studentId} {
-          allow get: if isOwner(studentId) || isSubcollectionOfTutor(tutorId) || isAdmin();
-          allow list: if isSubcollectionOfTutor(tutorId) || isAdmin();
+          allow read: if isSubcollectionOfTutor(tutorId) || isAdmin();
+          allow get: if isOwner(studentId);
           allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
           allow delete: if isOwner(studentId);
           allow update: if false;
@@ -319,5 +317,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
