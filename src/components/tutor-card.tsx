@@ -11,10 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import type { Tutor } from '@/lib/types';
+import type { TutorProfile, WithId } from '@/lib/types';
 
 interface TutorCardProps {
-  tutor: Tutor;
+  tutor: WithId<TutorProfile>;
 }
 
 const getInitials = (name: string | null | undefined) => {
@@ -31,16 +31,17 @@ export function TutorCard({ tutor }: TutorCardProps) {
     <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg">
       <CardHeader className="flex flex-row items-center gap-4">
         <Avatar className="h-16 w-16">
+          <AvatarImage src={tutor.avatarUrl} />
           <AvatarFallback>{getInitials(tutor.name)}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <CardTitle className="text-lg font-headline flex items-center gap-2">
             {tutor.name}
-            {tutor.verified && <Verified className="h-5 w-5 text-primary" />}
+            {tutor.adminVerified && <Verified className="h-5 w-5 text-primary" />}
           </CardTitle>
           <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span>{tutor.rating}</span>
+            <span>{tutor.rating.toFixed(1)}</span>
             <span>({tutor.reviewsCount} reviews)</span>
           </div>
         </div>

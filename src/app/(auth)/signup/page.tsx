@@ -85,11 +85,14 @@ const createNewUserDocument = async (
         const tutorProfileData = {
             id: user.uid,
             userId: user.uid,
+            name: fullName,
+            avatarUrl: user.photoURL || null,
             subjects: [], // Tutors can add subjects later
             classes: classes || [],
             monthlyRate: monthlyRate || 0,
             availability: 'Non définie', // Default value
             rating: 0,
+            reviewsCount: 0,
             adminVerified: false,
             whatsapp: whatsapp,
             system: system,

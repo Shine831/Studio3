@@ -70,11 +70,14 @@ export interface UserProfile {
 export interface TutorProfile {
     id: string;
     userId: string;
+    name: string;
+    avatarUrl?: string;
     subjects: string[];
     classes: string[];
     monthlyRate: number;
     availability: string;
     rating: number;
+    reviewsCount: number;
     adminVerified: boolean;
     cvUrl?: string;
     identificationDocumentUrl?: string;

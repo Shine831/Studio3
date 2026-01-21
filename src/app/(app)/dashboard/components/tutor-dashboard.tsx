@@ -42,7 +42,7 @@ export function TutorDashboard() {
 
   const content = {
     fr: {
-      title: 'Tableau de bord du Répétiteur',
+      title: 'Tableau de bord',
       description: 'Gérez vos sessions, vos revenus et votre profil.',
       totalStudents: 'Total Élèves',
       avgRating: 'Note Moyenne',
@@ -62,7 +62,7 @@ export function TutorDashboard() {
       noFollowers: "Pas encore d'abonnés",
     },
     en: {
-      title: 'Tutor Dashboard',
+      title: 'Dashboard',
       description: 'Manage your sessions, earnings, and profile.',
       totalStudents: 'Total Students',
       avgRating: 'Average Rating',

@@ -2,7 +2,6 @@
 
 import { useParams } from 'next/navigation';
 import { Star, Verified, MessageSquare, MapPin, UserPlus, UserCheck } from 'lucide-react';
-import { tutors } from '@/lib/data'; // Using mock data for now
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import type { TutorRating, UserProfile } from '@/lib/types';
+import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -42,9 +41,10 @@ export default function TutorProfilePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const tutor = tutors.find((t) => t.id === tutorId);
-
   // --- Data Fetching ---
+  const tutorProfileRef = useMemoFirebase(() => (firestore ? doc(firestore, 'tutors', tutorId) : null), [firestore, tutorId]);
+  const { data: tutor, isLoading: isTutorLoading } = useDoc<TutorProfile>(tutorProfileRef);
+
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
   
@@ -160,6 +160,27 @@ export default function TutorProfilePage() {
   };
 
 
+  if (isTutorLoading) {
+    return (
+        <div className="container mx-auto max-w-4xl py-8">
+            <Card>
+                <CardHeader className="flex flex-col items-center gap-6 text-center md:flex-row md:text-left">
+                    <Skeleton className="h-32 w-32 rounded-full" />
+                    <div className="flex-1 space-y-3">
+                        <Skeleton className="h-8 w-64" />
+                        <Skeleton className="h-6 w-48" />
+                        <Skeleton className="h-7 w-32" />
+                    </div>
+                </CardHeader>
+                <CardContent className="mt-6 space-y-6 pt-6 border-t">
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
+
   if (!tutor) {
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -175,12 +196,13 @@ export default function TutorProfilePage() {
       <Card>
         <CardHeader className="flex flex-col items-center gap-6 text-center md:flex-row md:text-left">
           <Avatar className="h-32 w-32 border-4 border-primary">
+            <AvatarImage src={tutor.avatarUrl} />
             <AvatarFallback>{getInitials(tutor.name)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
             <CardTitle className="flex items-center justify-center gap-2 text-3xl font-headline md:justify-start">
               {tutor.name}
-              {tutor.verified && (
+              {tutor.adminVerified && (
                 <Verified
                   className="h-7 w-7 text-primary"
                   aria-label="Verified Tutor"
@@ -190,7 +212,7 @@ export default function TutorProfilePage() {
             <div className="flex items-center justify-center gap-4 text-lg text-muted-foreground md:justify-start">
                 <div className="flex items-center gap-1">
                     <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                    <span>{tutor.rating}</span>
+                    <span>{tutor.rating.toFixed(1)}</span>
                     <span>
                         ({tutor.reviewsCount} {t.reviews})
                     </span>
@@ -299,5 +321,3 @@ export default function TutorProfilePage() {
     </div>
   );
 }
-
-    

@@ -158,6 +158,8 @@ export default function SettingsPage() {
         const tutorDoc = await getDoc(tutorProfileRef);
         const tutorDataToUpdate: Partial<TutorProfile> = {
           userId: user.uid,
+          name: `${data.firstName} ${data.lastName}`,
+          avatarUrl: data.profilePicture,
           whatsapp: data.whatsapp,
           monthlyRate: data.monthlyRate,
           classes: data.classes?.split(',').map(c => c.trim()).filter(Boolean),
@@ -174,6 +176,7 @@ export default function SettingsPage() {
                 subjects: [],
                 availability: 'Non définie',
                 rating: 0,
+                reviewsCount: 0,
                 adminVerified: false,
              });
         }

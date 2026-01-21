@@ -25,7 +25,7 @@ export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardPr
 
   const content = {
     fr: {
-      dashboard: 'Tableau de bord de l\'élève',
+      dashboard: 'Tableau de bord',
       recentActivity: 'Activité récente',
       activityDescription: 'Vos quiz terminés des 7 derniers jours.',
       upcomingSessions: 'Prochaines sessions',
@@ -35,7 +35,7 @@ export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardPr
       bookFirstSession: 'Réservez une session avec un tuteur pour commencer.',
     },
     en: {
-      dashboard: 'Student Dashboard',
+      dashboard: 'Dashboard',
       recentActivity: 'Recent Activity',
       activityDescription: 'Your completed quizzes over the last 7 days.',
       upcomingSessions: 'Upcoming Sessions',
