@@ -212,8 +212,8 @@ export default function SchedulePage() {
                     <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
                     <p className="text-muted-foreground">{t.description}</p>
                 </div>
-                <div className="grid gap-8 md:grid-cols-3">
-                     <Card className="md:col-span-2">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                     <Card className="lg:col-span-2">
                         <CardContent className="p-0 sm:p-2">
                              <Calendar
                                 mode="single"

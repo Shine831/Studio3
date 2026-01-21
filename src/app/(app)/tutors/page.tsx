@@ -57,9 +57,9 @@ export default function TutorsPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex w-full flex-col items-stretch gap-4 sm:w-auto sm:flex-row sm:items-center">
           <div className="flex items-center space-x-2">
             <Switch
               id="verified-only"
@@ -69,7 +69,7 @@ export default function TutorsPage() {
             <Label htmlFor="verified-only">{t.verifiedOnly}</Label>
           </div>
           <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-            <SelectTrigger className="w-[180px] bg-card">
+            <SelectTrigger className="w-full sm:w-[220px] bg-card">
               <SelectValue placeholder={t.filterSubject} />
             </SelectTrigger>
             <SelectContent>
