@@ -65,10 +65,22 @@ export interface UserProfile {
   city: string;
   aiCredits: number;
   lastCreditRenewal?: any; // Firestore Timestamp
-  // Tutor-specific fields that might exist on the doc
-  whatsapp?: string;
-  classes?: string[];
-  monthlyRate?: number;
+}
+
+export interface TutorProfile {
+    id: string;
+    userId: string;
+    subjects: string[];
+    classes: string[];
+    monthlyRate: number;
+    availability: string;
+    rating: number;
+    adminVerified: boolean;
+    cvUrl?: string;
+    identificationDocumentUrl?: string;
+    whatsapp?: string;
+    system?: 'francophone' | 'anglophone' | 'both';
+    city: string;
 }
 
 export interface QuizResult {
@@ -86,16 +98,16 @@ export interface TutorRating {
   id: string; // studentUID
   tutorId: string;
   studentId: string;
+  studentName?: string;
   rating: number;
   comment?: string;
   createdAt: any; // Firestore Timestamp
 }
 
 export interface FollowerRecord {
+    id?: string; // The doc ID is the student's UID
     studentId: string;
     studentName: string;
     studentAvatar?: string;
     followedAt: any; // Firestore Timestamp
 }
-
-    

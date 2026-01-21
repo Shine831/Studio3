@@ -61,7 +61,8 @@ const createNewUserDocument = async (
   if (!docSnap.exists()) {
       const [firstName, ...lastNameParts] = (user.displayName || fullName || '').split(' ');
       const lastName = lastNameParts.join(' ');
-      const userData: { [key: string]: any } = {
+      
+      const userProfileData: { [key: string]: any } = {
           id: user.uid,
           email: user.email,
           firstName: firstName || '',
@@ -77,13 +78,26 @@ const createNewUserDocument = async (
           lastCreditRenewal: serverTimestamp(), // Set initial renewal date
       };
       
+      await setDoc(userRef, userProfileData);
+
       if (role === 'tutor') {
-        userData.whatsapp = whatsapp;
-        userData.classes = classes || [];
-        userData.monthlyRate = monthlyRate || 0;
+        const tutorRef = doc(firestore, 'tutors', user.uid);
+        const tutorProfileData = {
+            id: user.uid,
+            userId: user.uid,
+            subjects: [], // Tutors can add subjects later
+            classes: classes || [],
+            monthlyRate: monthlyRate || 0,
+            availability: 'Non définie', // Default value
+            rating: 0,
+            adminVerified: false,
+            whatsapp: whatsapp,
+            system: system,
+            city: city,
+        };
+        await setDoc(tutorRef, tutorProfileData);
       }
 
-      await setDoc(userRef, userData);
 
       // Add a welcome notification
       const notificationsCollectionRef = collection(firestore, 'users', user.uid, 'notifications');
@@ -571,5 +585,3 @@ export default function SignupPage() {
     </>
   );
 }
-
-    

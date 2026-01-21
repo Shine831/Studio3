@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 
 import {
   useFirestore,
@@ -38,7 +38,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { cameroonCities } from '@/lib/cameroon-cities';
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, TutorProfile } from '@/lib/types';
 import { Camera } from 'lucide-react';
 
 const profileFormSchema = z.object({
@@ -79,8 +79,13 @@ export default function SettingsPage() {
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );
-
   const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userProfileRef);
+  
+  const tutorProfileRef = useMemoFirebase(
+    () => (user && userProfile?.role === 'tutor' ? doc(firestore, 'tutors', user.uid) : null),
+    [firestore, user, userProfile?.role]
+  );
+  const { data: tutorProfile, isLoading: isTutorProfileLoading } = useDoc<TutorProfile>(tutorProfileRef);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -100,20 +105,25 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (userProfile) {
-      form.reset({
+      const defaultVals: Partial<ProfileFormValues> = {
         firstName: userProfile.firstName || '',
         lastName: userProfile.lastName || '',
         email: userProfile.email || '',
         system: userProfile.system,
         city: userProfile.city || '',
-        whatsapp: userProfile.whatsapp || '',
-        classes: Array.isArray(userProfile.classes) ? userProfile.classes.join(', ') : '',
-        monthlyRate: userProfile.monthlyRate || 0,
         profilePicture: userProfile.profilePicture || '',
-      });
-       setPreview(userProfile.profilePicture || null);
+      };
+
+      if (userProfile.role === 'tutor' && tutorProfile) {
+        defaultVals.whatsapp = tutorProfile.whatsapp || '';
+        defaultVals.classes = Array.isArray(tutorProfile.classes) ? tutorProfile.classes.join(', ') : '';
+        defaultVals.monthlyRate = tutorProfile.monthlyRate || 0;
+      }
+      
+      form.reset(defaultVals);
+      setPreview(userProfile.profilePicture || null);
     }
-  }, [userProfile, form, form.reset]);
+  }, [userProfile, tutorProfile, form]);
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -130,10 +140,9 @@ export default function SettingsPage() {
 
 
   async function onSubmit(data: ProfileFormValues) {
-    if (!userProfileRef) return;
+    if (!userProfileRef || !user) return;
     
-    // Create a clean data object to save, excluding fields that shouldn't be there
-    const dataToSave: Partial<UserProfile> = {
+    const userProfileData: Partial<UserProfile> = {
         firstName: data.firstName,
         lastName: data.lastName,
         system: data.system,
@@ -141,21 +150,25 @@ export default function SettingsPage() {
         profilePicture: data.profilePicture
     };
 
-    if (userProfile?.role === 'tutor') {
-        dataToSave.whatsapp = data.whatsapp;
-        dataToSave.monthlyRate = data.monthlyRate;
-        if(data.classes){
-            dataToSave.classes = data.classes.split(',').map(c => c.trim()).filter(Boolean);
-        }
-    }
-
     try {
-      await setDoc(userProfileRef, dataToSave, { merge: true });
+      await updateDoc(userProfileRef, userProfileData);
+
+      if (userProfile?.role === 'tutor' && tutorProfileRef) {
+        const tutorDataToUpdate: Partial<TutorProfile> = {
+          whatsapp: data.whatsapp,
+          monthlyRate: data.monthlyRate,
+          classes: data.classes?.split(',').map(c => c.trim()).filter(Boolean),
+          city: data.city,
+          system: data.system as 'francophone' | 'anglophone' | undefined,
+        };
+         await updateDoc(tutorProfileRef, tutorDataToUpdate);
+      }
+
       toast({
         title: content[language].updateSuccessTitle,
         description: content[language].updateSuccessDesc,
       });
-      form.reset(data); // Resets the form's dirty state
+      form.reset(data); // Resets the form's dirty state to prevent multiple submissions
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
@@ -219,7 +232,7 @@ export default function SettingsPage() {
 
   const t = content[language];
 
-  if (isProfileLoading) {
+  if (isProfileLoading || isTutorProfileLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-1/4" />
@@ -415,5 +428,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
