@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -79,15 +79,18 @@ export default function StudyPlanPage() {
     defaultValues: {
       subject: '',
       learningGoals: '',
-      gradeLevel: userProfile?.classLevel || '',
-    },
-    values: { // Use values to update form when profile loads
-      subject: form.watch('subject'),
-      learningGoals: form.watch('learningGoals'),
-      gradeLevel: userProfile?.classLevel || '',
+      gradeLevel: '',
     },
     mode: 'onChange',
   });
+
+  useEffect(() => {
+    // When the user profile is loaded, set the grade level in the form.
+    // The form field will then be pre-filled for the user.
+    if (userProfile?.classLevel) {
+      form.setValue('gradeLevel', userProfile.classLevel);
+    }
+  }, [userProfile, form]);
 
   const availableClasses = userProfile?.system === 'anglophone' ? anglophoneClasses : francophoneClasses;
 
