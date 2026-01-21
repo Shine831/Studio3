@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   createUserWithEmailAndPassword,
   updateProfile,
@@ -28,9 +28,10 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal } from 'lucide-react';
-import { useFirebase } from '@/firebase';
+import { useFirebase, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { francophoneClasses, anglophoneClasses } from '@/lib/cameroon-education';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const createNewUserDocument = async (
   firestore: Firestore,
@@ -93,7 +94,8 @@ export default function SignupPage() {
   const [whatsapp, setWhatsapp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { auth, firestore, isUserLoading } = useFirebase();
+  const { user, isUserLoading: isAuthLoading } = useUser();
+  const { auth, firestore, isUserLoading: isFirebaseLoading } = useFirebase();
   const { language } = useLanguage();
 
   const content = {
@@ -183,6 +185,12 @@ export default function SignupPage() {
 
   const t = content[language];
 
+  useEffect(() => {
+    if (!isAuthLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isAuthLoading, router]);
+
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -257,7 +265,26 @@ export default function SignupPage() {
     }
   };
 
-  const isDisabled = loading || isUserLoading;
+  const isDisabled = loading || isAuthLoading || isFirebaseLoading;
+
+  if (isAuthLoading || user) {
+    return (
+        <div className="flex flex-col space-y-4 text-center">
+            <Skeleton className="h-8 w-48 self-center" />
+            <Skeleton className="h-4 w-full" />
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full"/>
+                        <Skeleton className="h-10 w-full"/>
+                        <Skeleton className="h-10 w-full"/>
+                        <Skeleton className="h-10 w-full"/>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   return (
     <>
