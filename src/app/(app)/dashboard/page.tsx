@@ -22,10 +22,12 @@ export default function Dashboard() {
     fr: {
       loading: 'Chargement du tableau de bord...',
       notStudentOrTutor: 'Rôle utilisateur non défini. Impossible d\'afficher le tableau de bord.',
+      errorLoading: 'Impossible de charger le profil utilisateur.',
     },
     en: {
       loading: 'Loading dashboard...',
       notStudentOrTutor: 'User role not set. Cannot display dashboard.',
+      errorLoading: 'Failed to load user profile.',
     }
   };
   const t = content[language];
@@ -63,17 +65,26 @@ export default function Dashboard() {
   
   if (error) {
     console.error("Error fetching user profile:", error);
+    return (
+        <div className="flex flex-col items-center justify-center h-full">
+            <p className="text-destructive">{t.errorLoading}</p>
+        </div>
+    )
   }
 
 
   // Render the appropriate dashboard based on the user's role
-  if (userProfile?.role === 'tutor') {
-    return <TutorDashboard />;
-  }
-  
-  if (userProfile?.role === 'student' || userProfile?.role === 'admin' || !userProfile?.role) {
-    return <StudentDashboard />;
-  }
+  switch (userProfile?.role) {
+    case 'tutor':
+      return <TutorDashboard />;
+    
+    case 'student':
+    case 'admin':
+      return <StudentDashboard />;
 
-  return <div>{t.notStudentOrTutor}</div>;
+    default:
+      // This handles cases where `userProfile` is null, or `role` is not set.
+      // This defaults to the student dashboard as a safe fallback for new users.
+      return <StudentDashboard />;
+  }
 }
