@@ -9,7 +9,7 @@ import {
   signInWithPopup,
   User,
 } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, Firestore } from 'firebase/firestore'; // Import Firestore type
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -21,7 +21,15 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { auth, firestore } from '@/firebase';
+import { useFirebase } from '@/firebase'; // Use the hook
+
+// Helper function now accepts firestore instance
+const updateUserLoginTimestamp = (firestore: Firestore, user: User | null) => {
+    if (!user) return;
+    const userRef = doc(firestore, 'users', user.uid);
+    setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true })
+        .catch(error => console.error("Error updating login timestamp:", error));
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,13 +38,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const updateUserLoginTimestamp = (user: User | null) => {
-      if (!user) return;
-      const userRef = doc(firestore, 'users', user.uid);
-      setDoc(userRef, { lastLoginAt: serverTimestamp() }, { merge: true })
-          .catch(error => console.error("Error updating login timestamp:", error));
-  }
+  const { auth, firestore, isUserLoading } = useFirebase(); // Get instances from context
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +50,7 @@ export default function LoginPage() {
     setError(null);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      updateUserLoginTimestamp(userCredential.user);
+      updateUserLoginTimestamp(firestore, userCredential.user);
       toast({
         title: 'Login Successful',
         description: "Welcome back!",
@@ -56,7 +58,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err: any) {
       console.error("Email/Password login error:", err);
-      let friendlyMessage = "An unexpected error occurred. Please try again.";
+      let friendlyMessage = err.message || "An unexpected error occurred. Please try again.";
       
       if (err.code) {
         switch (err.code) {
@@ -68,8 +70,9 @@ export default function LoginPage() {
             case 'auth/too-many-requests':
               friendlyMessage = "Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.";
               break;
-            default:
-              friendlyMessage = err.message;
+            case 'auth/configuration-not-found':
+              friendlyMessage = "Firebase configuration is missing. The app is not properly connected to Firebase.";
+              break;
         }
       }
       
@@ -90,7 +93,9 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      updateUserLoginTimestamp(result.user);
+      // The creation/update of user doc should happen here as well for Google sign in
+      updateUserLoginTimestamp(firestore, result.user);
+
        toast({
         title: 'Login Successful',
         description: "Welcome back!",
@@ -98,7 +103,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err: any) {
       console.error("Google Login Error:", err);
-      let friendlyMessage = "An unexpected error occurred during Google sign-in.";
+      let friendlyMessage = err.message || "An unexpected error occurred during Google sign-in.";
       
       if (err.code) {
         switch (err.code) {
@@ -108,8 +113,9 @@ export default function LoginPage() {
             case 'auth/account-exists-with-different-credential':
               friendlyMessage = 'An account already exists with the same email address but different sign-in credentials. Please sign in using the original method.';
               break;
-             default:
-                friendlyMessage = err.message;
+            case 'auth/configuration-not-found':
+              friendlyMessage = "Firebase configuration is missing. The app is not properly connected to Firebase.";
+              break;
         }
       }
 
@@ -123,6 +129,8 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+  
+  const isDisabled = loading || isUserLoading;
 
   return (
     <>
@@ -158,7 +166,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
+                  disabled={isDisabled}
                 />
               </div>
               <div className="grid gap-2">
@@ -177,18 +185,18 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
+                  disabled={isDisabled}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Logging in...' : 'Login'}
+              <Button type="submit" className="w-full" disabled={isDisabled}>
+                {isDisabled ? 'Initializing...' : 'Login'}
               </Button>
               <Button
                 variant="outline"
                 type="button"
                 className="w-full"
                 onClick={handleGoogleLogin}
-                disabled={loading}
+                disabled={isDisabled}
               >
                 <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
                   <path
@@ -196,7 +204,7 @@ export default function LoginPage() {
                     d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.62 1.9-5.62 1.9-4.76 0-8.64-3.89-8.64-8.64s3.88-8.64 8.64-8.64c2.69 0 4.35 1.05 5.33 1.95l2.62-2.62C19.03 1.18 16.25 0 12.48 0 5.6 0 0 5.6 0 12.48s5.6 12.48 12.48 12.48c7.34 0 12.07-4.82 12.07-12.07 0-.82-.07-1.55-.2-2.28H12.48z"
                   ></path>
                 </svg>
-                Login with Google
+                {isDisabled ? 'Initializing...' : 'Login with Google'}
               </Button>
             </div>
           </form>

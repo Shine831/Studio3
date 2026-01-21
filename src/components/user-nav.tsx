@@ -25,7 +25,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUser, auth } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -33,10 +33,12 @@ import { useToast } from '@/hooks/use-toast';
 export function UserNav() {
   const { setTheme } = useTheme();
   const { user } = useUser();
+  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
     toast({
       title: 'Logged Out',
