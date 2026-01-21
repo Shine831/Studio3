@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 
 import {
   useFirestore,
@@ -38,7 +38,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { cameroonCities } from '@/lib/cameroon-cities';
-import type { UserProfile, TutorProfile } from '@/lib/types';
+import type { UserProfile, TutorProfile, WithId } from '@/lib/types';
 import { Camera } from 'lucide-react';
 
 const profileFormSchema = z.object({
@@ -85,7 +85,7 @@ export default function SettingsPage() {
     () => (user && userProfile?.role === 'tutor' ? doc(firestore, 'tutors', user.uid) : null),
     [firestore, user, userProfile?.role]
   );
-  const { data: tutorProfile, isLoading: isTutorProfileLoading } = useDoc<TutorProfile>(tutorProfileRef);
+  const { data: tutorProfile, isLoading: isTutorProfileLoading } = useDoc<WithId<TutorProfile>>(tutorProfileRef);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -114,10 +114,10 @@ export default function SettingsPage() {
         profilePicture: userProfile.profilePicture || '',
       };
 
-      if (userProfile.role === 'tutor' && tutorProfile) {
-        defaultVals.whatsapp = tutorProfile.whatsapp || '';
-        defaultVals.classes = Array.isArray(tutorProfile.classes) ? tutorProfile.classes.join(', ') : '';
-        defaultVals.monthlyRate = tutorProfile.monthlyRate || 0;
+      if (userProfile.role === 'tutor') {
+        defaultVals.whatsapp = tutorProfile?.whatsapp || '';
+        defaultVals.classes = Array.isArray(tutorProfile?.classes) ? tutorProfile.classes.join(', ') : '';
+        defaultVals.monthlyRate = tutorProfile?.monthlyRate || 0;
       }
       
       form.reset(defaultVals);
@@ -154,21 +154,55 @@ export default function SettingsPage() {
       await updateDoc(userProfileRef, userProfileData);
 
       if (userProfile?.role === 'tutor' && tutorProfileRef) {
+         // Check if tutor profile exists, if not, create it
+        const tutorDoc = await getDoc(tutorProfileRef);
         const tutorDataToUpdate: Partial<TutorProfile> = {
+          userId: user.uid,
           whatsapp: data.whatsapp,
           monthlyRate: data.monthlyRate,
           classes: data.classes?.split(',').map(c => c.trim()).filter(Boolean),
           city: data.city,
-          system: data.system as 'francophone' | 'anglophone' | undefined,
+          system: data.system as 'francophone' | 'anglophone' | 'both' | undefined,
         };
-         await updateDoc(tutorProfileRef, tutorDataToUpdate);
+        
+        if (tutorDoc.exists()) {
+             await updateDoc(tutorProfileRef, tutorDataToUpdate);
+        } else {
+             await setDoc(tutorProfileRef, {
+                ...tutorDataToUpdate,
+                id: user.uid,
+                subjects: [],
+                availability: 'Non définie',
+                rating: 0,
+                adminVerified: false,
+             });
+        }
       }
 
       toast({
         title: content[language].updateSuccessTitle,
         description: content[language].updateSuccessDesc,
       });
-      form.reset(data); // Resets the form's dirty state to prevent multiple submissions
+
+      // Refetch data to reset form state with fresh data
+       const updatedUser = await getDoc(userProfileRef);
+       const updatedTutor = userProfile?.role === 'tutor' && tutorProfileRef ? await getDoc(tutorProfileRef) : null;
+       
+       const newDefaultVals: Partial<ProfileFormValues> = {
+         firstName: updatedUser.data()?.firstName || '',
+         lastName: updatedUser.data()?.lastName || '',
+         email: updatedUser.data()?.email || '',
+         system: updatedUser.data()?.system,
+         city: updatedUser.data()?.city || '',
+         profilePicture: updatedUser.data()?.profilePicture || '',
+       };
+       if (userProfile?.role === 'tutor' && updatedTutor?.exists()) {
+         newDefaultVals.whatsapp = updatedTutor.data()?.whatsapp || '';
+         newDefaultVals.classes = Array.isArray(updatedTutor.data()?.classes) ? updatedTutor.data()?.classes.join(', ') : '';
+         newDefaultVals.monthlyRate = updatedTutor.data()?.monthlyRate || 0;
+       }
+
+      form.reset(newDefaultVals); 
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
@@ -232,7 +266,7 @@ export default function SettingsPage() {
 
   const t = content[language];
 
-  if (isProfileLoading || isTutorProfileLoading) {
+  if (isProfileLoading || (userProfile?.role === 'tutor' && isTutorProfileLoading)) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-1/4" />
