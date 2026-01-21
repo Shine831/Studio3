@@ -115,6 +115,13 @@ export interface FollowerRecord {
     followedAt: any; // Firestore Timestamp
 }
 
+export interface FollowingRecord {
+    tutorId: string;
+    tutorName: string;
+    tutorAvatar?: string;
+    followedAt: any; // Firestore Timestamp
+}
+
 export interface Booking {
   id: string;
   studentId: string;

@@ -443,6 +443,31 @@
       },
       "required": [ "studentId", "followedAt" ]
     },
+    "FollowingRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FollowingRecord",
+      "type": "object",
+      "description": "Represents a tutor that a student is following.",
+      "properties": {
+        "tutorId": {
+          "type": "string"
+        },
+        "tutorName": {
+          "type": "string"
+        },
+        "tutorAvatar": {
+          "type": "string"
+        },
+        "followedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "tutorId",
+        "followedAt"
+      ]
+    },
     "Booking": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Booking",
@@ -922,6 +947,26 @@
             {
               "name": "studentId",
               "description": "The unique identifier of the student who is following."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/following/{tutorId}",
+        "definition": {
+          "entityName": "FollowingRecord",
+          "schema": {
+            "$ref": "#/backend/entities/FollowingRecord"
+          },
+          "description": "Stores a record of a tutor a student is following, enabling efficient lookups.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The student's UID."
+            },
+            {
+              "name": "tutorId",
+              "description": "The UID of the tutor being followed."
             }
           ]
         }

@@ -125,8 +125,17 @@ service cloud.firestore {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc();
+      allow update: if isOwner(userId) || isAdmin(); // Allow owner to update their own profile.
       allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
+
+      /**
+       * @description Manages a user's private list of tutors they follow.
+       * @path /users/{userId}/following/{tutorId}
+       * @principle Path-based ownership for user subcollections.
+       */
+      match /following/{tutorId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     /**
@@ -296,3 +305,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

@@ -17,12 +17,6 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -42,7 +36,6 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
             dialogTitle: "Planifier une session pour",
             subjectLabel: "Matière",
             dateLabel: "Date",
-            datePlaceholder: "Choisissez une date",
             startTimeLabel: "Heure de début",
             endTimeLabel: "Heure de fin",
             notesLabel: "Notes (optionnel)",
@@ -63,7 +56,6 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
             dialogTitle: "Schedule a Session for",
             subjectLabel: "Subject",
             dateLabel: "Date",
-            datePlaceholder: "Pick a date",
             startTimeLabel: "Start Time",
             endTimeLabel: "End Time",
             notesLabel: "Notes (optional)",
@@ -83,10 +75,10 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
     }[language];
 
      const bookingFormSchema = z.object({
-        subject: z.string().min(2, t.formErrors.subjectRequired),
-        date: z.date({ required_error: t.formErrors.dateRequired }),
-        startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, t.formErrors.invalidTime),
-        endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, t.formErrors.invalidTime),
+        subject: z.string().min(2, { message: t.formErrors.subjectRequired }),
+        date: z.string().min(1, { message: t.formErrors.dateRequired }),
+        startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: t.formErrors.invalidTime }),
+        endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: t.formErrors.invalidTime }),
         notes: z.string().optional(),
     }).refine(data => {
         if (!data.startTime || !data.endTime) return true;
@@ -98,7 +90,7 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
     
     const form = useForm<z.infer<typeof bookingFormSchema>>({
         resolver: zodResolver(bookingFormSchema),
-        defaultValues: { subject: '', startTime: '', endTime: '', notes: '' },
+        defaultValues: { subject: '', date: '', startTime: '', endTime: '', notes: '' },
     });
 
     async function onSubmit(data: z.infer<typeof bookingFormSchema>) {
@@ -107,12 +99,14 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
         try {
             const [startHour, startMinute] = data.startTime.split(':').map(Number);
             const [endHour, endMinute] = data.endTime.split(':').map(Number);
+            
+            // Combine date string and time string for robust Date object creation
+            const startDate = new Date(`${data.date}T${data.startTime}`);
+            const endDate = new Date(`${data.date}T${data.endTime}`);
 
-            const startDate = new Date(data.date);
-            startDate.setHours(startHour, startMinute);
-
-            const endDate = new Date(data.date);
-            endDate.setHours(endHour, endMinute);
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                throw new Error("Invalid date or time value");
+            }
 
             const newBooking: Omit<Booking, 'id'> = {
                 studentId: student.id,
@@ -164,38 +158,10 @@ function ScheduleSessionDialog({ student, language, user, firestore }: { student
                             control={form.control}
                             name="date"
                             render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                <FormLabel>{t.dateLabel}</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                            variant={"outline"}
-                                            className={cn(
-                                                "w-full pl-3 text-left font-normal",
-                                                !field.value && "text-muted-foreground"
-                                            )}
-                                            >
-                                            {field.value ? (
-                                                format(field.value, "PPP")
-                                            ) : (
-                                                <span>{t.datePlaceholder}</span>
-                                            )}
-                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            mode="single"
-                                            selected={field.value}
-                                            onSelect={field.onChange}
-                                            disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
+                                <FormItem>
+                                    <FormLabel>{t.dateLabel}</FormLabel>
+                                    <FormControl><Input type="date" {...field} /></FormControl>
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
@@ -364,3 +330,5 @@ export default function MyStudentsPage() {
         </RoleGuard>
     );
 }
+
+    

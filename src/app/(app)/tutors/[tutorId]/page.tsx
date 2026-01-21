@@ -16,7 +16,7 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,10 +54,18 @@ export default function TutorProfilePage() {
   }, [firestore, user?.uid, tutorId]);
   const { data: userRating, isLoading: isRatingLoading } = useDoc<TutorRating>(userRatingRef);
 
+  // This ref points to the /tutors/{tutorId}/followers/{studentId} document
   const followerRef = useMemoFirebase(() => {
     if(!firestore || !user?.uid || !tutorId) return null;
     return doc(firestore, 'tutors', tutorId, 'followers', user.uid);
   }, [firestore, user?.uid, tutorId]);
+
+  // This ref points to the /users/{studentId}/following/{tutorId} document
+  const followingRef = useMemoFirebase(() => {
+    if(!firestore || !user?.uid || !tutorId) return null;
+    return doc(firestore, 'users', user.uid, 'following', tutorId);
+  }, [firestore, user?.uid, tutorId]);
+
   const { data: followerDoc, isLoading: isFollowerLoading } = useDoc(followerRef);
 
   const hasRated = !!userRating;
@@ -88,6 +96,7 @@ export default function TutorProfilePage() {
       follow: 'Suivre',
       unfollow: 'Ne plus suivre',
       following: 'Suivi',
+      newFollowerNotif: `vous suit maintenant.`
     },
     en: {
       tutorNotFound: 'Tutor not found',
@@ -111,21 +120,49 @@ export default function TutorProfilePage() {
       follow: 'Follow',
       unfollow: 'Unfollow',
       following: 'Following',
+      newFollowerNotif: `is now following you.`
     },
   };
   const t = content[language];
   
   // --- Handlers ---
   const handleFollowToggle = async () => {
-    if (!followerRef || !user || !userProfile) return;
+    if (!followerRef || !followingRef || !user || !userProfile || !tutor || !firestore) return;
+    
     if (isFollowing) {
+        // Unfollow action
         await deleteDoc(followerRef);
+        await deleteDoc(followingRef);
     } else {
+        // Follow action
+        const now = serverTimestamp();
+        
+        // Create record in tutor's followers list
         await setDoc(followerRef, {
             studentId: user.uid,
             studentName: userProfile.firstName + ' ' + userProfile.lastName,
             studentAvatar: userProfile.profilePicture || null,
-            followedAt: serverTimestamp(),
+            followedAt: now,
+        });
+
+        // Create record in student's following list (for their dashboard)
+        await setDoc(followingRef, {
+            tutorId: tutor.id,
+            tutorName: tutor.name,
+            tutorAvatar: tutor.avatarUrl || null,
+            followedAt: now,
+        });
+
+        // Send notification to the tutor
+        const tutorNotificationsRef = collection(firestore, 'users', tutorId, 'notifications');
+        const studentName = userProfile.firstName + ' ' + userProfile.lastName;
+        await addDoc(tutorNotificationsRef, {
+            userId: tutorId,
+            type: 'new_follower',
+            messageFr: `${studentName} ${t.newFollowerNotif}`,
+            messageEn: `${studentName} ${t.newFollowerNotif}`,
+            sentAt: now,
+            targetURL: '/students' // Link to the 'My Students' page
         });
     }
   }
@@ -321,3 +358,5 @@ export default function TutorProfilePage() {
     </div>
   );
 }
+
+    
