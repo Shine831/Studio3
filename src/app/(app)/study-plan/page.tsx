@@ -104,7 +104,6 @@ export default function StudyPlanPage() {
         generateButton: "Générer mon Plan",
         generating: "Génération en cours...",
         generatedPlanTitle: "Votre Plan d'Étude",
-        exploreCourses: "Explorer les cours",
         minutes: "minutes",
         generationError: "Une erreur est survenue lors de la génération du plan. Veuillez réessayer.",
         noPlanGenerated: "Impossible de générer un plan pour ce sujet. Veuillez essayer une autre matière.",
@@ -121,7 +120,6 @@ export default function StudyPlanPage() {
         generateButton: "Generate My Plan",
         generating: "Generating...",
         generatedPlanTitle: "Your Study Plan",
-        exploreCourses: "Explore Courses",
         minutes: "minutes",
         generationError: "An error occurred while generating the plan. Please try again.",
         noPlanGenerated: "Could not generate a plan for this topic. Please try another subject.",
@@ -174,14 +172,11 @@ export default function StudyPlanPage() {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
-                                <div className="flex items-center justify-between p-4 rounded-md">
+                                <div className="flex items-center justify-start p-4 rounded-md">
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <Clock className="h-4 w-4" />
                                         <span>{item.duration} {t.minutes}</span>
                                     </div>
-                                    <Button asChild>
-                                      <Link href="/courses">{t.exploreCourses}</Link>
-                                    </Button>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>

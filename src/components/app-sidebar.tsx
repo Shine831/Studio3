@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import {
-  BookCopy,
   Home,
   Settings,
   Target,
@@ -19,14 +18,12 @@ export function AppSidebar({ className }: { className?: string }) {
   const content = {
     fr: {
       dashboard: 'Tableau de bord',
-      courses: 'Cours',
       tutors: 'Répétiteurs',
       studyPlan: 'Plan d\'étude',
       settings: 'Paramètres',
     },
     en: {
       dashboard: 'Dashboard',
-      courses: 'Courses',
       tutors: 'Tutors',
       studyPlan: 'Study Plan',
       settings: 'Settings',
@@ -37,7 +34,6 @@ export function AppSidebar({ className }: { className?: string }) {
 
   const navItems = [
     { href: '/dashboard', icon: Home, label: t.dashboard },
-    { href: '/courses', icon: BookCopy, label: t.courses },
     { href: '/tutors', icon: Users, label: t.tutors },
     { href: '/study-plan', icon: Target, label: t.studyPlan },
     { href: '/settings', icon: Settings, label: t.settings },

@@ -59,6 +59,10 @@
             "type": "string",
             "description": "The educational system the user belongs to.",
             "enum": ["francophone", "anglophone"]
+        },
+        "classLevel": {
+            "type": "string",
+            "description": "Student's current class level (e.g., 'Terminale A', 'Form 5')."
         }
       },
       "required": [
@@ -311,6 +315,13 @@
             "type": "string"
           }
         },
+        "classes": {
+            "type": "array",
+            "description": "Classes the tutor is qualified to teach.",
+            "items": {
+                "type": "string"
+            }
+        },
         "hourlyRate": {
           "type": "number",
           "description": "Hourly rate charged by the tutor."
@@ -351,6 +362,7 @@
         "id",
         "userId",
         "subjects",
+        "classes",
         "hourlyRate",
         "availability"
       ]

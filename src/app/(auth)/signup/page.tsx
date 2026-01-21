@@ -31,6 +31,7 @@ import { Terminal } from 'lucide-react';
 import { useFirebase, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 
 const createNewUserDocument = async (
   firestore: Firestore,
@@ -40,11 +41,13 @@ const createNewUserDocument = async (
     role,
     system,
     whatsapp,
+    classes,
   }: {
     fullName: string;
     role: 'student' | 'tutor';
     system: 'francophone' | 'anglophone';
     whatsapp?: string;
+    classes?: string[];
   }
 ) => {
   const userRef = doc(firestore, 'users', user.uid);
@@ -68,6 +71,7 @@ const createNewUserDocument = async (
       
       if (role === 'tutor') {
         userData.whatsapp = whatsapp;
+        userData.classes = classes || [];
       }
 
       await setDoc(userRef, userData);
@@ -85,6 +89,7 @@ export default function SignupPage() {
   const [role, setRole] = useState<'student' | 'tutor'>('student');
   const [system, setSystem] = useState<'francophone' | 'anglophone' | ''>('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [classes, setClasses] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -108,6 +113,9 @@ export default function SignupPage() {
       anglophone: 'Anglophone',
       whatsappLabel: 'Numéro WhatsApp',
       whatsappPlaceholder: '+237 6XX XXX XXX',
+      classesLabel: 'Classes Enseignées',
+      classesPlaceholder: 'Ex: 6ème, Seconde A, Terminale C',
+      classesDescription: 'Séparez les classes par une virgule.',
       createAccountButton: 'Créer un compte',
       initializing: 'Initialisation...',
       alreadyHaveAccount: 'Vous avez déjà un compte ?',
@@ -119,9 +127,10 @@ export default function SignupPage() {
       accountCreatedTitle: 'Compte créé',
       accountCreatedDesc: 'Bienvenue ! Votre inscription est terminée.',
       signupFailedTitle: 'Échec de l\'inscription',
-      errorFillFields: 'Veuillez remplir tous les champs.',
+      errorFillFields: 'Veuillez remplir tous les champs obligatoires.',
       errorSelectSystem: 'Veuillez sélectionner un système éducatif.',
       errorWhatsapp: 'Veuillez entrer un numéro WhatsApp.',
+      errorClasses: 'Veuillez renseigner les classes que vous enseignez.',
       errorPasswordLength: 'Le mot de passe doit contenir au moins 6 caractères.',
       errorEmailInUse: 'Cette adresse email est déjà utilisée par un autre compte.',
       errorWeakPassword: 'Le mot de passe est trop faible. Veuillez utiliser un mot de passe plus fort.',
@@ -146,6 +155,9 @@ export default function SignupPage() {
       anglophone: 'Anglophone',
       whatsappLabel: 'WhatsApp Number',
       whatsappPlaceholder: '+237 6XX XXX XXX',
+      classesLabel: 'Classes Taught',
+      classesPlaceholder: 'E.g., Form 1, Form 5, Lower Sixth',
+      classesDescription: 'Separate classes with a comma.',
       createAccountButton: 'Create account',
       initializing: 'Initializing...',
       alreadyHaveAccount: 'Already have an account?',
@@ -157,9 +169,10 @@ export default function SignupPage() {
       accountCreatedTitle: 'Account Created',
       accountCreatedDesc: "Welcome! You're now signed up.",
       signupFailedTitle: 'Signup Failed',
-      errorFillFields: 'Please fill in all fields.',
+      errorFillFields: 'Please fill in all required fields.',
       errorSelectSystem: 'Please select an educational system.',
       errorWhatsapp: 'Please enter a WhatsApp number.',
+      errorClasses: 'Please enter the classes you teach.',
       errorPasswordLength: 'Password must be at least 6 characters long.',
       errorEmailInUse: 'This email address is already in use by another account.',
       errorWeakPassword: 'The password is too weak. Please use a stronger password.',
@@ -195,6 +208,10 @@ export default function SignupPage() {
         setError(t.errorWhatsapp);
         return;
     }
+    if (role === 'tutor' && !classes) {
+        setError(t.errorClasses);
+        return;
+    }
     if (password.length < 6) {
         setError(t.errorPasswordLength);
         return;
@@ -205,11 +222,14 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: fullName });
       
+      const classesArray = role === 'tutor' ? classes.split(',').map(c => c.trim()).filter(Boolean) : [];
+
       await createNewUserDocument(firestore, userCredential.user, {
           fullName,
           role,
           system: system as 'francophone' | 'anglophone',
           whatsapp,
+          classes: classesArray,
       });
 
       toast({
@@ -369,17 +389,31 @@ export default function SignupPage() {
                 </div>
                 
                 {role === 'tutor' && (
-                  <div className="grid gap-2">
-                    <Label htmlFor="whatsapp">{t.whatsappLabel}</Label>
-                    <Input
-                      id="whatsapp"
-                      placeholder={t.whatsappPlaceholder}
-                      required
-                      value={whatsapp}
-                      onChange={(e) => setWhatsapp(e.target.value)}
-                      disabled={isDisabled}
-                    />
-                  </div>
+                  <>
+                    <div className="grid gap-2">
+                      <Label htmlFor="whatsapp">{t.whatsappLabel}</Label>
+                      <Input
+                        id="whatsapp"
+                        placeholder={t.whatsappPlaceholder}
+                        required
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        disabled={isDisabled}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="classes">{t.classesLabel}</Label>
+                        <Textarea
+                            id="classes"
+                            placeholder={t.classesPlaceholder}
+                            required
+                            value={classes}
+                            onChange={(e) => setClasses(e.target.value)}
+                            disabled={isDisabled}
+                        />
+                        <p className="text-sm text-muted-foreground">{t.classesDescription}</p>
+                    </div>
+                  </>
                 )}
 
 

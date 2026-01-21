@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { Star, Verified, Phone, MessageSquare } from 'lucide-react';
+import { Star, Verified, MessageSquare } from 'lucide-react';
 import { tutors } from '@/lib/data'; // Using mock data for now
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,7 @@ export default function TutorProfilePage() {
       bookSession: 'Réserver une session',
       contactViaWhatsapp: 'Contacter sur WhatsApp',
       subjects: 'Matières enseignées',
+      classes: 'Classes enseignées',
       system: 'Système',
       systems: {
           francophone: 'Francophone',
@@ -45,6 +46,7 @@ export default function TutorProfilePage() {
       bookSession: 'Book Session',
       contactViaWhatsapp: 'Contact on WhatsApp',
       subjects: 'Subjects Taught',
+      classes: 'Classes Taught',
       system: 'System',
       systems: {
           francophone: 'Francophone',
@@ -64,7 +66,7 @@ export default function TutorProfilePage() {
     );
   }
 
-  const whatsappLink = `https://wa.me/${tutor.whatsapp?.replace('+', '')}`;
+  const whatsappLink = `https://wa.me/${tutor.whatsapp?.replace(/[^0-9]/g, '')}`;
 
   return (
     <div className="container mx-auto max-w-4xl py-8">
@@ -117,6 +119,16 @@ export default function TutorProfilePage() {
                 {tutor.subjects.map((subject) => (
                     <Badge key={subject} variant="secondary" className="text-sm">
                     {subject}
+                    </Badge>
+                ))}
+                </div>
+            </div>
+             <div>
+                <h4 className="font-semibold">{t.classes}</h4>
+                <div className="mt-2 flex flex-wrap gap-2">
+                {tutor.classes.map((c) => (
+                    <Badge key={c} variant="secondary" className="text-sm">
+                    {c}
                     </Badge>
                 ))}
                 </div>

@@ -34,16 +34,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { francophoneClasses, anglophoneClasses } from '@/lib/cameroon-education';
 
 const profileFormSchema = z.object({
   firstName: z.string().min(2, { message: 'First name must be at least 2 characters.' }),
   lastName: z.string().min(2, { message: 'Last name must be at least 2 characters.' }),
   email: z.string().email(),
+  system: z.enum(['francophone', 'anglophone']).optional(),
   // Student-specific fields
   dateOfBirth: z.string().optional(),
-  system: z.enum(['francophone', 'anglophone']).optional(),
+  classLevel: z.string().optional(),
   // Tutor-specific fields
   whatsapp: z.string().optional(),
+  classes: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -69,7 +73,9 @@ export default function SettingsPage() {
       email: userProfile?.email || '',
       dateOfBirth: userProfile?.dateOfBirth || '',
       system: userProfile?.system,
+      classLevel: userProfile?.classLevel || '',
       whatsapp: userProfile?.whatsapp || '',
+      classes: userProfile?.classes?.join(', ') || '',
     },
     mode: 'onChange',
   });
@@ -77,7 +83,14 @@ export default function SettingsPage() {
   async function onSubmit(data: ProfileFormValues) {
     if (!userProfileRef) return;
     try {
-      await setDoc(userProfileRef, data, { merge: true });
+      const dataToSave: Partial<ProfileFormValues> & { classes?: string[] } = { ...data };
+      if (userProfile?.role === 'tutor' && data.classes) {
+        dataToSave.classes = data.classes.split(',').map(c => c.trim()).filter(Boolean);
+      } else {
+        delete dataToSave.classes;
+      }
+
+      await setDoc(userProfileRef, dataToSave, { merge: true });
       toast({
         title: content[language].updateSuccessTitle,
         description: content[language].updateSuccessDesc,
@@ -105,8 +118,12 @@ export default function SettingsPage() {
       systemPlaceholder: 'Choisissez un système',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
+      classLevel: 'Classe',
+      classLevelPlaceholder: 'Choisissez votre classe',
       whatsapp: 'Numéro WhatsApp',
       whatsappDesc: 'Visible par les étudiants qui réservent une session.',
+      classes: 'Classes Enseignées',
+      classesDesc: 'Séparez les classes par une virgule (ex: 6ème, 5ème).',
       updateButton: 'Mettre à jour le profil',
       updateSuccessTitle: 'Profil mis à jour',
       updateSuccessDesc: 'Vos informations ont été sauvegardées avec succès.',
@@ -124,8 +141,12 @@ export default function SettingsPage() {
       systemPlaceholder: 'Select a system',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
+      classLevel: 'Class Level',
+      classLevelPlaceholder: 'Select your class',
       whatsapp: 'WhatsApp Number',
       whatsappDesc: 'Visible to students who book a session.',
+      classes: 'Classes Taught',
+      classesDesc: 'Separate classes with a comma (e.g., Form 1, Form 2).',
       updateButton: 'Update Profile',
       updateSuccessTitle: 'Profile Updated',
       updateSuccessDesc: 'Your information has been successfully saved.',
@@ -134,6 +155,7 @@ export default function SettingsPage() {
   };
 
   const t = content[language];
+  const currentSystem = form.watch('system');
 
   if (isProfileLoading) {
     return (
@@ -240,25 +262,63 @@ export default function SettingsPage() {
                         </FormItem>
                     )}
                     />
+                <FormField
+                    control={form.control}
+                    name="classLevel"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>{t.classLevel}</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!currentSystem}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder={t.classLevelPlaceholder} />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {(currentSystem === 'francophone' ? francophoneClasses : anglophoneClasses).map(c => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
               </div>
             </>
           )}
 
           {userProfile?.role === 'tutor' && (
-            <FormField
-              control={form.control}
-              name="whatsapp"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t.whatsapp}</FormLabel>
-                  <FormControl>
-                    <Input placeholder="+237 6XX XXX XXX" {...field} />
-                  </FormControl>
-                  <FormDescription>{t.whatsappDesc}</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <>
+                <FormField
+                control={form.control}
+                name="whatsapp"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>{t.whatsapp}</FormLabel>
+                    <FormControl>
+                        <Input placeholder="+237 6XX XXX XXX" {...field} />
+                    </FormControl>
+                    <FormDescription>{t.whatsappDesc}</FormDescription>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                    control={form.control}
+                    name="classes"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>{t.classes}</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="e.g., 6ème, 5ème, Form 1, Form 2" {...field} />
+                        </FormControl>
+                         <FormDescription>{t.classesDesc}</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </>
           )}
 
           <Button type="submit">{t.updateButton}</Button>

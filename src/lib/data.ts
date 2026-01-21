@@ -1,4 +1,4 @@
-import type { Course, Tutor } from '@/lib/types';
+import type { Tutor } from '@/lib/types';
 import type { ImagePlaceholder } from './placeholder-images';
 
 export const placeholderImages: ImagePlaceholder[] = [
@@ -58,68 +58,6 @@ export const placeholderImages: ImagePlaceholder[] = [
     }
   ];
 
-export const courses: Course[] = [
-  {
-    id: 'math-101',
-    title: 'Algebra Fundamentals',
-    subject: 'Mathematics',
-    language: 'en',
-    description: 'Master the basics of algebra, from linear equations to functions.',
-    imageUrl: placeholderImages[1].imageUrl,
-    imageHint: placeholderImages[1].imageHint,
-    lessonsCount: 12,
-  },
-  {
-    id: 'phy-201',
-    title: 'Classical Mechanics',
-    subject: 'Physics',
-    language: 'en',
-    description: 'Explore Newton\'s laws, energy, momentum, and rotational motion.',
-    imageUrl: placeholderImages[2].imageUrl,
-    imageHint: placeholderImages[2].imageHint,
-    lessonsCount: 15,
-  },
-  {
-    id: 'chem-301',
-    title: 'Organic Chemistry',
-    subject: 'Chemistry',
-    language: 'fr',
-    description: 'Plongez dans le monde des composés à base de carbone et de leurs réactions.',
-    imageUrl: placeholderImages[3].imageUrl,
-    imageHint: placeholderImages[3].imageHint,
-    lessonsCount: 18,
-  },
-  {
-    id: 'bio-101',
-    title: 'Introduction to Biology',
-    subject: 'Biology',
-    language: 'en',
-    description: 'Learn about the fundamental concepts of life, cells, and ecosystems.',
-    imageUrl: placeholderImages[4].imageUrl,
-    imageHint: placeholderImages[4].imageHint,
-    lessonsCount: 10,
-  },
-  {
-    id: 'math-202',
-    title: 'Géométrie & Trigonométrie',
-    subject: 'Mathematics',
-    language: 'fr',
-    description: 'Maîtrisez les formes, les angles et les fonctions trigonométriques.',
-    imageUrl: placeholderImages[1].imageUrl,
-    imageHint: placeholderImages[1].imageHint,
-    lessonsCount: 14,
-  },
-  {
-    id: 'phy-301',
-    title: 'Electromagnetism',
-    subject: 'Physics',
-    language: 'en',
-    description: 'Understand the forces that govern electricity and magnetism.',
-    imageUrl: placeholderImages[2].imageUrl,
-    imageHint: placeholderImages[2].imageHint,
-    lessonsCount: 20,
-  },
-];
 
 export const tutors: Tutor[] = [
   {
@@ -127,10 +65,11 @@ export const tutors: Tutor[] = [
     name: 'Dr. Marie Dubois',
     avatarUrl: placeholderImages[5].imageUrl,
     imageHint: placeholderImages[5].imageHint,
-    subjects: ['Physics', 'Chemistry'],
+    subjects: ['Physique', 'Chimie'],
+    classes: ['Première S', 'Terminale D'],
     rating: 4.9,
     reviewsCount: 120,
-    rate: 25,
+    rate: 15000,
     verified: true,
     whatsapp: '+237612345678',
     system: 'francophone'
@@ -141,9 +80,10 @@ export const tutors: Tutor[] = [
     avatarUrl: placeholderImages[6].imageUrl,
     imageHint: placeholderImages[6].imageHint,
     subjects: ['Mathematics', 'Further Maths'],
+    classes: ['Lower Sixth', 'Upper Sixth'],
     rating: 4.8,
     reviewsCount: 98,
-    rate: 22,
+    rate: 12000,
     verified: true,
     whatsapp: '+237612345679',
     system: 'anglophone'
@@ -154,9 +94,10 @@ export const tutors: Tutor[] = [
     avatarUrl: placeholderImages[7].imageUrl,
     imageHint: placeholderImages[7].imageHint,
     subjects: ['Français', 'Histoire-Géo'],
+    classes: ['Seconde', 'Première A'],
     rating: 4.7,
     reviewsCount: 75,
-    rate: 20,
+    rate: 10000,
     verified: false,
     whatsapp: '+237612345680',
     system: 'francophone'
@@ -167,9 +108,10 @@ export const tutors: Tutor[] = [
     avatarUrl: placeholderImages[6].imageUrl,
     imageHint: placeholderImages[6].imageHint,
     subjects: ['Biology', 'Chemistry'],
+    classes: ['Form 5', 'Upper Sixth'],
     rating: 5.0,
     reviewsCount: 210,
-    rate: 30,
+    rate: 20000,
     verified: true,
     whatsapp: '+237612345681',
     system: 'both'

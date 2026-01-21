@@ -32,12 +32,12 @@ export default function LandingPage() {
     {
       icon: <BrainCircuit className="h-10 w-10" />,
       title: {
-        fr: 'Quiz Interactifs & IA',
-        en: 'Interactive Quizzes & AI',
+        fr: 'Plans d\'Étude sur Mesure',
+        en: 'Custom Study Plans',
       },
       description: {
-        fr: 'Testez vos connaissances avec des retours instantanés et des explications générées par IA.',
-        en: 'Test your knowledge with instant feedback and AI-generated explanations.',
+        fr: 'Décrivez vos objectifs et obtenez un plan d\'étude personnalisé généré par IA.',
+        en: 'Describe your goals and get a custom, AI-generated study plan.',
       },
     },
     {
@@ -66,13 +66,12 @@ export default function LandingPage() {
 
   const content = {
     fr: {
-      tagline: 'Cours, quiz et répétiteurs pour réussir votre lycée au Cameroun.',
+      tagline: 'Plans d\'étude sur mesure et répétiteurs pour réussir votre lycée au Cameroun.',
       getStarted: 'Commencer',
-      browseCourses: 'Parcourir les cours',
+      browseTutors: 'Voir les répétiteurs',
       everythingYouNeed: 'Tout ce dont vous avez besoin pour réussir',
       platformDescription: 'Une plateforme conçue pour les élèves camerounais.',
       features: 'Fonctionnalités',
-      courses: 'Cours',
       tutors: 'Répétiteurs',
       login: 'Se connecter',
       signup: 'S\'inscrire',
@@ -80,13 +79,12 @@ export default function LandingPage() {
       privacy: 'Confidentialité'
     },
     en: {
-      tagline: 'Lessons, quizzes and tutors to succeed in Cameroonian high school.',
+      tagline: 'Custom study plans and tutors to succeed in Cameroonian high school.',
       getStarted: 'Get Started',
-      browseCourses: 'Browse Courses',
+      browseTutors: 'Browse Tutors',
       everythingYouNeed: 'Everything you need to succeed',
       platformDescription: 'A platform designed for Cameroonian students.',
       features: 'Features',
-      courses: 'Courses',
       tutors: 'Tutors',
       login: 'Log In',
       signup: 'Sign Up',
@@ -113,12 +111,6 @@ export default function LandingPage() {
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {t.features}
-            </Link>
-            <Link
-              href="/courses"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {t.courses}
             </Link>
             <Link
               href="/tutors"
@@ -163,7 +155,7 @@ export default function LandingPage() {
                 <Link href="/signup">{t.getStarted}</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/courses">{t.browseCourses}</Link>
+                <Link href="/tutors">{t.browseTutors}</Link>
               </Button>
             </div>
           </div>
