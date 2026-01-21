@@ -163,7 +163,7 @@ export function TutorDashboard() {
               <CardHeader className="flex flex-row items-center">
                   <CardTitle>{t.upcomingSessions}</CardTitle>
                    <Button asChild size="sm" className="ml-auto">
-                        <Link href="/schedule">{t.viewAll}</Link>
+                        <Link href="/students">{t.viewAll}</Link>
                    </Button>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -207,5 +207,3 @@ export function TutorDashboard() {
     </div>
   );
 }
-
-    
