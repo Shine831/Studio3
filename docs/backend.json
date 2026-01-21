@@ -593,7 +593,6 @@
   "auth": {
     "providers": [
       "password",
-      "google.com",
       "phone"
     ]
   },
