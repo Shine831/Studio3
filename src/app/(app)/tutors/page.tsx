@@ -17,7 +17,7 @@ import { useLanguage } from '@/context/language-context';
 export default function TutorsPage() {
   const { language } = useLanguage();
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('all');
 
   const content = {
     fr: {
@@ -50,7 +50,7 @@ export default function TutorsPage() {
     return tutors.filter((tutor) => {
       const isVerifiedMatch = !verifiedOnly || tutor.verified;
       const isSubjectMatch =
-        !selectedSubject || tutor.subjects.includes(selectedSubject);
+        selectedSubject === 'all' || tutor.subjects.includes(selectedSubject);
       return isVerifiedMatch && isSubjectMatch;
     });
   }, [verifiedOnly, selectedSubject]);
@@ -73,7 +73,7 @@ export default function TutorsPage() {
               <SelectValue placeholder={t.filterSubject} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t.allSubjects}</SelectItem>
+              <SelectItem value="all">{t.allSubjects}</SelectItem>
               {allSubjects.map((subject) => (
                 <SelectItem key={subject} value={subject}>
                   {subject}
