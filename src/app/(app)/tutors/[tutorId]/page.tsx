@@ -15,6 +15,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useLanguage } from '@/context/language-context';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -29,6 +31,8 @@ export default function TutorProfilePage() {
   const params = useParams();
   const { tutorId } = params;
   const { language } = useLanguage();
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
 
   const tutor = tutors.find((t) => t.id === tutorId);
 
@@ -47,6 +51,8 @@ export default function TutorProfilePage() {
           both: 'Bilingue'
       },
       location: 'Localisation',
+      leaveRating: 'Laisser une évaluation',
+      submitRating: 'Soumettre l\'évaluation',
     },
     en: {
       tutorNotFound: 'Tutor not found',
@@ -62,6 +68,8 @@ export default function TutorProfilePage() {
           both: 'Bilingual'
       },
       location: 'Location',
+      leaveRating: 'Leave a Rating',
+      submitRating: 'Submit Rating',
     },
   };
 
@@ -158,6 +166,26 @@ export default function TutorProfilePage() {
                     </div>
                 </div>
             )}
+             <div className="border-t pt-6 mt-6">
+              <h4 className="font-semibold">{t.leaveRating}</h4>
+              <div className="flex items-center gap-1 mt-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={cn(
+                      "h-7 w-7 cursor-pointer",
+                      (hoverRating || rating) >= star
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-muted-foreground"
+                    )}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    onClick={() => setRating(star)}
+                  />
+                ))}
+              </div>
+              <Button className="mt-4" disabled={rating === 0}>{t.submitRating}</Button>
+            </div>
         </CardContent>
       </Card>
     </div>

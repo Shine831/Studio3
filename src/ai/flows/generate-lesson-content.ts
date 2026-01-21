@@ -35,13 +35,13 @@ const prompt = ai.definePrompt({
   name: 'generateLessonContentPrompt',
   input: { schema: GenerateLessonContentInputSchema },
   output: { schema: GenerateLessonContentOutputSchema },
-  prompt: `You are an expert teacher creating a detailed lesson for a student in the Cameroonian education system. The lesson should be comprehensive, well-structured, and follow a clear pedagogical approach. The entire output must be in valid Markdown format.
+  prompt: `You are an expert teacher creating a detailed lesson for a student in the Cameroonian education system. The lesson must be exceptionally detailed, in-depth, comprehensive, and follow a clear pedagogical approach. Explain all concepts thoroughly. The entire output must be in valid Markdown format.
 
 The lesson structure should be as follows:
 1.  **# Main Title of the Lesson**
 2.  **## Introduction**: A brief, engaging overview of the topic.
-3.  **## Core Concepts**: One or more sections explaining the main ideas. Use subheadings (###), bullet points (\`-\`), and bold text (\`**...**\`) to clarify key terms.
-4.  **## Examples**: Provide concrete examples to illustrate the concepts.
+3.  **## Core Concepts**: One or more sections explaining the main ideas. Use subheadings (###), bullet points (\`-\`), and bold text (\`**...**\`) to clarify key terms and important concepts.
+4.  **## Examples**: Provide concrete, step-by-step examples to illustrate the concepts.
 5.  **## Summary**: A conclusion that recaps the most important points of the lesson.
 
 Generate the lesson content for:

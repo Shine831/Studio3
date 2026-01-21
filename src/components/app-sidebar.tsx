@@ -11,6 +11,7 @@ import { Icons } from './icons';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/language-context';
+import { SheetClose } from '@/components/ui/sheet';
 
 export function AppSidebar({ className }: { className?: string }) {
   const { language } = useLanguage();
@@ -51,19 +52,20 @@ export function AppSidebar({ className }: { className?: string }) {
         <div className="flex-1">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             {navItems.map(({ href, icon: Icon, label, badge }) => (
-              <Link
-                key={label}
-                href={href}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-                {badge && (
-                  <Badge className="ml-auto flex h-6 w-12 items-center justify-center rounded-md">
-                    {badge}
-                  </Badge>
-                )}
-              </Link>
+               <SheetClose asChild key={label}>
+                  <Link
+                    href={href}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                    {badge && (
+                      <Badge className="ml-auto flex h-6 w-12 items-center justify-center rounded-md">
+                        {badge}
+                      </Badge>
+                    )}
+                  </Link>
+               </SheetClose>
             ))}
           </nav>
         </div>

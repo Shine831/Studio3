@@ -223,13 +223,13 @@ function AiCreditAlert({ language }: { language: 'fr' | 'en' }) {
             noCreditsTitle: "Crédits Quotidiens Épuisés",
             noCreditsDescription: "Vous avez utilisé tous vos crédits pour aujourd'hui. Revenez demain pour en avoir plus !",
             rechargeButton: "Recharger (1200 FCFA)",
-            rechargeDescription: "Payez via Orange Money au 699 477 055 pour créditer votre compte."
+            rechargeDescription: "Payez via Orange Money au 699 477 055 pour un accès illimité pour le reste de la journée."
         },
         en: {
             noCreditsTitle: "Daily Credits Exhausted",
             noCreditsDescription: "You have used all your credits for today. Check back tomorrow for more!",
             rechargeButton: "Recharge (1200 FCFA)",
-            rechargeDescription: "Pay via Orange Money to 699 477 055 to credit your account."
+            rechargeDescription: "Pay via Orange Money to 699 477 055 for unlimited access for the rest of the day."
         }
     }[language];
 

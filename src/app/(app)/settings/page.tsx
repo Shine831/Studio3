@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -36,6 +37,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { cameroonCities } from '@/lib/cameroon-cities';
+import type { UserProfile } from '@/lib/types';
 
 const profileFormSchema = z.object({
   firstName: z.string().min(2, { message: 'First name must be at least 2 characters.' }),
@@ -62,22 +64,37 @@ export default function SettingsPage() {
     [firestore, user]
   );
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    values: {
-      firstName: userProfile?.firstName || '',
-      lastName: userProfile?.lastName || '',
-      email: userProfile?.email || '',
-      system: userProfile?.system,
-      city: userProfile?.city || '',
-      whatsapp: userProfile?.whatsapp || '',
-      classes: userProfile?.classes?.join(', ') || '',
-      monthlyRate: userProfile?.monthlyRate || 0,
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      system: undefined,
+      city: '',
+      whatsapp: '',
+      classes: '',
+      monthlyRate: 0,
     },
     mode: 'onChange',
   });
+
+  useEffect(() => {
+    if (userProfile) {
+      form.reset({
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        email: userProfile.email || '',
+        system: userProfile.system,
+        city: userProfile.city || '',
+        whatsapp: userProfile.whatsapp || '',
+        classes: Array.isArray(userProfile.classes) ? userProfile.classes.join(', ') : '',
+        monthlyRate: userProfile.monthlyRate || 0,
+      });
+    }
+  }, [userProfile, form]);
 
   async function onSubmit(data: ProfileFormValues) {
     if (!userProfileRef) return;
@@ -236,7 +253,7 @@ export default function SettingsPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.system}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t.systemPlaceholder} />
@@ -257,7 +274,7 @@ export default function SettingsPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t.city}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={t.cityPlaceholder} />
@@ -321,7 +338,7 @@ export default function SettingsPage() {
             </>
           )}
 
-          <Button type="submit">{t.updateButton}</Button>
+          <Button type="submit" disabled={form.formState.isSubmitting}>{t.updateButton}</Button>
         </form>
       </Form>
     </div>
