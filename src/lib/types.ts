@@ -1,11 +1,3 @@
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl: string;
-  role: 'student' | 'tutor' | 'admin';
-};
-
 export type Tutor = {
   id: string;
   name: string;
@@ -56,4 +48,25 @@ export interface Notification {
     messageEn: string;
     sentAt: any; // Firestore Timestamp
     targetURL?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  role: 'student' | 'tutor' | 'admin';
+  email: string;
+  phone?: string;
+  firstName: string;
+  lastName: string;
+  profilePicture?: string;
+  language: 'fr' | 'en';
+  createdAt: any; // Firestore Timestamp
+  lastLogin: any; // Firestore Timestamp
+  system?: 'francophone' | 'anglophone';
+  city: string;
+  aiCredits: number;
+  lastCreditRenewal?: any; // Firestore Timestamp
+  // Tutor-specific fields that might exist on the doc
+  whatsapp?: string;
+  classes?: string[];
+  monthlyRate?: number;
 }

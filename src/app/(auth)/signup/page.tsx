@@ -74,6 +74,7 @@ const createNewUserDocument = async (
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
           aiCredits: 5, // Give 5 free credits on signup
+          lastCreditRenewal: serverTimestamp(), // Set initial renewal date
       };
       
       if (role === 'tutor') {

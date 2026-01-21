@@ -62,6 +62,11 @@
         "aiCredits": {
             "type": "number",
             "description": "Number of remaining AI generation credits."
+        },
+        "lastCreditRenewal": {
+            "type": "string",
+            "description": "Timestamp of the last daily AI credit renewal.",
+            "format": "date-time"
         }
       },
       "required": [

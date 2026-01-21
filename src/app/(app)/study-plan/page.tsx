@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { doc, addDoc, setDoc, serverTimestamp, collection, deleteDoc } from 'firebase/firestore';
+import { isSameDay } from 'date-fns';
 
 import {
   generatePersonalizedStudyPlan,
@@ -62,7 +63,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { type SavedStudyPlan, type WithId } from '@/lib/types';
+import { type SavedStudyPlan, type WithId, type UserProfile } from '@/lib/types';
 
 
 // Schema for the form
@@ -75,7 +76,7 @@ const StudyPlanFormSchema = z.object({
 });
 type StudyPlanFormValues = z.infer<typeof StudyPlanFormSchema>;
 
-function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: any, onPlanGenerated: () => void }) {
+function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: UserProfile, onPlanGenerated: () => void }) {
   const { language } = useLanguage();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -219,14 +220,14 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: any
 function AiCreditAlert({ language }: { language: 'fr' | 'en' }) {
     const t = {
         fr: {
-            noCreditsTitle: "Crédits IA Épuisés",
-            noCreditsDescription: "Vous avez utilisé tous vos crédits pour générer des plans d'étude.",
+            noCreditsTitle: "Crédits Quotidiens Épuisés",
+            noCreditsDescription: "Vous avez utilisé tous vos crédits pour aujourd'hui. Revenez demain pour en avoir plus !",
             rechargeButton: "Recharger (1200 FCFA)",
             rechargeDescription: "Payez via Orange Money au 699 477 055 pour créditer votre compte."
         },
         en: {
-            noCreditsTitle: "AI Credits Exhausted",
-            noCreditsDescription: "You have used all your credits for generating study plans.",
+            noCreditsTitle: "Daily Credits Exhausted",
+            noCreditsDescription: "You have used all your credits for today. Check back tomorrow for more!",
             rechargeButton: "Recharge (1200 FCFA)",
             rechargeDescription: "Pay via Orange Money to 699 477 055 to credit your account."
         }
@@ -258,7 +259,7 @@ export default function StudyPlanPage() {
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const studyPlansRef = useMemoFirebase(
     () => (user ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
@@ -268,6 +269,33 @@ export default function StudyPlanPage() {
   const { data: savedPlans, isLoading: arePlansLoading, error: plansError } = useCollection<SavedStudyPlan>(studyPlansRef);
   
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const DAILY_CREDIT_LIMIT = 5;
+
+  useEffect(() => {
+    if (!user || !firestore || !userProfile || isProfileLoading) return;
+
+    const checkAndRenewCredits = async () => {
+        const now = new Date();
+        const lastRenewal = userProfile.lastCreditRenewal;
+        const lastRenewalDate = lastRenewal?.toDate ? lastRenewal.toDate() : null;
+
+        if (!lastRenewalDate || !isSameDay(now, lastRenewalDate)) {
+            const userDocRef = doc(firestore, 'users', user.uid);
+            try {
+                await setDoc(userDocRef, {
+                    aiCredits: DAILY_CREDIT_LIMIT,
+                    lastCreditRenewal: serverTimestamp(),
+                }, { merge: true });
+            } catch (error) {
+                console.error("Failed to renew credits:", error);
+            }
+        }
+    };
+
+    checkAndRenewCredits();
+  }, [user, firestore, userProfile, isProfileLoading]);
+
 
   const content = {
     fr: {
@@ -279,7 +307,7 @@ export default function StudyPlanPage() {
         viewPlan: "Voir le plan",
         lessons: "leçons",
         errorLoading: "Une erreur est survenue lors du chargement de vos plans.",
-        aiCreditsRemaining: "crédits de génération restants",
+        aiCreditsRemaining: "crédits quotidiens restants",
         deletePlan: "Supprimer",
         deleteConfirmTitle: "Êtes-vous sûr ?",
         deleteConfirmDesc: "Cette action est irréversible. Votre plan d'étude sera définitivement supprimé.",
@@ -294,7 +322,7 @@ export default function StudyPlanPage() {
         viewPlan: "View Plan",
         lessons: "lessons",
         errorLoading: "An error occurred while loading your plans.",
-        aiCreditsRemaining: "generation credits remaining",
+        aiCreditsRemaining: "daily credits remaining",
         deletePlan: "Delete",
         deleteConfirmTitle: "Are you sure?",
         deleteConfirmDesc: "This action cannot be undone. This will permanently delete your study plan.",
@@ -304,7 +332,7 @@ export default function StudyPlanPage() {
   const t = content[language];
   
   const isLoading = isUserLoading || isProfileLoading || arePlansLoading;
-  const hasCredits = userProfile?.aiCredits > 0;
+  const hasCredits = userProfile ? userProfile.aiCredits > 0 : false;
 
   const handleDeletePlan = async (planId: string) => {
     if (!user) return;

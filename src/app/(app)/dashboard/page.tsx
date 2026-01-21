@@ -6,12 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StudentDashboard } from './components/student-dashboard';
 import { TutorDashboard } from './components/tutor-dashboard';
 import { useLanguage } from '@/context/language-context';
-
-// Define a type for the user profile for better type safety
-interface UserProfile {
-  role?: 'student' | 'tutor' | 'admin';
-  // Add other profile fields as needed
-}
+import type { UserProfile } from '@/lib/types';
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser();
@@ -42,7 +37,7 @@ export default function Dashboard() {
     data: userProfile,
     isLoading: isProfileLoading,
     error,
-  } = useDoc<UserProfile & DocumentData>(userProfileRef);
+  } = useDoc<UserProfile>(userProfileRef);
 
   // Show a loading state while fetching user or profile data
   if (isUserLoading || isProfileLoading) {
