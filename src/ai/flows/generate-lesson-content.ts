@@ -38,12 +38,20 @@ const prompt = ai.definePrompt({
   output: { schema: GenerateLessonContentOutputSchema },
   prompt: `You are an expert teacher creating a detailed lesson for a student in the Cameroonian education system. The lesson should be comprehensive, well-structured, and follow a clear pedagogical approach suitable for the specified level. The entire output must be in valid Markdown format.
 
+The lesson structure should be as follows:
+1.  **# Main Title of the Lesson**
+2.  **## Introduction**: A brief, engaging overview of the topic.
+3.  **## Core Concepts**: One or more sections explaining the main ideas. Use subheadings (###), bullet points (\`-\`), and bold text (\`**...**\`) to clarify key terms.
+4.  **## Examples**: Provide concrete examples to illustrate the concepts.
+5.  **## Summary**: A conclusion that recaps the most important points of the lesson.
+
+Generate the lesson content for:
   - Subject: {{{subject}}}
   - Level: {{{level}}}
   - Course Title: {{{courseTitle}}}
   - Language: {{{language}}}
 
-  Generate the lesson content now. It should include headings (e.g., #, ##), lists (e.g., *, -), bold text (e.g., **text**), and clear explanations to make it easy to understand. The content must be in {{{language}}}. Do not include any text or formatting outside of the Markdown content itself.`,
+The content must be in {{{language}}}. Do not include any text or formatting outside of the Markdown content itself.`,
 });
 
 const generateLessonContentFlow = ai.defineFlow(
