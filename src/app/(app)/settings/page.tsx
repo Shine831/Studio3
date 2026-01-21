@@ -5,7 +5,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc, setDoc, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 
 import {
   useFirestore,
@@ -112,16 +112,22 @@ export default function SettingsPage() {
         firstName: userProfile.firstName || '',
         lastName: userProfile.lastName || '',
         email: userProfile.email || '',
-        system: userProfile.system || '',
+        system: userProfile.system || undefined,
         city: userProfile.city || '',
         profilePicture: userProfile.profilePicture || '',
       };
 
-      if (userProfile.role === 'tutor' && tutorProfile) {
-        defaultVals.subjects = Array.isArray(tutorProfile.subjects) ? tutorProfile.subjects.join(', ') : '';
-        defaultVals.whatsapp = tutorProfile.whatsapp || '';
-        defaultVals.classes = Array.isArray(tutorProfile.classes) ? tutorProfile.classes.join(', ') : '';
-        defaultVals.monthlyRate = tutorProfile.monthlyRate ?? 0;
+      if (userProfile.role === 'tutor') {
+         defaultVals.subjects = '';
+         defaultVals.whatsapp = '';
+         defaultVals.classes = '';
+         defaultVals.monthlyRate = 0;
+        if (tutorProfile) {
+            defaultVals.subjects = Array.isArray(tutorProfile.subjects) ? tutorProfile.subjects.join(', ') : '';
+            defaultVals.whatsapp = tutorProfile.whatsapp || '';
+            defaultVals.classes = Array.isArray(tutorProfile.classes) ? tutorProfile.classes.join(', ') : '';
+            defaultVals.monthlyRate = tutorProfile.monthlyRate ?? 0;
+        }
       }
       
       form.reset(defaultVals as ProfileFormValues);
@@ -149,10 +155,18 @@ export default function SettingsPage() {
     const userProfileData: Partial<UserProfile> = {
         firstName: data.firstName,
         lastName: data.lastName,
+        profilePicture: data.profilePicture,
         system: data.system,
         city: data.city,
-        profilePicture: data.profilePicture
     };
+    
+    if (userProfile?.role === 'student') {
+        delete (userProfileData as Partial<ProfileFormValues>).subjects;
+        delete (userProfileData as Partial<ProfileFormValues>).whatsapp;
+        delete (userProfileData as Partial<ProfileFormValues>).classes;
+        delete (userProfileData as Partial<ProfileFormValues>).monthlyRate;
+    }
+
 
     try {
       await updateDoc(userProfileRef, { ...userProfileData });
@@ -185,8 +199,6 @@ export default function SettingsPage() {
              });
         }
       }
-      
-      form.reset(data);
 
       toast({
         title: content[language].updateSuccessTitle,
@@ -262,7 +274,9 @@ export default function SettingsPage() {
 
   const t = content[language];
 
-  if (isProfileLoading || (userProfile?.role === 'tutor' && isTutorProfileLoading)) {
+  const isLoading = isProfileLoading || (userProfile?.role === 'tutor' && isTutorProfileLoading);
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-1/4" />

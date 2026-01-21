@@ -125,7 +125,7 @@ service cloud.firestore {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) || isAdmin(); // Allow owner to update their own profile.
+      allow update: if (isOwner(userId) || isAdmin()) && request.resource.data.role == resource.data.role; // Allow owner to update, but not change role
       allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
 
       /**
@@ -241,8 +241,7 @@ service cloud.firestore {
        * @principle The student owns their "follow" relationship. The tutor can read who follows them.
        */
        match /followers/{studentId} {
-          allow read: if isSubcollectionOfTutor(tutorId) || isAdmin();
-          allow get: if isOwner(studentId);
+          allow read: if isSubcollectionOfTutor(tutorId) || isAdmin() || isOwner(studentId);
           allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
           allow delete: if isOwner(studentId);
           allow update: if false;
@@ -303,7 +302,13 @@ service cloud.firestore {
       allow update: if isAdmin() && isExistingDoc();
       allow delete: if isAdmin() && isExistingDoc();
     }
+    
+    // --------------------------------------------------------------------
+    // Bug Reports Collection
+    // --------------------------------------------------------------------
+    match /bug_reports/{reportId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if false;
+    }
   }
 }
-
-    

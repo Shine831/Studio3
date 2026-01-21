@@ -6,8 +6,10 @@ import {
   Moon,
   Sun,
   User as UserIcon,
+  Bug,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import React, { useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -30,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/language-context';
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
+import { ReportBugDialog } from '@/components/report-bug-dialog';
 
 
 export function UserNav() {
@@ -40,6 +43,7 @@ export function UserNav() {
   const router = useRouter();
   const { toast } = useToast();
   const { language } = useLanguage();
+  const [reportBugOpen, setReportBugOpen] = useState(false);
 
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -57,7 +61,8 @@ export function UserNav() {
       logOut: 'Se déconnecter',
       loggedOutTitle: 'Déconnecté',
       loggedOutDesc: 'Vous avez été déconnecté avec succès.',
-      noEmail: 'Pas d\'email'
+      noEmail: 'Pas d\'email',
+      reportBug: 'Signaler un bug',
     },
     en: {
       profile: 'Profile',
@@ -68,7 +73,8 @@ export function UserNav() {
       logOut: 'Log out',
       loggedOutTitle: 'Logged Out',
       loggedOutDesc: 'You have been successfully logged out.',
-      noEmail: 'No email'
+      noEmail: 'No email',
+      reportBug: 'Report a bug',
     }
   };
   const t = content[language];
@@ -93,58 +99,65 @@ export function UserNav() {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={userProfile?.profilePicture} alt="User avatar" />
-            <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.displayName || 'User'}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email || t.noEmail}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link href="/settings">
-              <UserIcon className="mr-2 h-4 w-4" />
-              <span>{t.profile}</span>
-            </Link>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-9 w-9">
+              <AvatarImage src={userProfile?.profilePicture} alt="User avatar" />
+              <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{user?.displayName || 'User'}</p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {user?.email || t.noEmail}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <UserIcon className="mr-2 h-4 w-4" />
+                <span>{t.profile}</span>
+              </Link>
+            </DropdownMenuItem>
+             <DropdownMenuItem onSelect={() => setReportBugOpen(true)}>
+              <Bug className="mr-2 h-4 w-4" />
+              <span>{t.reportBug}</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+           <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <span className="pl-2">{t.toggleTheme}</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem onClick={() => setTheme("light")}>
+                {t.light}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("dark")}>
+                {t.dark}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("system")}>
+                {t.system}
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>{t.logOut}</span>
           </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-         <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="pl-2">{t.toggleTheme}</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuItem onClick={() => setTheme("light")}>
-              {t.light}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme("dark")}>
-              {t.dark}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme("system")}>
-              {t.system}
-            </DropdownMenuItem>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>{t.logOut}</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ReportBugDialog open={reportBugOpen} onOpenChange={setReportBugOpen} />
+    </>
   );
 }

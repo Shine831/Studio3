@@ -1,0 +1,64 @@
+'use client';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import type { UserProfile } from '@/lib/types';
+import { doc } from 'firebase/firestore';
+import { useLanguage } from '@/context/language-context';
+import { Skeleton } from './skeleton';
+import { Card, CardHeader, CardTitle, CardDescription } from './card';
+import { AlertTriangle } from 'lucide-react';
+
+interface RoleGuardProps {
+  allowedRoles: Array<'student' | 'tutor' | 'admin'>;
+  children: React.ReactNode;
+}
+
+export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { language } = useLanguage();
+  
+  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
+  const { data: userProfile, isLoading } = useDoc<UserProfile>(userProfileRef);
+
+  const t = {
+      fr: {
+          loading: "Vérification des permissions...",
+          unauthorized: "Accès non autorisé",
+          unauthorizedDesc: "Vous n'avez pas la permission de voir cette page."
+      },
+      en: {
+          loading: "Verifying permissions...",
+          unauthorized: "Unauthorized Access",
+          unauthorizedDesc: "You do not have permission to view this page."
+      }
+  }[language]
+
+  if (isLoading) {
+    return (
+        <div className="space-y-4">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-64 w-full" />
+        </div>
+    );
+  }
+
+  // A default role of 'student' is assumed for new users or if profile is still loading but user exists
+  const role = userProfile?.role || 'student';
+
+  if (!userProfile || !allowedRoles.includes(role)) {
+    return (
+        <Card className="mt-10">
+            <CardHeader className="text-center">
+                <div className="mx-auto bg-destructive/10 p-3 rounded-full w-fit">
+                    <AlertTriangle className="h-8 w-8 text-destructive" />
+                </div>
+                <CardTitle className="mt-4">{t.unauthorized}</CardTitle>
+                <CardDescription>{t.unauthorizedDesc}</CardDescription>
+            </CardHeader>
+        </Card>
+    );
+  }
+
+  return <>{children}</>;
+}

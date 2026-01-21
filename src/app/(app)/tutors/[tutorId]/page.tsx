@@ -151,7 +151,7 @@ export default function TutorProfilePage() {
 
         // Create record in student's following list (for their dashboard)
         await setDoc(followingRef, {
-            tutorId: tutor.id,
+            tutorId: tutorId,
             tutorName: tutor.name,
             tutorAvatar: tutor.avatarUrl || null,
             followedAt: now,
@@ -160,16 +160,18 @@ export default function TutorProfilePage() {
         await updateDoc(tutorDocRef, { followersCount: increment(1) });
 
         // Send notification to the tutor
-        const tutorNotificationsRef = collection(firestore, 'users', tutorId, 'notifications');
-        const studentName = userProfile.firstName + ' ' + userProfile.lastName;
-        await addDoc(tutorNotificationsRef, {
-            userId: tutorId,
-            type: 'new_follower',
-            messageFr: `${studentName} ${t.newFollowerNotif}`,
-            messageEn: `${studentName} ${t.newFollowerNotif}`,
-            sentAt: now,
-            targetURL: '/students' // Link to the 'My Students' page
-        });
+        if(tutor.userId) {
+            const tutorNotificationsRef = collection(firestore, 'users', tutor.userId, 'notifications');
+            const studentName = userProfile.firstName + ' ' + userProfile.lastName;
+            await addDoc(tutorNotificationsRef, {
+                userId: tutor.userId,
+                type: 'new_follower',
+                messageFr: `${studentName} ${t.newFollowerNotif}`,
+                messageEn: `${studentName} ${t.newFollowerNotif}`,
+                sentAt: now,
+                targetURL: '/students' // Link to the 'My Students' page
+            });
+        }
     }
   }
   
@@ -365,4 +367,3 @@ export default function TutorProfilePage() {
     </div>
   );
 }
-

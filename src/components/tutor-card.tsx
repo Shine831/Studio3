@@ -88,4 +88,3 @@ export function TutorCard({ tutor }: TutorCardProps) {
     </Card>
   );
 }
-

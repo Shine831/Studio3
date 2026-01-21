@@ -10,8 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { RoleGuard } from '@/components/role-guard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { RoleGuard } from '@/components/ui/role-guard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,14 +29,29 @@ const getInitials = (name: string | null | undefined) => {
     return name.substring(0, 1).toUpperCase();
 }
 
-function GroupScheduleDialog({ students, language, user, firestore, onSessionCreated }: { students: WithId<FollowerRecord>[], language: 'fr' | 'en', user: any, firestore: any, onSessionCreated: () => void }) {
+
+function ScheduleSessionDialog({ 
+    students, 
+    language, 
+    user, 
+    firestore, 
+    onSessionCreated, 
+    children 
+}: { 
+    students: WithId<FollowerRecord>[], 
+    language: 'fr' | 'en', 
+    user: any, 
+    firestore: any, 
+    onSessionCreated: () => void,
+    children: React.ReactNode
+}) {
     const [open, setOpen] = useState(false);
     const { toast } = useToast();
 
     const t = {
         fr: {
-            dialogTitle: "Planifier une session de groupe",
-            studentCount: "élèves sélectionnés",
+            dialogTitle: students.length > 1 ? "Planifier une session de groupe" : "Planifier une session",
+            studentCount: students.length > 1 ? `${students.length} élèves sélectionnés` : students[0]?.studentName,
             subjectLabel: "Matière",
             dateLabel: "Date",
             startTimeLabel: "Heure de début",
@@ -56,8 +71,8 @@ function GroupScheduleDialog({ students, language, user, firestore, onSessionCre
             }
         },
         en: {
-            dialogTitle: "Schedule Group Session",
-            studentCount: "students selected",
+            dialogTitle: students.length > 1 ? "Schedule Group Session" : "Schedule Session",
+            studentCount: students.length > 1 ? `${students.length} students selected` : students[0]?.studentName,
             subjectLabel: "Subject",
             dateLabel: "Date",
             startTimeLabel: "Start Time",
@@ -111,6 +126,7 @@ function GroupScheduleDialog({ students, language, user, firestore, onSessionCre
             const batch = writeBatch(firestore);
 
             students.forEach(student => {
+                const newBookingRef = doc(collection(firestore, 'tutors', user.uid, 'bookings'));
                 const newBooking: Omit<Booking, 'id'> = {
                     studentId: student.id,
                     tutorId: user.uid,
@@ -121,7 +137,6 @@ function GroupScheduleDialog({ students, language, user, firestore, onSessionCre
                     status: 'confirmed',
                     notes: data.notes || '',
                 };
-                const newBookingRef = addDoc(collection(firestore, 'tutors', user.uid, 'bookings'), newBooking).withConverter(null);
                 batch.set(newBookingRef, newBooking);
             })
 
@@ -141,12 +156,12 @@ function GroupScheduleDialog({ students, language, user, firestore, onSessionCre
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button disabled={students.length === 0}>{language === 'fr' ? 'Planifier une session' : 'Schedule Session'}</Button>
+                {children}
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{t.dialogTitle}</DialogTitle>
-                    <p className="text-sm text-muted-foreground">{students.length} {t.studentCount}</p>
+                    <DialogDescription>{t.studentCount}</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -229,18 +244,22 @@ export default function MyStudentsPage() {
         fr: {
             title: "Mes Élèves",
             description: "Voici la liste des élèves qui vous suivent. Cochez les cases pour planifier une session de groupe.",
+            scheduleGroup: "Planifier (Groupe)",
             name: "Nom",
             followedOn: "Suivi le",
             actions: "Actions",
+            schedule: "Planifier",
             noStudents: "Aucun élève ne vous suit pour le moment.",
             loading: "Chargement des élèves...",
         },
         en: {
             title: "My Students",
             description: "Here is the list of students who are following you. Select checkboxes to schedule a group session.",
+            scheduleGroup: "Schedule (Group)",
             name: "Name",
             followedOn: "Followed On",
             actions: "Actions",
+            schedule: "Schedule",
             noStudents: "No students are following you yet.",
             loading: "Loading students...",
         }
@@ -308,13 +327,15 @@ export default function MyStudentsPage() {
                         <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
                         <p className="text-muted-foreground">{t.description}</p>
                     </div>
-                     <GroupScheduleDialog 
+                     <ScheduleSessionDialog 
                         students={selectedStudents} 
                         language={language} 
                         user={user} 
                         firestore={firestore} 
                         onSessionCreated={() => setSelectedStudents([])}
-                    />
+                    >
+                        <Button disabled={selectedStudents.length === 0}>{t.scheduleGroup}</Button>
+                    </ScheduleSessionDialog>
                 </div>
 
                 <Card>
@@ -324,13 +345,14 @@ export default function MyStudentsPage() {
                                 <TableRow>
                                     <TableHead className="w-[50px]">
                                         <Checkbox 
-                                            onCheckedChange={handleSelectAll}
-                                            checked={followers ? selectedStudents.length === followers.length : false}
+                                            onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                                            checked={followers ? selectedStudents.length === followers.length && followers.length > 0 : false}
                                             aria-label="Select all"
                                         />
                                     </TableHead>
                                     <TableHead>{t.name}</TableHead>
                                     <TableHead>{t.followedOn}</TableHead>
+                                    <TableHead className="text-right">{t.actions}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -356,11 +378,22 @@ export default function MyStudentsPage() {
                                             <TableCell>
                                                 {follower.followedAt?.toDate().toLocaleDateString(language)}
                                             </TableCell>
+                                            <TableCell className="text-right">
+                                                 <ScheduleSessionDialog 
+                                                    students={[follower]} 
+                                                    language={language} 
+                                                    user={user} 
+                                                    firestore={firestore} 
+                                                    onSessionCreated={() => {}}
+                                                >
+                                                    <Button variant="outline" size="sm">{t.schedule}</Button>
+                                                </ScheduleSessionDialog>
+                                            </TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="h-24 text-center">
+                                        <TableCell colSpan={4} className="h-24 text-center">
                                             {t.noStudents}
                                         </TableCell>
                                     </TableRow>

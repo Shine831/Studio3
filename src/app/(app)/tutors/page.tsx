@@ -12,9 +12,9 @@ import { TutorCard } from '@/components/tutor-card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/context/language-context';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
-import type { TutorProfile, WithId } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
+import type { TutorProfile, WithId, UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function TutorsPage() {
@@ -22,6 +22,13 @@ export default function TutorsPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState('all');
   const firestore = useFirestore();
+  const { user } = useUser();
+
+  const userProfileRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
+  );
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const tutorsQuery = useMemoFirebase(
     () => (firestore ? query(collection(firestore, 'tutors')) : null),
@@ -61,12 +68,22 @@ export default function TutorsPage() {
   const filteredTutors = useMemo(() => {
     if (!tutorsData) return [];
     return tutorsData.filter((tutor) => {
-      const isVerifiedMatch = !verifiedOnly || tutor.adminVerified;
+      const isVerifiedMatch = !verifiedOnly || tutor.adminVerified || (tutor.followersCount && tutor.followersCount >= 20);
       const isSubjectMatch =
         selectedSubject === 'all' || tutor.subjects.includes(selectedSubject);
-      return isVerifiedMatch && isSubjectMatch;
+      
+      let isSystemMatch = true;
+      if (userProfile?.system) {
+        if (userProfile.system === 'francophone') {
+            isSystemMatch = tutor.system === 'francophone' || tutor.system === 'both';
+        } else if (userProfile.system === 'anglophone') {
+            isSystemMatch = tutor.system === 'anglophone' || tutor.system === 'both';
+        }
+      }
+      
+      return isVerifiedMatch && isSubjectMatch && isSystemMatch;
     });
-  }, [verifiedOnly, selectedSubject, tutorsData]);
+  }, [verifiedOnly, selectedSubject, tutorsData, userProfile]);
 
   return (
     <div className="flex flex-1 flex-col gap-4">
