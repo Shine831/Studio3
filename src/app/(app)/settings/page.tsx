@@ -13,6 +13,7 @@ import {
 } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { useToast } from '@/hooks/use-toast';
+import { francophoneClasses, anglophoneClasses } from '@/lib/cameroon-education';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -76,6 +77,8 @@ export default function SettingsPage() {
     mode: 'onChange',
   });
 
+  const selectedSystem = form.watch('system');
+
   async function onSubmit(data: ProfileFormValues) {
     if (!userProfileRef) return;
     try {
@@ -104,7 +107,9 @@ export default function SettingsPage() {
       email: 'Email',
       dob: 'Date de naissance',
       classLevel: 'Classe',
+      classLevelPlaceholder: 'Choisissez votre classe',
       system: 'Système Éducatif',
+      systemPlaceholder: 'Choisissez un système',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
       whatsapp: 'Numéro WhatsApp',
@@ -123,7 +128,9 @@ export default function SettingsPage() {
       email: 'Email',
       dob: 'Date of Birth',
       classLevel: 'Class Level',
+      classLevelPlaceholder: 'Select your class',
       system: 'Educational System',
+      systemPlaceholder: 'Select a system',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
       whatsapp: 'WhatsApp Number',
@@ -203,39 +210,6 @@ export default function SettingsPage() {
               </FormItem>
             )}
           />
-
-          {userProfile?.role === 'student' && (
-            <>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                 <FormField
-                    control={form.control}
-                    name="dateOfBirth"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>{t.dob}</FormLabel>
-                        <FormControl>
-                            <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                <FormField
-                  control={form.control}
-                  name="classLevel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.classLevel}</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Terminale C" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </>
-          )}
           
           <FormField
               control={form.control}
@@ -246,7 +220,7 @@ export default function SettingsPage() {
                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a system" />
+                        <SelectValue placeholder={t.systemPlaceholder} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -259,6 +233,47 @@ export default function SettingsPage() {
               )}
             />
 
+          {userProfile?.role === 'student' && (
+            <>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                 <FormField
+                    control={form.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>{t.dob}</FormLabel>
+                        <FormControl>
+                            <Input type="date" {...field} value={field.value || ''}/>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                <FormField
+                  control={form.control}
+                  name="classLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.classLevel}</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={!selectedSystem}>
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder={t.classLevelPlaceholder} />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {(selectedSystem === 'francophone' ? francophoneClasses : anglophoneClasses).map(c => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </>
+          )}
 
           {userProfile?.role === 'tutor' && (
             <FormField

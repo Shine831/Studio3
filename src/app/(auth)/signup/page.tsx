@@ -17,16 +17,35 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
+import { francophoneClasses, anglophoneClasses } from '@/lib/cameroon-education';
 
 const createNewUserDocument = async (
   firestore: Firestore,
   user: User,
-  fullName?: string
+  {
+    fullName,
+    role,
+    system,
+    classLevel,
+  }: {
+    fullName: string;
+    role: 'student' | 'tutor';
+    system: 'francophone' | 'anglophone';
+    classLevel?: string;
+  }
 ) => {
   const userRef = doc(firestore, 'users', user.uid);
   const docSnap = await getDoc(userRef);
@@ -40,7 +59,9 @@ const createNewUserDocument = async (
           firstName: firstName || '',
           lastName: lastName || '',
           profilePicture: user.photoURL || null,
-          role: 'student',
+          role: role,
+          system: system,
+          classLevel: role === 'student' ? classLevel : null,
           language: 'fr',
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
@@ -57,6 +78,9 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'student' | 'tutor'>('student');
+  const [system, setSystem] = useState<'francophone' | 'anglophone' | ''>('');
+  const [classLevel, setClassLevel] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { auth, firestore, isUserLoading } = useFirebase();
@@ -70,6 +94,15 @@ export default function SignupPage() {
       fullNamePlaceholder: 'Votre Nom',
       emailLabel: 'Email',
       passwordLabel: 'Mot de passe',
+      iAmA: 'Je suis un(e)',
+      student: 'Élève',
+      tutor: 'Répétiteur',
+      systemLabel: 'Système Éducatif',
+      systemPlaceholder: 'Choisissez votre système',
+      francophone: 'Francophone',
+      anglophone: 'Anglophone',
+      classLevelLabel: 'Classe',
+      classLevelPlaceholder: 'Choisissez votre classe',
       createAccountButton: 'Créer un compte',
       initializing: 'Initialisation...',
       alreadyHaveAccount: 'Vous avez déjà un compte ?',
@@ -82,6 +115,8 @@ export default function SignupPage() {
       accountCreatedDesc: 'Bienvenue ! Votre inscription est terminée.',
       signupFailedTitle: 'Échec de l\'inscription',
       errorFillFields: 'Veuillez remplir tous les champs.',
+      errorSelectSystem: 'Veuillez sélectionner un système éducatif.',
+      errorSelectClass: 'Veuillez sélectionner votre classe.',
       errorPasswordLength: 'Le mot de passe doit contenir au moins 6 caractères.',
       errorEmailInUse: 'Cette adresse email est déjà utilisée par un autre compte.',
       errorWeakPassword: 'Le mot de passe est trop faible. Veuillez utiliser un mot de passe plus fort.',
@@ -97,6 +132,15 @@ export default function SignupPage() {
       fullNamePlaceholder: 'Your Name',
       emailLabel: 'Email',
       passwordLabel: 'Password',
+      iAmA: 'I am a',
+      student: 'Student',
+      tutor: 'Tutor',
+      systemLabel: 'Educational System',
+      systemPlaceholder: 'Select your system',
+      francophone: 'Francophone',
+      anglophone: 'Anglophone',
+      classLevelLabel: 'Class Level',
+      classLevelPlaceholder: 'Select your class',
       createAccountButton: 'Create account',
       initializing: 'Initializing...',
       alreadyHaveAccount: 'Already have an account?',
@@ -109,6 +153,8 @@ export default function SignupPage() {
       accountCreatedDesc: "Welcome! You're now signed up.",
       signupFailedTitle: 'Signup Failed',
       errorFillFields: 'Please fill in all fields.',
+      errorSelectSystem: 'Please select an educational system.',
+      errorSelectClass: 'Please select your class level.',
       errorPasswordLength: 'Password must be at least 6 characters long.',
       errorEmailInUse: 'This email address is already in use by another account.',
       errorWeakPassword: 'The password is too weak. Please use a stronger password.',
@@ -124,12 +170,18 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    
     if (!auth || !firestore) {
-        setError(t.errorFirebaseConfig);
-        return;
+      setError(t.errorFirebaseConfig);
+      return;
     }
-    if (!fullName || !email || !password) {
+    if (!fullName || !email || !password || !role || !system) {
       setError(t.errorFillFields);
+      return;
+    }
+    if (role === 'student' && !classLevel) {
+      setError(t.errorSelectClass);
       return;
     }
     if (password.length < 6) {
@@ -137,12 +189,17 @@ export default function SignupPage() {
         return;
     }
     setLoading(true);
-    setError(null);
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: fullName });
-      await createNewUserDocument(firestore, userCredential.user, fullName);
+      
+      await createNewUserDocument(firestore, userCredential.user, {
+          fullName,
+          role,
+          system: system as 'francophone' | 'anglophone',
+          classLevel
+      });
 
       toast({
         title: t.accountCreatedTitle,
@@ -238,6 +295,65 @@ export default function SignupPage() {
                     disabled={isDisabled}
                 />
               </div>
+
+               <div className="grid gap-2">
+                  <Label>{t.iAmA}</Label>
+                  <RadioGroup
+                    defaultValue="student"
+                    className="grid grid-cols-2 gap-4"
+                    onValueChange={(value: 'student' | 'tutor') => setRole(value)}
+                    disabled={isDisabled}
+                  >
+                    <div>
+                      <RadioGroupItem value="student" id="student" className="peer sr-only" />
+                      <Label
+                        htmlFor="student"
+                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                      >
+                        {t.student}
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem value="tutor" id="tutor" className="peer sr-only" />
+                      <Label
+                        htmlFor="tutor"
+                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                      >
+                        {t.tutor}
+                      </Label>
+                    </div>
+                  </RadioGroup>
+               </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor="system">{t.systemLabel}</Label>
+                    <Select onValueChange={(value: 'francophone' | 'anglophone') => setSystem(value)} disabled={isDisabled} value={system}>
+                        <SelectTrigger id="system">
+                            <SelectValue placeholder={t.systemPlaceholder} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="francophone">{t.francophone}</SelectItem>
+                            <SelectItem value="anglophone">{t.anglophone}</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {role === 'student' && system && (
+                    <div className="grid gap-2">
+                        <Label htmlFor="class-level">{t.classLevelLabel}</Label>
+                        <Select onValueChange={setClassLevel} disabled={isDisabled || !system} value={classLevel}>
+                            <SelectTrigger id="class-level">
+                                <SelectValue placeholder={t.classLevelPlaceholder} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {(system === 'francophone' ? francophoneClasses : anglophoneClasses).map(c => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+
               <Button type="submit" className="w-full" disabled={isDisabled}>
                 {isDisabled ? t.initializing : t.createAccountButton}
               </Button>
