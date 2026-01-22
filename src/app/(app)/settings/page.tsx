@@ -117,17 +117,11 @@ export default function SettingsPage() {
         profilePicture: userProfile.profilePicture || '',
       };
 
-      if (userProfile.role === 'tutor') {
-         defaultVals.subjects = '';
-         defaultVals.whatsapp = '';
-         defaultVals.classes = '';
-         defaultVals.monthlyRate = 0;
-        if (tutorProfile) {
-            defaultVals.subjects = Array.isArray(tutorProfile.subjects) ? tutorProfile.subjects.join(', ') : '';
-            defaultVals.whatsapp = tutorProfile.whatsapp || '';
-            defaultVals.classes = Array.isArray(tutorProfile.classes) ? tutorProfile.classes.join(', ') : '';
-            defaultVals.monthlyRate = tutorProfile.monthlyRate ?? 0;
-        }
+      if (userProfile.role === 'tutor' && tutorProfile) {
+        defaultVals.subjects = Array.isArray(tutorProfile.subjects) ? tutorProfile.subjects.join(', ') : '';
+        defaultVals.whatsapp = tutorProfile.whatsapp || '';
+        defaultVals.classes = Array.isArray(tutorProfile.classes) ? tutorProfile.classes.join(', ') : '';
+        defaultVals.monthlyRate = tutorProfile.monthlyRate ?? 0;
       }
       
       form.reset(defaultVals as ProfileFormValues);
@@ -159,14 +153,6 @@ export default function SettingsPage() {
         system: data.system,
         city: data.city,
     };
-    
-    if (userProfile?.role === 'student') {
-        delete (userProfileData as Partial<ProfileFormValues>).subjects;
-        delete (userProfileData as Partial<ProfileFormValues>).whatsapp;
-        delete (userProfileData as Partial<ProfileFormValues>).classes;
-        delete (userProfileData as Partial<ProfileFormValues>).monthlyRate;
-    }
-
 
     try {
       await updateDoc(userProfileRef, { ...userProfileData });
@@ -374,54 +360,101 @@ export default function SettingsPage() {
             )}
           />
           
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <FormField
-                control={form.control}
-                name="system"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.system}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t.systemPlaceholder} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="francophone">{t.francophone}</SelectItem>
-                        <SelectItem value="anglophone">{t.anglophone}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.city}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t.cityPlaceholder} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {cameroonCities.map(c => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-          </div>
+          {userProfile?.role === 'student' && (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <FormField
+                  control={form.control}
+                  name="system"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.system}</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t.systemPlaceholder} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="francophone">{t.francophone}</SelectItem>
+                          <SelectItem value="anglophone">{t.anglophone}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.city}</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t.cityPlaceholder} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {cameroonCities.map(c => (
+                              <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
+          )}
           
           {userProfile?.role === 'tutor' && (
             <>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <FormField
+                        control={form.control}
+                        name="system"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>{t.system}</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder={t.systemPlaceholder} />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="francophone">{t.francophone}</SelectItem>
+                                <SelectItem value="anglophone">{t.anglophone}</SelectItem>
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>{t.city}</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder={t.cityPlaceholder} />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {cameroonCities.map(c => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
                 <FormField
                 control={form.control}
                 name="whatsapp"

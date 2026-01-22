@@ -187,7 +187,7 @@ service cloud.firestore {
      */
     match /users/{userId}/notifications/{notificationId} {
       allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isSignedIn() && request.resource.data.userId == userId;
+      allow create: if isSignedIn();
       allow update, delete: if isOwner(userId) || isAdmin();
     }
 
@@ -265,7 +265,7 @@ service cloud.firestore {
        * @principle The student owns their "follow" relationship. The tutor can read who follows them.
        */
        match /followers/{studentId} {
-          allow read: if isSubcollectionOfTutor(tutorId) || isAdmin() || isOwner(studentId);
+          allow read, list: if isSubcollectionOfTutor(tutorId) || isAdmin() || isOwner(studentId);
           allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
           allow delete: if isOwner(studentId);
           allow update: if false;

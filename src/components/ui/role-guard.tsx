@@ -43,10 +43,7 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
     );
   }
 
-  // A default role of 'student' is assumed for new users or if profile is still loading but user exists
-  const role = userProfile?.role || 'student';
-
-  if (!userProfile || !allowedRoles.includes(role)) {
+  if (!userProfile || !allowedRoles.includes(userProfile.role)) {
     return (
         <Card className="mt-10">
             <CardHeader className="text-center">
@@ -62,3 +59,5 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
 
   return <>{children}</>;
 }
+
+    

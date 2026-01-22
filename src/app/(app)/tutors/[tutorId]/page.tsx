@@ -138,7 +138,7 @@ export default function TutorProfilePage() {
         // Unfollow action
         batch.delete(followerRef);
         batch.delete(followingRef);
-        batch.update(tutorDocRef, { followersCount: currentFollowers - 1 });
+        batch.update(tutorDocRef, { followersCount: currentFollowers > 0 ? currentFollowers - 1 : 0 });
     } else {
         // Follow action
         const now = serverTimestamp();
