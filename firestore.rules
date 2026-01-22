@@ -27,6 +27,24 @@ service cloud.firestore {
       return isOwner(tutorProfileData.userId);
     }
 
+    function isFollowAction(tutorDocId) {
+        // Only 'followersCount' can be changed
+        if (!request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount'])) {
+            return false;
+        }
+        
+        // Check the state BEFORE the batch.
+        let isCurrentlyFollowing = exists(/databases/$(database)/documents/users/$(request.auth.uid)/following/$(tutorDocId));
+        
+        // If student is NOT following, the count must increase by exactly 1. (This is a follow action)
+        let isFollowing = !isCurrentlyFollowing && request.resource.data.followersCount == resource.data.followersCount + 1;
+        
+        // If student IS following, the count must decrease by exactly 1. (This is an unfollow action)
+        let isUnfollowing = isCurrentlyFollowing && request.resource.data.followersCount == resource.data.followersCount - 1;
+        
+        return isSignedIn() && (isFollowing || isUnfollowing);
+    }
+
     // --------------------------------------------------------------------
     // User Data Collections (/users)
     // --------------------------------------------------------------------
@@ -67,7 +85,7 @@ service cloud.firestore {
         // A student can read their own booking.
         allow read: if isOwner(userId);
         // A student can write to their own booking, or the tutor of the booking can create/update it.
-        allow write: if isOwner(userId) || isOwner(request.resource.data.tutorId);
+        allow write: if isOwner(userId) || isOwner(resource.data.tutorId) || isOwner(request.resource.data.tutorId);
       }
     }
 
@@ -83,7 +101,7 @@ service cloud.firestore {
     match /tutors/{tutorId} {
       allow get, list: if true;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if (isTutorOwner(resource.data) || isAdmin() || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount']))) && isExistingDoc();
+      allow update: if (isTutorOwner(resource.data) || isAdmin() || isFollowAction(tutorId)) && isExistingDoc();
       allow delete: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
 
       match /ratings/{studentId} {
@@ -100,10 +118,7 @@ service cloud.firestore {
         allow list, get: if isOwner(tutorId) || isAdmin();
         
         // A student can create/delete their own follower record.
-        allow create, delete: if request.auth.uid == studentId;
-
-        // No one can update a follower record.
-        allow update: if false;
+        allow write: if request.auth.uid == studentId;
       }
 
       match /bookings/{bookingId} {

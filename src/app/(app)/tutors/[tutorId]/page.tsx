@@ -16,7 +16,7 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, serverTimestamp, writeBatch, increment, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, writeBatch, deleteDoc } from 'firebase/firestore';
 import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -117,7 +117,7 @@ export default function TutorProfilePage() {
   const t = content[language];
   
   const handleFollowToggle = async () => {
-    if (!user || !firestore || !userProfile) {
+    if (!user || !firestore || !userProfile || !tutor) {
         toast({ variant: 'destructive', title: t.loginToRate, description: t.loginToRateDesc });
         return;
     }
@@ -132,7 +132,7 @@ export default function TutorProfilePage() {
             // Unfollow
             batch.delete(userFollowingRef);
             batch.delete(tutorFollowerRef);
-            batch.update(tutorDocRef, { followersCount: increment(-1) });
+            batch.update(tutorDocRef, { followersCount: (tutor.followersCount || 1) - 1 });
             
             await batch.commit();
             toast({ title: t.unfollowSuccess });
@@ -145,7 +145,7 @@ export default function TutorProfilePage() {
                 studentAvatar: userProfile.profilePicture || null,
                 followedAt: serverTimestamp()
             });
-            batch.update(tutorDocRef, { followersCount: increment(1) });
+            batch.update(tutorDocRef, { followersCount: (tutor.followersCount || 0) + 1 });
             
             await batch.commit();
             toast({ title: t.followSuccess });
