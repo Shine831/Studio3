@@ -60,7 +60,6 @@ export function AppSidebar({ className }: { className?: string }) {
     { href: '/tutors', icon: Users, label: t.tutors },
     { href: '/study-plan', icon: BookCopy, label: t.studyPlans },
     { href: '/my-schedule', icon: CalendarClock, label: t.mySchedule },
-    { href: '/my-tutors', icon: UserCheck, label: t.myTutors },
   ];
   
   const tutorNavItems = [

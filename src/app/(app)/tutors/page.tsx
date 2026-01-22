@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -14,12 +15,13 @@ import { Label } from '@/components/ui/label';
 import { useLanguage } from '@/context/language-context';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
-import type { TutorProfile, WithId, UserProfile } from '@/lib/types';
+import type { TutorProfile, WithId, UserProfile, FollowingRecord } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function TutorsPage() {
   const { language } = useLanguage();
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [followingOnly, setFollowingOnly] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState('all');
   const firestore = useFirestore();
   const { user } = useUser();
@@ -34,19 +36,29 @@ export default function TutorsPage() {
     () => (firestore ? query(collection(firestore, 'tutors')) : null),
     [firestore]
   );
-  const { data: tutorsData, isLoading } = useCollection<TutorProfile>(tutorsQuery);
+  const { data: tutorsData, isLoading: isLoadingTutors } = useCollection<TutorProfile>(tutorsQuery);
+
+  const followingQuery = useMemoFirebase(
+    () => (user ? collection(firestore, 'users', user.uid, 'following') : null),
+    [firestore, user]
+  );
+  const { data: following, isLoading: isLoadingFollowing } = useCollection<FollowingRecord>(followingQuery);
+
+  const isLoading = isLoadingTutors || isLoadingFollowing;
 
 
   const content = {
     fr: {
       title: 'Trouver un répétiteur',
       verifiedOnly: 'Vérifié seulement',
+      followingOnly: 'Suivis seulement',
       filterSubject: 'Filtrer par matière',
       allSubjects: 'Toutes les matières',
     },
     en: {
       title: 'Find a Tutor',
       verifiedOnly: 'Verified Only',
+      followingOnly: 'Following Only',
       filterSubject: 'Filter by Subject',
       allSubjects: 'All Subjects',
     },
@@ -67,10 +79,15 @@ export default function TutorsPage() {
 
   const filteredTutors = useMemo(() => {
     if (!tutorsData) return [];
+
+    const followedTutorIds = new Set(following?.map(f => f.id) || []);
+
     return tutorsData.filter((tutor) => {
       const isVerifiedMatch = !verifiedOnly || tutor.adminVerified || (tutor.followersCount && tutor.followersCount >= 20);
       const isSubjectMatch =
         selectedSubject === 'all' || tutor.subjects.includes(selectedSubject);
+      
+      const isFollowingMatch = !followingOnly || followedTutorIds.has(tutor.id);
       
       let isSystemMatch = true;
       if (userProfile?.system) {
@@ -81,9 +98,9 @@ export default function TutorsPage() {
         }
       }
       
-      return isVerifiedMatch && isSubjectMatch && isSystemMatch;
+      return isVerifiedMatch && isSubjectMatch && isSystemMatch && isFollowingMatch;
     });
-  }, [verifiedOnly, selectedSubject, tutorsData, userProfile]);
+  }, [verifiedOnly, selectedSubject, tutorsData, userProfile, followingOnly, following]);
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -98,6 +115,16 @@ export default function TutorsPage() {
             />
             <Label htmlFor="verified-only">{t.verifiedOnly}</Label>
           </div>
+           {userProfile?.role !== 'tutor' && (
+             <div className="flex items-center space-x-2">
+                <Switch
+                  id="following-only"
+                  checked={followingOnly}
+                  onCheckedChange={setFollowingOnly}
+                />
+                <Label htmlFor="following-only">{t.followingOnly}</Label>
+             </div>
+            )}
           <Select value={selectedSubject} onValueChange={setSelectedSubject}>
             <SelectTrigger className="w-full sm:w-[220px] bg-card">
               <SelectValue placeholder={t.filterSubject} />
