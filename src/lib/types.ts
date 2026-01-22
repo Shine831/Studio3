@@ -14,6 +14,8 @@ export interface UserProfile {
   lastLogin: any; // Firestore Timestamp
   system?: 'francophone' | 'anglophone';
   city: string;
+  aiCredits?: number;
+  lastCreditRenewal?: any; // Firestore Timestamp
 }
 
 export interface TutorProfile {
@@ -45,4 +47,37 @@ export interface TutorRating {
   createdAt: any; // Firestore Timestamp
 }
 
+export interface Question {
+  questionText: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+}
+
+export interface Lesson {
+  title: string;
+  description: string;
+  duration: number;
+  content?: string;
+  quiz?: Question[];
+}
+
+export interface SavedStudyPlan {
+  id: string;
+  studentId: string;
+  subject: string;
+  learningGoals: string;
+  lessons: Lesson[];
+  createdAt: any; // Firestore Timestamp
+}
+
+export interface QuizResult {
+  studentId: string;
+  planId: string;
+  planSubject: string;
+  lessonTitle: string;
+  score: number;
+  completionDate: any; // Firestore Timestamp
+  answers: Array<{ questionIndex: number; answer: string }>;
+}
     

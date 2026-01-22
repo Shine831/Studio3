@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -5,7 +6,7 @@ import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc, addDoc, setDoc, serverTimestamp, collection, deleteDoc } from 'firebase/firestore';
+import { doc, addDoc, setDoc, serverTimestamp, collection, deleteDoc, getDoc } from 'firebase/firestore';
 import { isSameDay } from 'date-fns';
 
 import {
@@ -156,8 +157,8 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
             const lastRenewal = currentProfile.lastCreditRenewal?.toDate();
             const isUnlimited = lastRenewal && isSameDay(new Date(), lastRenewal) && currentProfile.aiCredits === Infinity;
 
-            if (!isUnlimited) {
-                 await setDoc(userProfileRef, { aiCredits: (currentProfile.aiCredits || 0) - 1 }, { merge: true });
+            if (!isUnlimited && currentProfile.aiCredits) {
+                 await setDoc(userProfileRef, { aiCredits: currentProfile.aiCredits - 1 }, { merge: true });
             }
         }
 
@@ -293,7 +294,6 @@ export default function StudyPlanPage() {
         const now = new Date();
         const lastRenewal = userProfile.lastCreditRenewal?.toDate();
 
-        // Do not renew if credits are unlimited for the day
         if (lastRenewal && isSameDay(now, lastRenewal) && userProfile.aiCredits === Infinity) {
             hasCheckedCredits.current = true;
             return;
@@ -358,7 +358,7 @@ export default function StudyPlanPage() {
   const isLoading = isUserLoading || isProfileLoading || arePlansLoading;
   
   const isUnlimited = userProfile?.aiCredits === Infinity;
-  const hasCredits = userProfile ? isUnlimited || userProfile.aiCredits > 0 : false;
+  const hasCredits = userProfile ? isUnlimited || (userProfile.aiCredits || 0) > 0 : false;
 
   const handleDeletePlan = async (planId: string) => {
     if (!user) return;
@@ -394,7 +394,7 @@ export default function StudyPlanPage() {
                 <div className="text-right">
                     <GeneratePlanDialog userProfile={userProfile} onPlanGenerated={() => setRefreshKey(k => k+1)} />
                     <p className="text-xs text-muted-foreground mt-1">
-                        {isUnlimited ? t.unlimited : `${userProfile.aiCredits} ${t.aiCreditsRemaining}`}
+                        {isUnlimited ? t.unlimited : `${userProfile.aiCredits || 0} ${t.aiCreditsRemaining}`}
                     </p>
                 </div>
             )}
@@ -412,7 +412,7 @@ export default function StudyPlanPage() {
         {savedPlans && savedPlans.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {savedPlans.map(plan => (
-                    <Card key={plan.id} className="flex flex-col group">
+                    <Card key={(plan as WithId<SavedStudyPlan>).id} className="flex flex-col group">
                         <CardHeader>
                             <div className="flex justify-between items-start">
                                 <CardTitle className="flex items-center gap-3">
@@ -444,7 +444,7 @@ export default function StudyPlanPage() {
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                         <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeletePlan(plan.id)} className="bg-destructive hover:bg-destructive/90">
+                                        <AlertDialogAction onClick={() => handleDeletePlan((plan as WithId<SavedStudyPlan>).id)} className="bg-destructive hover:bg-destructive/90">
                                             {t.deletePlan}
                                         </AlertDialogAction>
                                         </AlertDialogFooter>
@@ -460,7 +460,7 @@ export default function StudyPlanPage() {
                         </CardContent>
                         <CardFooter>
                             <Button asChild className="w-full">
-                                <Link href={`/study-plan/${plan.id}`}>
+                                <Link href={`/study-plan/${(plan as WithId<SavedStudyPlan>).id}`}>
                                     {t.viewPlan} <ArrowRight className="ml-2" />
                                 </Link>
                             </Button>
@@ -478,5 +478,3 @@ export default function StudyPlanPage() {
     </RoleGuard>
   );
 }
-
-    

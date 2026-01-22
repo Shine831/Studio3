@@ -1,12 +1,13 @@
+
 'use client';
 
-import { doc } from 'firebase/firestore';
-import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { doc, collection, query } from 'firebase/firestore';
+import { useDoc, useFirestore, useUser, useMemoFirebase, useCollection } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StudentDashboard } from './components/student-dashboard';
 import { TutorDashboard } from './components/tutor-dashboard';
 import { useLanguage } from '@/context/language-context';
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, SavedStudyPlan, QuizResult } from '@/lib/types';
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser();
@@ -35,14 +36,29 @@ export default function Dashboard() {
     isLoading: isProfileLoading,
     error,
   } = useDoc<UserProfile>(userProfileRef);
+
+  const studyPlansRef = useMemoFirebase(
+    () => (user ? query(collection(firestore, 'users', user.uid, 'studyPlans')) : null),
+    [firestore, user]
+  );
+  const { data: studyPlans, isLoading: arePlansLoading } = useCollection<SavedStudyPlan>(studyPlansRef);
+
+  const quizResultsRef = useMemoFirebase(
+    () => (user ? query(collection(firestore, 'users', user.uid, 'quizResults')) : null),
+    [firestore, user]
+  );
+  const { data: quizResults, isLoading: areResultsLoading } = useCollection<QuizResult>(quizResultsRef);
   
-  const isLoading = isUserLoading || isProfileLoading;
+  const isLoading = isUserLoading || isProfileLoading || arePlansLoading || areResultsLoading;
 
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col gap-4">
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
           <Skeleton className="h-36" />
         </div>
         <div className="grid gap-4 md:gap-8">
@@ -65,7 +81,5 @@ export default function Dashboard() {
     return <TutorDashboard />;
   }
   
-  return <StudentDashboard />;
+  return <StudentDashboard studyPlans={studyPlans} quizResults={quizResults} />;
 }
-
-    

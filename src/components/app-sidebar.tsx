@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -5,6 +6,7 @@ import {
   Home,
   Settings,
   Users,
+  BookCopy,
 } from 'lucide-react';
 import { Icons } from './icons';
 import { cn } from '@/lib/utils';
@@ -32,20 +34,23 @@ export function AppSidebar({ className }: { className?: string }) {
       dashboard: 'Tableau de bord',
       tutors: 'Répétiteurs',
       settings: 'Paramètres',
+      studyPlan: "Plans d'étude",
     },
     en: {
       dashboard: 'Dashboard',
       tutors: 'Tutors',
       settings: 'Settings',
+      studyPlan: "Study Plans",
     },
   };
 
   const t = content[language];
   
   const navItems = [
-    { href: '/dashboard', icon: Home, label: t.dashboard },
-    { href: '/tutors', icon: Users, label: t.tutors },
-    { href: '/settings', icon: Settings, label: t.settings },
+    { href: '/dashboard', icon: Home, label: t.dashboard, roles: ['student', 'tutor', 'admin'] },
+    { href: '/study-plan', icon: BookCopy, label: t.studyPlan, roles: ['student'] },
+    { href: '/tutors', icon: Users, label: t.tutors, roles: ['student', 'tutor', 'admin'] },
+    { href: '/settings', icon: Settings, label: t.settings, roles: ['student', 'tutor', 'admin'] },
   ];
   
   const isLoading = isProfileLoading;
@@ -71,17 +76,19 @@ export function AppSidebar({ className }: { className?: string }) {
                     <Skeleton className="h-8 w-full" />
                 </div>
             ) : (
-                navItems.map(({ href, icon: Icon, label }) => (
-                <Link
-                    key={label}
-                    href={href}
-                    className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted", {
-                        "bg-muted text-primary": pathname === href
-                    })}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
+                navItems
+                .filter(item => userProfile && item.roles.includes(userProfile.role))
+                .map(({ href, icon: Icon, label }) => (
+                  <Link
+                      key={label}
+                      href={href}
+                      className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted", {
+                          "bg-muted text-primary": pathname.startsWith(href) && (href !== '/dashboard' || pathname === href)
+                      })}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Link>
                 ))
             )}
           </nav>
@@ -90,5 +97,3 @@ export function AppSidebar({ className }: { className?: string }) {
     </div>
   );
 }
-
-    

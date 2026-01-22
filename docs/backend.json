@@ -59,6 +59,15 @@
         "city": {
           "type": "string",
           "description": "User's city in Cameroon."
+        },
+        "aiCredits": {
+            "type": "number",
+            "description": "Number of AI credits for generating content."
+        },
+        "lastCreditRenewal": {
+            "type": "string",
+            "description": "Timestamp of the last AI credit renewal.",
+            "format": "date-time"
         }
       },
       "required": [
@@ -240,6 +249,66 @@
         "rating",
         "createdAt"
       ]
+    },
+    "StudyPlan": {
+        "title": "Study Plan",
+        "type": "object",
+        "description": "A personalized study plan for a student.",
+        "properties": {
+            "studentId": { "type": "string" },
+            "subject": { "type": "string" },
+            "learningGoals": { "type": "string" },
+            "lessons": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "title": { "type": "string" },
+                        "description": { "type": "string" },
+                        "duration": { "type": "number" },
+                        "content": { "type": "string" },
+                        "quiz": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "questionText": { "type": "string" },
+                                    "options": { "type": "array", "items": { "type": "string" } },
+                                    "correctAnswer": { "type": "string" },
+                                    "explanation": { "type": "string" }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["studentId", "subject", "learningGoals", "lessons", "createdAt"]
+    },
+    "QuizResult": {
+        "title": "Quiz Result",
+        "type": "object",
+        "description": "Results of a quiz taken by a student.",
+        "properties": {
+            "studentId": { "type": "string" },
+            "planId": { "type": "string" },
+            "planSubject": { "type": "string" },
+            "lessonTitle": { "type": "string" },
+            "score": { "type": "number" },
+            "completionDate": { "type": "string", "format": "date-time" },
+            "answers": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "questionIndex": { "type": "number" },
+                        "answer": { "type": "string" }
+                    }
+                }
+            }
+        },
+        "required": ["studentId", "planId", "score", "completionDate"]
     }
   },
   "auth": {
@@ -258,13 +327,27 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores user profiles. Accessible only to the user themselves and admins.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
+          "description": "Stores user profiles. Accessible only to the user themselves and admins."
+        }
+      },
+      {
+        "path": "/users/{userId}/studyPlans/{studyPlanId}",
+        "definition": {
+          "entityName": "StudyPlan",
+          "schema": {
+            "$ref": "#/backend/entities/StudyPlan"
+          },
+          "description": "Stores a student's personalized study plans."
+        }
+      },
+      {
+        "path": "/users/{userId}/quizResults/{quizResultId}",
+        "definition": {
+          "entityName": "QuizResult",
+          "schema": {
+            "$ref": "#/backend/entities/QuizResult"
+          },
+          "description": "Stores a student's quiz results."
         }
       },
       {
@@ -274,13 +357,7 @@
           "schema": {
             "$ref": "#/backend/entities/Subject"
           },
-          "description": "Stores subjects offered in the application. Publicly readable.",
-          "params": [
-            {
-              "name": "subjectId",
-              "description": "The unique identifier of the subject."
-            }
-          ]
+          "description": "Stores subjects offered in the application. Publicly readable."
         }
       },
       {
@@ -290,13 +367,7 @@
           "schema": {
             "$ref": "#/backend/entities/TutorProfile"
           },
-          "description": "Stores tutor profiles. Publicly readable, but only the tutor and admins can edit.",
-          "params": [
-            {
-              "name": "tutorId",
-              "description": "The unique identifier of the tutor profile."
-            }
-          ]
+          "description": "Stores tutor profiles. Publicly readable, but only the tutor and admins can edit."
         }
       },
       {
@@ -306,17 +377,7 @@
           "schema": {
             "$ref": "#/backend/entities/TutorRating"
           },
-          "description": "Stores individual ratings for a tutor. Each student can only create one rating per tutor, using their UID as the ratingId.",
-          "params": [
-            {
-              "name": "tutorId",
-              "description": "The unique identifier of the tutor profile."
-            },
-            {
-              "name": "studentId",
-              "description": "The unique identifier for the rating, which should be the student's UID."
-            }
-          ]
+          "description": "Stores individual ratings for a tutor. Each student can only create one rating per tutor, using their UID as the ratingId."
         }
       },
       {
@@ -326,18 +387,10 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores admin roles. Existence of a document grants admin privileges. Accessible only to admins.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user with admin privileges."
-            }
-          ]
+          "description": "Stores admin roles. Existence of a document grants admin privileges. Accessible only to admins."
         }
       }
     ],
-    "reasoning": "The Firestore structure has been radically simplified to focus on the core functionality: connecting students with tutors via WhatsApp. All entities and collections related to bookings, study plans, quizzes, courses, and payments have been removed. The structure now primarily supports user and tutor profiles, and a rating system. This clean model ensures security and scalability for the core features, adhering to principles of data minimization and clear access control.\\n\\n1.  **User & Tutor Profiles:** `/users/{userId}` and `/tutors/{tutorId}` remain the core collections for storing profile information. Access is restricted to owners or admins.\\n\\n2.  **Tutor Ratings:** `/tutors/{tutorId}/ratings/{studentId}` allows students to rate tutors. Using the student's UID as the document ID enforces a one-rating-per-student rule, which is a simple and effective security measure.\\n\\n3.  **Admin Roles:** The `/roles_admin/{userId}` collection continues to manage administrative privileges based on document existence, a secure and efficient pattern."
+    "reasoning": "The Firestore structure has been radically simplified to focus on the core functionality: connecting students with tutors via WhatsApp. All entities and collections related to bookings, and courses have been removed. The structure now primarily supports user and tutor profiles, a rating system, and student-centric features like study plans and quiz results. This clean model ensures security and scalability for the core features, adhering to principles of data minimization and clear access control.\\n\\n1.  **User & Tutor Profiles:** `/users/{userId}` and `/tutors/{tutorId}` remain the core collections for storing profile information. Access is restricted to owners or admins.\\n\\n2.  **Student Features:** Study plans and quiz results are stored in subcollections under the user's document (`/users/{userId}/studyPlans` and `/users/{userId}/quizResults`) to ensure data privacy and easy access for the student.\\n\\n3.  **Tutor Ratings:** `/tutors/{tutorId}/ratings/{studentId}` allows students to rate tutors. Using the student's UID as the document ID enforces a one-rating-per-student rule, which is a simple and effective security measure.\\n\\n4.  **Admin Roles:** The `/roles_admin/{userId}` collection continues to manage administrative privileges based on document existence, a secure and efficient pattern."
   }
 }
-
-    

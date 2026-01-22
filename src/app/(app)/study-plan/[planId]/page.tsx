@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -15,7 +16,7 @@ import {
 } from '@/ai/flows/generate-lesson-content';
 import { useLanguage } from '@/context/language-context';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import type { SavedStudyPlan, WithId, Lesson, Question } from '@/lib/types';
+import type { SavedStudyPlan, WithId, Lesson } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -349,7 +350,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 )}
-                {!isLoadingQuiz && !quizData && (
+                {!isLoadingQuiz && !quizData && quizScore === null && (
                     <Button onClick={handleGenerateQuiz} size="lg">
                         {t.takeQuiz}
                     </Button>
@@ -460,5 +461,3 @@ export default function StudyPlanDetailPage() {
     </RoleGuard>
   );
 }
-
-    
