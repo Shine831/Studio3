@@ -1,12 +1,12 @@
 'use client';
 
-import { collection, doc, DocumentData, query, where } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StudentDashboard } from './components/student-dashboard';
 import { TutorDashboard } from './components/tutor-dashboard';
 import { useLanguage } from '@/context/language-context';
-import type { UserProfile, SavedStudyPlan, QuizResult, FollowingRecord } from '@/lib/types';
+import type { UserProfile, SavedStudyPlan, QuizResult } from '@/lib/types';
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser();
@@ -16,18 +16,15 @@ export default function Dashboard() {
   const content = {
     fr: {
       loading: 'Chargement du tableau de bord...',
-      notStudentOrTutor: 'Rôle utilisateur non défini. Impossible d\'afficher le tableau de bord.',
       errorLoading: 'Impossible de charger le profil utilisateur.',
     },
     en: {
       loading: 'Loading dashboard...',
-      notStudentOrTutor: 'User role not set. Cannot display dashboard.',
       errorLoading: 'Failed to load user profile.',
     }
   };
   const t = content[language];
 
-  // Memoize the document reference to prevent re-renders
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'users', user.uid);
@@ -54,7 +51,6 @@ export default function Dashboard() {
   
   const isLoading = isUserLoading || isProfileLoading || arePlansLoading || areResultsLoading;
 
-  // Show a loading state while fetching user or profile data
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col gap-4">
@@ -65,8 +61,7 @@ export default function Dashboard() {
           <Skeleton className="h-36" />
           <Skeleton className="h-36" />
         </div>
-        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-          <Skeleton className="h-80 xl:col-span-2" />
+        <div className="grid gap-4 md:gap-8">
           <Skeleton className="h-80" />
         </div>
       </div>
@@ -82,19 +77,13 @@ export default function Dashboard() {
     )
   }
 
-
-  // Render the appropriate dashboard based on the user's role
   switch (userProfile?.role) {
     case 'tutor':
       return <TutorDashboard />;
     
     case 'student':
     case 'admin':
-      return <StudentDashboard studyPlans={studyPlans} quizResults={quizResults} />;
-
     default:
-      // This handles cases where `userProfile` is null, or `role` is not set.
-      // This defaults to the student dashboard as a safe fallback for new users.
       return <StudentDashboard studyPlans={studyPlans} quizResults={quizResults} />;
   }
 }

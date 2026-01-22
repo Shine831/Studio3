@@ -134,7 +134,8 @@ service cloud.firestore {
        * @principle Path-based ownership for user subcollections.
        */
       match /following/{tutorId} {
-        allow read, list, write: if isOwner(userId);
+        allow read, list: if isOwner(userId);
+        allow write: if isOwner(userId);
       }
 
       /**

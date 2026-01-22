@@ -47,8 +47,8 @@ const profileFormSchema = z.object({
   firstName: z.string().min(2, { message: 'First name must be at least 2 characters.' }),
   lastName: z.string().min(2, { message: 'Last name must be at least 2 characters.' }),
   email: z.string().email(),
-  system: z.enum(['francophone', 'anglophone']).optional(),
-  city: z.string().optional(),
+  system: z.enum(['francophone', 'anglophone']),
+  city: z.string(),
   // Tutor-specific fields
   subjects: z.string().optional(),
   whatsapp: z.string().optional(),
@@ -95,7 +95,7 @@ export default function SettingsPage() {
       firstName: '',
       lastName: '',
       email: '',
-      system: undefined,
+      system: 'francophone',
       city: '',
       subjects: '',
       whatsapp: '',
@@ -112,7 +112,7 @@ export default function SettingsPage() {
         firstName: userProfile.firstName || '',
         lastName: userProfile.lastName || '',
         email: userProfile.email || '',
-        system: userProfile.system || undefined,
+        system: userProfile.system || 'francophone',
         city: userProfile.city || '',
         profilePicture: userProfile.profilePicture || '',
       };
@@ -360,13 +360,12 @@ export default function SettingsPage() {
             )}
           />
           
-          {userProfile?.role === 'student' && (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {userProfile?.role === 'student' ? (
               <FormField
                   control={form.control}
                   name="system"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="hidden">
                       <FormLabel>{t.system}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ''}>
                         <FormControl>
@@ -383,31 +382,8 @@ export default function SettingsPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.city}</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t.cityPlaceholder} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {cameroonCities.map(c => (
-                              <SelectItem key={c} value={c}>{c}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            </div>
-          )}
-          
+          ) : null}
+
           {userProfile?.role === 'tutor' && (
             <>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

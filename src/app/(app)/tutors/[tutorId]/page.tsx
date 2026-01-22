@@ -17,7 +17,7 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, deleteDoc, serverTimestamp, collection, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, serverTimestamp, collection, writeBatch, getDoc } from 'firebase/firestore';
 import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,7 +42,6 @@ export default function TutorProfilePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  // --- Data Fetching ---
   const tutorProfileRef = useMemoFirebase(() => (firestore ? doc(firestore, 'tutors', tutorId) : null), [firestore, tutorId]);
   const { data: tutor, isLoading: isTutorLoading } = useDoc<TutorProfile>(tutorProfileRef);
 
@@ -55,13 +54,11 @@ export default function TutorProfilePage() {
   }, [firestore, user?.uid, tutorId]);
   const { data: userRating, isLoading: isRatingLoading } = useDoc<TutorRating>(userRatingRef);
 
-  // This ref points to the /tutors/{tutorId}/followers/{studentId} document
   const followerRef = useMemoFirebase(() => {
     if(!firestore || !user?.uid || !tutorId) return null;
     return doc(firestore, 'tutors', tutorId, 'followers', user.uid);
   }, [firestore, user?.uid, tutorId]);
 
-  // This ref points to the /users/{studentId}/following/{tutorId} document
   const followingRef = useMemoFirebase(() => {
     if(!firestore || !user?.uid || !tutorId) return null;
     return doc(firestore, 'users', user.uid, 'following', tutorId);
@@ -73,7 +70,6 @@ export default function TutorProfilePage() {
   const isFollowing = !!followerDoc;
 
 
-  // --- Content ---
   const content = {
     fr: {
       tutorNotFound: 'Répétiteur non trouvé',
@@ -126,58 +122,55 @@ export default function TutorProfilePage() {
   };
   const t = content[language];
   
-  // --- Handlers ---
   const handleFollowToggle = async () => {
     if (!followerRef || !followingRef || !user || !userProfile || !tutor || !firestore || !tutorProfileRef) return;
     
-    const batch = writeBatch(firestore);
-    const tutorDocRef = doc(firestore, 'tutors', tutorId);
-    const currentFollowers = tutor.followersCount || 0;
-
-    if (isFollowing) {
-        // Unfollow action
-        batch.delete(followerRef);
-        batch.delete(followingRef);
-        batch.update(tutorDocRef, { followersCount: currentFollowers > 0 ? currentFollowers - 1 : 0 });
-    } else {
-        // Follow action
-        const now = serverTimestamp();
-        
-        // Create record in tutor's followers list
-        batch.set(followerRef, {
-            studentId: user.uid,
-            studentName: userProfile.firstName + ' ' + userProfile.lastName,
-            studentAvatar: userProfile.profilePicture || null,
-            followedAt: now,
-        });
-
-        // Create record in student's following list (for their dashboard)
-        batch.set(followingRef, {
-            tutorId: tutorId,
-            tutorName: tutor.name,
-            tutorAvatar: tutor.avatarUrl || null,
-            followedAt: now,
-        });
-        
-        batch.update(tutorDocRef, { followersCount: currentFollowers + 1 });
-
-        // Send notification to the tutor
-        if(tutor.userId) {
-            const tutorNotificationsRef = doc(collection(firestore, 'users', tutor.userId, 'notifications'));
-            const studentName = userProfile.firstName + ' ' + userProfile.lastName;
-            batch.set(tutorNotificationsRef, {
-                userId: tutor.userId,
-                type: 'new_follower',
-                messageFr: `${studentName} ${t.newFollowerNotif}`,
-                messageEn: `${studentName} ${t.newFollowerNotif}`,
-                sentAt: now,
-                targetURL: '/students' // Link to the 'My Students' page
-            });
-        }
-    }
-
     try {
-      await batch.commit();
+        const batch = writeBatch(firestore);
+        const tutorDocRef = doc(firestore, 'tutors', tutorId);
+        const tutorDoc = await getDoc(tutorDocRef);
+        const currentTutorData = tutorDoc.data() as TutorProfile;
+        const currentFollowers = currentTutorData.followersCount || 0;
+
+        if (isFollowing) {
+            // Unfollow action
+            batch.delete(followerRef);
+            batch.delete(followingRef);
+            batch.update(tutorDocRef, { followersCount: currentFollowers > 0 ? currentFollowers - 1 : 0 });
+        } else {
+            // Follow action
+            const now = serverTimestamp();
+            
+            batch.set(followerRef, {
+                studentId: user.uid,
+                studentName: userProfile.firstName + ' ' + userProfile.lastName,
+                studentAvatar: userProfile.profilePicture || null,
+                followedAt: now,
+            });
+
+            batch.set(followingRef, {
+                tutorId: tutorId,
+                tutorName: tutor.name,
+                tutorAvatar: tutor.avatarUrl || null,
+                followedAt: now,
+            });
+            
+            batch.update(tutorDocRef, { followersCount: currentFollowers + 1 });
+
+            if(tutor.userId) {
+                const tutorNotificationsRef = doc(collection(firestore, 'users', tutor.userId, 'notifications'));
+                const studentName = userProfile.firstName + ' ' + userProfile.lastName;
+                batch.set(tutorNotificationsRef, {
+                    userId: tutor.userId,
+                    type: 'new_follower',
+                    messageFr: `${studentName} ${t.newFollowerNotif}`,
+                    messageEn: `${studentName} ${t.newFollowerNotif}`,
+                    sentAt: now,
+                    targetURL: '/students'
+                });
+            }
+        }
+        await batch.commit();
     } catch(error) {
       console.error("Follow/Unfollow transaction failed: ", error);
       toast({

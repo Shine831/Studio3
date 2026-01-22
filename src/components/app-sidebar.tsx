@@ -8,20 +8,22 @@ import {
   BookCopy,
   LayoutGrid,
   CalendarClock,
+  UserCheck,
 } from 'lucide-react';
 import { Icons } from './icons';
-import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/language-context';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import { doc } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
+import { usePathname } from 'next/navigation';
 
 export function AppSidebar({ className }: { className?: string }) {
   const { language } = useLanguage();
   const { user } = useUser();
   const firestore = useFirestore();
+  const pathname = usePathname();
 
   const userProfileRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -61,7 +63,7 @@ export function AppSidebar({ className }: { className?: string }) {
   
   const tutorNavItems = [
     { href: '/dashboard', icon: LayoutGrid, label: t.dashboard },
-    { href: '/students', icon: Users, label: t.students },
+    { href: '/students', icon: UserCheck, label: t.students },
     { href: '/schedule', icon: CalendarClock, label: t.schedule },
   ]
   
@@ -73,7 +75,6 @@ export function AppSidebar({ className }: { className?: string }) {
     if (userProfile?.role === 'tutor') {
       return [...tutorNavItems, ...commonNavItems];
     }
-    // Default to student nav for 'student', 'admin', or null/undefined roles
     return [...studentNavItems, ...commonNavItems];
   }
   
@@ -103,26 +104,20 @@ export function AppSidebar({ className }: { className?: string }) {
                     <Skeleton className="h-8 w-full" />
                 </div>
             ) : (
-                navItems.map(({ href, icon: Icon, label, badge }) => (
+                navItems.map(({ href, icon: Icon, label }) => (
                 <Link
                     key={label}
                     href={href}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
+                    className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted", {
+                        "bg-muted text-primary": pathname === href
+                    })}
                 >
                   <Icon className="h-4 w-4" />
                   {label}
-                  {badge && (
-                  <Badge className="ml-auto flex h-6 w-12 items-center justify-center rounded-md">
-                      {badge}
-                  </Badge>
-                  )}
                 </Link>
                 ))
             )}
           </nav>
-        </div>
-        <div className="mt-auto p-4 border-t">
-          {/* This could be a user profile section */}
         </div>
       </div>
     </div>
