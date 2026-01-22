@@ -26,6 +26,7 @@ export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardPr
   const content = {
     fr: {
       title: 'Tableau de bord de l\'élève',
+      description: "Voici un résumé de votre activité et de votre progression.",
       overview: 'Aperçu',
       recentActivity: 'Activité récente',
       myStudyPlans: 'Mes Plans d\'Étude',
@@ -35,6 +36,7 @@ export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardPr
     },
     en: {
       title: 'Student Dashboard',
+      description: "Here's a summary of your activity and progress.",
       overview: 'Overview',
       recentActivity: 'Recent Activity',
       myStudyPlans: 'My Study Plans',
@@ -48,7 +50,11 @@ export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardPr
   const recentPlans = studyPlans?.slice(0, 3) || [];
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
+    <div className="flex flex-1 flex-col gap-6">
+       <div>
+            <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
+            <p className="text-muted-foreground">{t.description}</p>
+        </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Overview studyPlans={studyPlans} quizResults={quizResults} />
       </div>
