@@ -129,6 +129,7 @@ export interface Booking {
   studentId: string;
   tutorId: string;
   studentName: string;
+  tutorName: string;
   subject: string;
   startTime: any; // Firestore Timestamp
   endTime: any; // Firestore Timestamp

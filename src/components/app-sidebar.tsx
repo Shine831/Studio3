@@ -37,6 +37,7 @@ export function AppSidebar({ className }: { className?: string }) {
       settings: 'Paramètres',
       students: 'Mes Élèves',
       schedule: 'Mon Calendrier',
+      mySchedule: 'Mon Emploi du Temps',
     },
     en: {
       dashboard: 'Dashboard',
@@ -45,6 +46,7 @@ export function AppSidebar({ className }: { className?: string }) {
       settings: 'Settings',
       students: 'My Students',
       schedule: 'My Schedule',
+      mySchedule: 'My Schedule',
     },
   };
 
@@ -54,6 +56,7 @@ export function AppSidebar({ className }: { className?: string }) {
     { href: '/dashboard', icon: Home, label: t.dashboard },
     { href: '/tutors', icon: Users, label: t.tutors },
     { href: '/study-plan', icon: BookCopy, label: t.studyPlans },
+    { href: '/my-schedule', icon: CalendarClock, label: t.mySchedule },
   ];
   
   const tutorNavItems = [

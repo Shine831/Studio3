@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useLanguage } from '@/context/language-context';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, Timestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import type { Booking, FollowerRecord, WithId } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,6 +19,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Timestamp } from 'firebase/firestore';
+import { format } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -113,7 +116,7 @@ function ScheduleSessionDialog({
     });
 
     async function onSubmit(data: z.infer<typeof bookingFormSchema>) {
-        if (!user || !firestore || students.length === 0) return;
+        if (!user || !user.displayName || !firestore || students.length === 0) return;
         
         try {
             const startDate = new Date(`${data.date}T${data.startTime}`);
@@ -126,18 +129,33 @@ function ScheduleSessionDialog({
             const batch = writeBatch(firestore);
 
             students.forEach(student => {
-                const newBookingRef = doc(collection(firestore, 'tutors', user.uid, 'bookings'));
+                const newTutorBookingRef = doc(collection(firestore, 'tutors', user.uid, 'bookings'));
+                const newStudentBookingRef = doc(firestore, 'users', student.id, 'bookings', newTutorBookingRef.id);
+                const studentNotificationRef = doc(collection(firestore, 'users', student.id, 'notifications'));
+                
                 const newBooking: Omit<Booking, 'id'> = {
                     studentId: student.id,
                     tutorId: user.uid,
                     studentName: student.studentName,
+                    tutorName: user.displayName || 'Tutor',
                     subject: data.subject,
                     startTime: Timestamp.fromDate(startDate),
                     endTime: Timestamp.fromDate(endDate),
                     status: 'confirmed',
                     notes: data.notes || '',
                 };
-                batch.set(newBookingRef, newBooking);
+                
+                batch.set(newTutorBookingRef, newBooking);
+                batch.set(newStudentBookingRef, newBooking);
+
+                batch.set(studentNotificationRef, {
+                    userId: student.id,
+                    type: 'booking_created',
+                    messageFr: `Nouvelle session de ${data.subject} programmée par ${user.displayName} pour le ${format(startDate, 'PPP', { locale: fr })}.`,
+                    messageEn: `New ${data.subject} session scheduled by ${user.displayName} for ${format(startDate, 'PPP', { locale: enUS })}.`,
+                    sentAt: serverTimestamp(),
+                    targetURL: '/my-schedule'
+                });
             })
 
             await batch.commit();

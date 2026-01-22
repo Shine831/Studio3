@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import type { Booking, WithId } from '@/lib/types';
@@ -32,6 +32,7 @@ function EditSessionDialog({ booking, language, children }: { booking: WithId<Bo
     const { toast } = useToast();
     const firestore = useFirestore();
     const { user } = useUser();
+    const locale = language === 'fr' ? fr : enUS;
 
     const t = {
         fr: {
@@ -47,6 +48,7 @@ function EditSessionDialog({ booking, language, children }: { booking: WithId<Bo
             updateSuccessDesc: "La session a été modifiée.",
             updateErrorTitle: "Erreur",
             updateErrorDesc: "Impossible de mettre à jour la session.",
+            notificationMessage: `Votre session de ${booking.subject} a été mise à jour.`,
             formErrors: {
                 subjectRequired: "Veuillez entrer une matière.",
                 dateRequired: "Veuillez choisir une date.",
@@ -67,6 +69,7 @@ function EditSessionDialog({ booking, language, children }: { booking: WithId<Bo
             updateSuccessDesc: "The session has been successfully modified.",
             updateErrorTitle: "Error",
             updateErrorDesc: "Could not update the session.",
+            notificationMessage: `Your ${booking.subject} session has been updated.`,
             formErrors: {
                 subjectRequired: "Please enter a subject.",
                 dateRequired: "Please pick a date.",
@@ -110,14 +113,32 @@ function EditSessionDialog({ booking, language, children }: { booking: WithId<Bo
             const startDate = new Date(`${data.date}T${data.startTime}`);
             const endDate = new Date(`${data.date}T${data.endTime}`);
 
-            const bookingRef = doc(firestore, 'tutors', user.uid, 'bookings', booking.id);
+            const batch = writeBatch(firestore);
 
-            await updateDoc(bookingRef, {
+            const tutorBookingRef = doc(firestore, 'tutors', user.uid, 'bookings', booking.id);
+            const studentBookingRef = doc(firestore, 'users', booking.studentId, 'bookings', booking.id);
+            const studentNotificationRef = doc(collection(firestore, 'users', booking.studentId, 'notifications'));
+
+            const updatedData = {
                 subject: data.subject,
                 startTime: Timestamp.fromDate(startDate),
                 endTime: Timestamp.fromDate(endDate),
                 notes: data.notes || '',
+            };
+
+            batch.update(tutorBookingRef, updatedData);
+            batch.update(studentBookingRef, updatedData);
+
+            batch.set(studentNotificationRef, {
+                userId: booking.studentId,
+                type: 'booking_updated',
+                messageFr: `Votre session de ${booking.subject} du ${format(booking.startTime.toDate(), 'PPP', { locale: fr })} a été modifiée.`,
+                messageEn: `Your ${booking.subject} session on ${format(booking.startTime.toDate(), 'PPP', { locale: enUS })} has been updated.`,
+                sentAt: serverTimestamp(),
+                targetURL: '/my-schedule'
             });
+
+            await batch.commit();
 
             toast({ title: t.updateSuccessTitle, description: t.updateSuccessDesc });
             setOpen(false);
@@ -192,7 +213,7 @@ function CancelSessionAlert({ booking, language, children }: { booking: WithId<B
     const t = {
         fr: {
             title: "Annuler la session ?",
-            description: "Cette action est irréversible. La session sera marquée comme annulée.",
+            description: "Cette action est irréversible. La session sera marquée comme annulée et l'élève sera notifié.",
             cancel: "Retour",
             confirm: "Confirmer l'annulation",
             successTitle: "Session annulée",
@@ -202,7 +223,7 @@ function CancelSessionAlert({ booking, language, children }: { booking: WithId<B
         },
         en: {
             title: "Cancel Session?",
-            description: "This action cannot be undone. The session will be marked as cancelled.",
+            description: "This action cannot be undone. The session will be marked as cancelled and the student will be notified.",
             cancel: "Back",
             confirm: "Confirm Cancellation",
             successTitle: "Session Cancelled",
@@ -215,8 +236,26 @@ function CancelSessionAlert({ booking, language, children }: { booking: WithId<B
     const handleCancel = async () => {
         if (!user || !firestore) return;
         try {
-            const bookingRef = doc(firestore, 'tutors', user.uid, 'bookings', booking.id);
-            await updateDoc(bookingRef, { status: 'cancelled' });
+            const batch = writeBatch(firestore);
+            
+            const tutorBookingRef = doc(firestore, 'tutors', user.uid, 'bookings', booking.id);
+            const studentBookingRef = doc(firestore, 'users', booking.studentId, 'bookings', booking.id);
+            const studentNotificationRef = doc(collection(firestore, 'users', booking.studentId, 'notifications'));
+
+            batch.update(tutorBookingRef, { status: 'cancelled' });
+            batch.update(studentBookingRef, { status: 'cancelled' });
+
+            batch.set(studentNotificationRef, {
+                userId: booking.studentId,
+                type: 'booking_cancelled',
+                messageFr: `Votre session de ${booking.subject} du ${format(booking.startTime.toDate(), 'PPP', { locale: fr })} a été annulée.`,
+                messageEn: `Your ${booking.subject} session on ${format(booking.startTime.toDate(), 'PPP', { locale: enUS })} has been cancelled.`,
+                sentAt: serverTimestamp(),
+                targetURL: '/my-schedule'
+            });
+
+            await batch.commit();
+
             toast({ title: t.successTitle, description: t.successDesc });
         } catch (error) {
             console.error(error);

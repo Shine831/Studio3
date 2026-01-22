@@ -136,6 +136,18 @@ service cloud.firestore {
       match /following/{tutorId} {
         allow read, write: if isOwner(userId);
       }
+
+      /**
+       * @description Stores a denormalized copy of a student's bookings for easy access.
+       * @path /users/{userId}/bookings/{bookingId}
+       * @principle Denormalization for efficient, secure reads.
+       */
+       match /bookings/{bookingId} {
+         // A student can read their own bookings.
+         allow read, list: if isOwner(userId);
+         // Writes are handled by tutors via batch writes, secured by checking for a tutor profile.
+         allow write: if isSignedIn() && exists(/databases/$(database)/documents/tutors/$(request.auth.uid));
+       }
     }
 
     /**
@@ -174,10 +186,7 @@ service cloud.firestore {
      * @principle Path-based ownership for user subcollections.
      */
     match /users/{userId}/notifications/{notificationId} {
-      allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc();
-      allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
+      allow get, list, write: if isOwner(userId) || isAdmin();
     }
 
 
