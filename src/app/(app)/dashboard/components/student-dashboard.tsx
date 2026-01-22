@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -14,6 +13,7 @@ import { RecentActivityChart } from './recent-activity-chart';
 import type { SavedStudyPlan, QuizResult, WithId } from '@/lib/types';
 import { BookCopy, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 interface StudentDashboardProps {
   studyPlans: SavedStudyPlan[] | null;
@@ -69,9 +69,6 @@ export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardPr
                     {t.viewAll} <ArrowRight className="inline h-4 w-4" />
                 </Link>
               </CardTitle>
-              <CardDescription>
-                {t.noPlans} <Link href="/study-plan" className="text-primary hover:underline">{t.createOne}</Link>
-              </CardDescription>
             </CardHeader>
             <CardContent>
               {recentPlans.length > 0 ? (
