@@ -180,8 +180,6 @@ export default function SettingsPage() {
                 availability: 'Non définie',
                 rating: 0,
                 reviewsCount: 0,
-                followersCount: 0,
-                adminVerified: false,
              });
         }
       }

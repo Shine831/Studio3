@@ -2,7 +2,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { Star, Verified, MessageSquare, MapPin } from 'lucide-react';
+import { Star, MessageSquare, MapPin } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -160,7 +160,6 @@ export default function TutorProfilePage() {
   }
 
   const whatsappLink = `https://wa.me/${tutor.whatsapp?.replace(/[^0-9]/g, '')}`;
-  const isVerified = tutor.adminVerified;
 
   return (
     <div className="container mx-auto max-w-4xl py-8">
@@ -173,12 +172,6 @@ export default function TutorProfilePage() {
           <div className="flex-1 space-y-2">
             <CardTitle className="flex items-center justify-center gap-2 text-3xl font-headline md:justify-start">
               {tutor.name}
-              {isVerified && (
-                <Verified
-                  className="h-7 w-7 text-primary"
-                  aria-label="Verified Tutor"
-                />
-              )}
             </CardTitle>
             <div className="flex items-center justify-center gap-4 text-lg text-muted-foreground md:justify-start">
                 <div className="flex items-center gap-1">
@@ -288,5 +281,3 @@ export default function TutorProfilePage() {
     </div>
   );
 }
-
-    

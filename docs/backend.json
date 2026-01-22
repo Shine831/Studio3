@@ -166,10 +166,6 @@
           "type": "number",
           "description": "Total number of reviews for the tutor."
         },
-        "adminVerified": {
-          "type": "boolean",
-          "description": "Indicates if the tutor has been verified by an administrator."
-        },
         "cvUrl": {
           "type": "string",
           "description": "URL to the tutor's CV.",

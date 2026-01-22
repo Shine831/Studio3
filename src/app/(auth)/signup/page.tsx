@@ -92,7 +92,6 @@ const createNewUserDocument = async (
             availability: 'Non définie', // Default value
             rating: 0,
             reviewsCount: 0,
-            adminVerified: false,
             whatsapp: whatsapp,
             system: system,
             city: city,
@@ -574,5 +573,3 @@ export default function SignupPage() {
     </>
   );
 }
-
-    

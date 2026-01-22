@@ -3,7 +3,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star, Verified } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,8 +46,6 @@ export function TutorCard({ tutor }: TutorCardProps) {
     }
   }[language];
   
-  const isVerified = tutor.adminVerified;
-
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg">
       <CardHeader className="flex flex-row items-center gap-4">
@@ -58,7 +56,6 @@ export function TutorCard({ tutor }: TutorCardProps) {
         <div className="flex-1">
           <CardTitle className="text-lg font-headline flex items-center gap-2">
             {tutor.name}
-            {isVerified && <Verified className="h-5 w-5 text-primary" />}
           </CardTitle>
           <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -88,5 +85,3 @@ export function TutorCard({ tutor }: TutorCardProps) {
     </Card>
   );
 }
-
-    

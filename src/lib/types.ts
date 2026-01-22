@@ -29,7 +29,6 @@ export interface TutorProfile {
     availability: string;
     rating: number;
     reviewsCount: number;
-    adminVerified: boolean;
     cvUrl?: string;
     identificationDocumentUrl?: string;
     whatsapp: string;
@@ -80,4 +79,3 @@ export interface QuizResult {
   completionDate: any; // Firestore Timestamp
   answers: Array<{ questionIndex: number; answer: string }>;
 }
-    
