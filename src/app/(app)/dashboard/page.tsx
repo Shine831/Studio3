@@ -35,17 +35,17 @@ export default function Dashboard() {
 
   const studyPlansRef = useMemoFirebase(
     () => (user ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
-    [firestore, user]
+    [firestore, user?.uid]
   );
   
   const quizResultsRef = useMemoFirebase(
     () => (user ? collection(firestore, 'users', user.uid, 'quizResults') : null),
-    [firestore, user]
+    [firestore, user?.uid]
   );
 
   const followedTutorsRef = useMemoFirebase(
     () => user ? collection(firestore, 'users', user.uid, 'following') : null,
-    [firestore, user]
+    [firestore, user?.uid]
   );
 
   const {
