@@ -52,7 +52,7 @@ export default function MyTutorsPage() {
 
         const fetchTutorProfiles = async () => {
             setIsLoadingProfiles(true);
-            const tutorIds = following.map(f => f.tutorId);
+            const tutorIds = following.map(f => f.id);
             
             try {
                 // Firestore 'in' query is limited to 30 elements at a time.
@@ -63,6 +63,7 @@ export default function MyTutorsPage() {
                 }
 
                 const profilePromises = tutorBatches.map(batch => {
+                    if (batch.length === 0) return Promise.resolve([]);
                     const tutorsRef = collection(firestore, 'tutors');
                     const q = query(tutorsRef, where(documentId(), 'in', batch));
                     return getDocs(q);
@@ -70,7 +71,7 @@ export default function MyTutorsPage() {
 
                 const querySnapshots = await Promise.all(profilePromises);
                 const profiles = querySnapshots.flatMap(snapshot => 
-                    snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<TutorProfile>))
+                    (snapshot as any).docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as WithId<TutorProfile>))
                 );
                 
                 setTutorProfiles(profiles);

@@ -17,7 +17,7 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, deleteDoc, serverTimestamp, collection, addDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, serverTimestamp, collection, updateDoc, increment, writeBatch } from 'firebase/firestore';
 import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -130,19 +130,20 @@ export default function TutorProfilePage() {
   const handleFollowToggle = async () => {
     if (!followerRef || !followingRef || !user || !userProfile || !tutor || !firestore || !tutorProfileRef) return;
     
+    const batch = writeBatch(firestore);
     const tutorDocRef = doc(firestore, 'tutors', tutorId);
 
     if (isFollowing) {
         // Unfollow action
-        await deleteDoc(followerRef);
-        await deleteDoc(followingRef);
-        await updateDoc(tutorDocRef, { followersCount: increment(-1) });
+        batch.delete(followerRef);
+        batch.delete(followingRef);
+        batch.update(tutorDocRef, { followersCount: increment(-1) });
     } else {
         // Follow action
         const now = serverTimestamp();
         
         // Create record in tutor's followers list
-        await setDoc(followerRef, {
+        batch.set(followerRef, {
             studentId: user.uid,
             studentName: userProfile.firstName + ' ' + userProfile.lastName,
             studentAvatar: userProfile.profilePicture || null,
@@ -150,20 +151,20 @@ export default function TutorProfilePage() {
         });
 
         // Create record in student's following list (for their dashboard)
-        await setDoc(followingRef, {
+        batch.set(followingRef, {
             tutorId: tutorId,
             tutorName: tutor.name,
             tutorAvatar: tutor.avatarUrl || null,
             followedAt: now,
         });
         
-        await updateDoc(tutorDocRef, { followersCount: increment(1) });
+        batch.update(tutorDocRef, { followersCount: increment(1) });
 
         // Send notification to the tutor
         if(tutor.userId) {
-            const tutorNotificationsRef = collection(firestore, 'users', tutor.userId, 'notifications');
+            const tutorNotificationsRef = doc(collection(firestore, 'users', tutor.userId, 'notifications'));
             const studentName = userProfile.firstName + ' ' + userProfile.lastName;
-            await addDoc(tutorNotificationsRef, {
+            batch.set(tutorNotificationsRef, {
                 userId: tutor.userId,
                 type: 'new_follower',
                 messageFr: `${studentName} ${t.newFollowerNotif}`,
@@ -172,6 +173,17 @@ export default function TutorProfilePage() {
                 targetURL: '/students' // Link to the 'My Students' page
             });
         }
+    }
+
+    try {
+      await batch.commit();
+    } catch(error) {
+      console.error("Follow/Unfollow transaction failed: ", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "L'opération a échoué. Veuillez réessayer.",
+      });
     }
   }
   
