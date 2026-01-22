@@ -34,6 +34,7 @@ export interface TutorProfile {
     whatsapp: string;
     system?: 'francophone' | 'anglophone' | 'both';
     city: string;
+    followersCount?: number;
 }
 
 export interface TutorRating {
@@ -78,4 +79,33 @@ export interface QuizResult {
   score: number;
   completionDate: any; // Firestore Timestamp
   answers: Array<{ questionIndex: number; answer: string }>;
+}
+
+export interface Booking {
+  studentId: string;
+  tutorId: string;
+  studentName: string;
+  tutorName: string;
+  subject: string;
+  startTime: any; // Firestore Timestamp
+  endTime: any; // Firestore Timestamp
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  notes?: string;
+}
+
+export interface FollowerRecord {
+    studentId: string;
+    studentName: string;
+    studentAvatar?: string;
+    followedAt: any; // Firestore Timestamp
+}
+
+export interface Notification {
+    id: string;
+    userId: string;
+    type: string;
+    messageFr: string;
+    messageEn: string;
+    sentAt: any; // Firestore timestamp
+    targetURL?: string;
 }
