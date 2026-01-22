@@ -2,7 +2,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { Star, Verified, MessageSquare, MapPin, UserPlus, UserCheck } from 'lucide-react';
+import { Star, Verified, MessageSquare, MapPin } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, deleteDoc, serverTimestamp, collection, writeBatch, getDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,21 +54,7 @@ export default function TutorProfilePage() {
   }, [firestore, user?.uid, tutorId]);
   const { data: userRating, isLoading: isRatingLoading } = useDoc<TutorRating>(userRatingRef);
 
-  const followerRef = useMemoFirebase(() => {
-    if(!firestore || !user?.uid || !tutorId) return null;
-    return doc(firestore, 'tutors', tutorId, 'followers', user.uid);
-  }, [firestore, user?.uid, tutorId]);
-
-  const followingRef = useMemoFirebase(() => {
-    if(!firestore || !user?.uid || !tutorId) return null;
-    return doc(firestore, 'users', user.uid, 'following', tutorId);
-  }, [firestore, user?.uid, tutorId]);
-
-  const { data: followerDoc, isLoading: isFollowerLoading } = useDoc(followerRef);
-
   const hasRated = !!userRating;
-  const isFollowing = !!followerDoc;
-
 
   const content = {
     fr: {
@@ -90,10 +76,6 @@ export default function TutorProfilePage() {
       loginToRateDesc: 'Vous devez être connecté pour laisser une évaluation.',
       alreadyRated: 'Déjà évalué',
       ratingError: "Échec de l'envoi de l'évaluation. Veuillez réessayer.",
-      follow: 'Suivre',
-      unfollow: 'Ne plus suivre',
-      following: 'Suivi',
-      newFollowerNotif: `vous suit maintenant.`
     },
     en: {
       tutorNotFound: 'Tutor not found',
@@ -114,72 +96,9 @@ export default function TutorProfilePage() {
       loginToRateDesc: 'You must be logged in to leave a rating.',
       alreadyRated: 'Already Rated',
       ratingError: 'Failed to submit rating. Please try again.',
-      follow: 'Follow',
-      unfollow: 'Unfollow',
-      following: 'Following',
-      newFollowerNotif: `is now following you.`
     },
   };
   const t = content[language];
-  
-  const handleFollowToggle = async () => {
-    if (!followerRef || !followingRef || !user || !userProfile || !tutor || !firestore || !tutorProfileRef) return;
-    
-    try {
-        const batch = writeBatch(firestore);
-        const tutorDocRef = doc(firestore, 'tutors', tutorId);
-        const tutorDoc = await getDoc(tutorDocRef);
-        const currentTutorData = tutorDoc.data() as TutorProfile;
-        const currentFollowers = currentTutorData.followersCount || 0;
-
-        if (isFollowing) {
-            // Unfollow action
-            batch.delete(followerRef);
-            batch.delete(followingRef);
-            batch.update(tutorDocRef, { followersCount: currentFollowers > 0 ? currentFollowers - 1 : 0 });
-        } else {
-            // Follow action
-            const now = serverTimestamp();
-            
-            batch.set(followerRef, {
-                studentId: user.uid,
-                studentName: userProfile.firstName + ' ' + userProfile.lastName,
-                studentAvatar: userProfile.profilePicture || null,
-                followedAt: now,
-            });
-
-            batch.set(followingRef, {
-                tutorId: tutorId,
-                tutorName: tutor.name,
-                tutorAvatar: tutor.avatarUrl || null,
-                followedAt: now,
-            });
-            
-            batch.update(tutorDocRef, { followersCount: currentFollowers + 1 });
-
-            if(tutor.userId) {
-                const tutorNotificationsRef = doc(collection(firestore, 'users', tutor.userId, 'notifications'));
-                const studentName = userProfile.firstName + ' ' + userProfile.lastName;
-                batch.set(tutorNotificationsRef, {
-                    userId: tutor.userId,
-                    type: 'new_follower',
-                    messageFr: `${studentName} ${t.newFollowerNotif}`,
-                    messageEn: `${studentName} ${t.newFollowerNotif}`,
-                    sentAt: now,
-                    targetURL: '/students'
-                });
-            }
-        }
-        await batch.commit();
-    } catch(error) {
-      console.error("Follow/Unfollow transaction failed: ", error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "L'opération a échoué. Veuillez réessayer.",
-      });
-    }
-  }
   
   const handleSubmitRating = async () => {
     if (!user || !firestore) {
@@ -241,7 +160,7 @@ export default function TutorProfilePage() {
   }
 
   const whatsappLink = `https://wa.me/${tutor.whatsapp?.replace(/[^0-9]/g, '')}`;
-  const isVerified = tutor.adminVerified || (tutor.followersCount && tutor.followersCount >= 20);
+  const isVerified = tutor.adminVerified;
 
   return (
     <div className="container mx-auto max-w-4xl py-8">
@@ -292,10 +211,6 @@ export default function TutorProfilePage() {
                     </a>
                 </Button>
             )}
-             <Button size="lg" variant={isFollowing ? "secondary" : "outline"} onClick={handleFollowToggle} disabled={isFollowerLoading}>
-                {isFollowing ? <UserCheck className="mr-2" /> : <UserPlus className="mr-2" />}
-                {isFollowing ? t.following : t.follow}
-             </Button>
           </div>
         </CardHeader>
         <CardContent className="mt-6 space-y-6 pt-6 border-t">
@@ -324,7 +239,7 @@ export default function TutorProfilePage() {
                     <h4 className="font-semibold">{t.system}</h4>
                     <div className="mt-2 flex flex-wrap gap-2">
                         <Badge variant="default" className="text-sm">
-                            {t.systems[tutor.system]}
+                            {t.systems[tutor.system as keyof typeof t.systems]}
                         </Badge>
                     </div>
                 </div>
@@ -373,3 +288,5 @@ export default function TutorProfilePage() {
     </div>
   );
 }
+
+    

@@ -5,10 +5,6 @@ import {
   Home,
   Settings,
   Users,
-  BookCopy,
-  LayoutGrid,
-  CalendarClock,
-  UserCheck,
 } from 'lucide-react';
 import { Icons } from './icons';
 import { cn } from '@/lib/utils';
@@ -35,52 +31,24 @@ export function AppSidebar({ className }: { className?: string }) {
     fr: {
       dashboard: 'Tableau de bord',
       tutors: 'Répétiteurs',
-      studyPlans: "Plans d'étude",
       settings: 'Paramètres',
-      students: 'Mes Élèves',
-      schedule: 'Mon Calendrier',
-      mySchedule: 'Mon Emploi du Temps',
     },
     en: {
       dashboard: 'Dashboard',
       tutors: 'Tutors',
-      studyPlans: 'Study Plans',
       settings: 'Settings',
-      students: 'My Students',
-      schedule: 'My Schedule',
-      mySchedule: 'My Schedule',
     },
   };
 
   const t = content[language];
   
-  const studentNavItems = [
+  const navItems = [
     { href: '/dashboard', icon: Home, label: t.dashboard },
     { href: '/tutors', icon: Users, label: t.tutors },
-    { href: '/study-plan', icon: BookCopy, label: t.studyPlans },
-    { href: '/my-schedule', icon: CalendarClock, label: t.mySchedule },
+    { href: '/settings', icon: Settings, label: t.settings },
   ];
   
-  const tutorNavItems = [
-    { href: '/dashboard', icon: LayoutGrid, label: t.dashboard },
-    { href: '/students', icon: UserCheck, label: t.students },
-    { href: '/schedule', icon: CalendarClock, label: t.schedule },
-  ]
-  
-  const commonNavItems = [
-     { href: '/settings', icon: Settings, label: t.settings },
-  ]
-  
-  const getNavItems = () => {
-    if (userProfile?.role === 'tutor') {
-      return [...tutorNavItems, ...commonNavItems];
-    }
-    return [...studentNavItems, ...commonNavItems];
-  }
-  
-  const navItems = getNavItems();
   const isLoading = isProfileLoading;
-
 
   return (
     <div className={cn('hidden border-r bg-card md:block', className)}>
@@ -98,7 +66,6 @@ export function AppSidebar({ className }: { className?: string }) {
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             {isLoading ? (
                 <div className="space-y-2 py-2">
-                    <Skeleton className="h-8 w-full" />
                     <Skeleton className="h-8 w-full" />
                     <Skeleton className="h-8 w-full" />
                     <Skeleton className="h-8 w-full" />
@@ -123,3 +90,5 @@ export function AppSidebar({ className }: { className?: string }) {
     </div>
   );
 }
+
+    

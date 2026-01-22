@@ -46,7 +46,7 @@ export function TutorCard({ tutor }: TutorCardProps) {
     }
   }[language];
   
-  const isVerified = tutor.adminVerified || (tutor.followersCount && tutor.followersCount >= 20);
+  const isVerified = tutor.adminVerified;
 
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all hover:shadow-lg">
@@ -69,7 +69,7 @@ export function TutorCard({ tutor }: TutorCardProps) {
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="flex flex-wrap gap-2">
-          {tutor.subjects.map((subject) => (
+          {tutor.subjects.slice(0, 3).map((subject) => (
             <Badge key={subject} variant="secondary">
               {subject}
             </Badge>
@@ -88,3 +88,5 @@ export function TutorCard({ tutor }: TutorCardProps) {
     </Card>
   );
 }
+
+    

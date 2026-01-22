@@ -59,15 +59,6 @@
         "city": {
           "type": "string",
           "description": "User's city in Cameroon."
-        },
-        "aiCredits": {
-            "type": "number",
-            "description": "Number of remaining AI generation credits."
-        },
-        "lastCreditRenewal": {
-            "type": "string",
-            "description": "Timestamp of the last daily AI credit renewal.",
-            "format": "date-time"
         }
       },
       "required": [
@@ -114,192 +105,6 @@
         "nameEn"
       ]
     },
-    "Course": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Course",
-      "type": "object",
-      "description": "Represents a course in a specific subject.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the course."
-        },
-        "subjectId": {
-          "type": "string",
-          "description": "Reference to Subject. (Relationship: Subject 1:N Course)"
-        },
-        "language": {
-          "type": "string",
-          "description": "Language of the course (fr/en)."
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the course."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the course."
-        },
-        "tags": {
-          "type": "array",
-          "description": "Tags associated with the course (e.g., algèbre, chimie organique).",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "id",
-        "subjectId",
-        "language",
-        "title",
-        "description"
-      ]
-    },
-    "Lesson": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Lesson",
-      "type": "object",
-      "description": "Represents a lesson within a course.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the lesson."
-        },
-        "courseId": {
-          "type": "string",
-          "description": "Reference to Course. (Relationship: Course 1:N Lesson)"
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the lesson."
-        },
-        "summary": {
-          "type": "string",
-          "description": "Summary of the lesson."
-        },
-        "content": {
-          "type": "string",
-          "description": "HTML/Markdown content of the lesson."
-        },
-        "resources": {
-          "type": "array",
-          "description": "URLs of resources (pdf/audio/video) for the lesson.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "estimatedTime": {
-          "type": "number",
-          "description": "Estimated time (in minutes) to complete the lesson."
-        }
-      },
-      "required": [
-        "id",
-        "courseId",
-        "title",
-        "summary",
-        "content"
-      ]
-    },
-    "Quiz": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Quiz",
-      "type": "object",
-      "description": "Represents a quiz associated with a lesson or course.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the quiz."
-        },
-        "courseId": {
-          "type": "string",
-          "description": "Reference to Course. (Relationship: Course 1:N Quiz)"
-        },
-        "lessonId": {
-          "type": "string",
-          "description": "Reference to Lesson. (Relationship: Lesson 1:N Quiz)"
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the quiz."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the quiz."
-        },
-        "questions": {
-          "type": "array",
-          "description": "References to questions in this quiz",
-          "items": {
-            "type": "string"
-          }
-        },
-        "duration": {
-          "type": "number",
-          "description": "Duration of the quiz in minutes."
-        },
-        "attemptsAllowed": {
-          "type": "number",
-          "description": "Number of attempts allowed for the quiz."
-        },
-        "passingScore": {
-          "type": "number",
-          "description": "Score required to pass the quiz."
-        }
-      },
-      "required": [
-        "id",
-        "title",
-        "questions"
-      ]
-    },
-    "Question": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Question",
-      "type": "object",
-      "description": "Represents a question within a quiz.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the question."
-        },
-        "quizId": {
-          "type": "string",
-          "description": "Reference to Quiz. (Relationship: Quiz 1:N Question)"
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of question (e.g., MCQ, True/False, short answer, matching)."
-        },
-        "text": {
-          "type": "string",
-          "description": "Text of the question."
-        },
-        "options": {
-          "type": "array",
-          "description": "Options for multiple-choice questions.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "correctAnswer": {
-          "type": "string",
-          "description": "Correct answer for the question."
-        },
-        "explanation": {
-          "type": "string",
-          "description": "Detailed explanation for the correct answer."
-        }
-      },
-      "required": [
-        "id",
-        "quizId",
-        "type",
-        "text",
-        "correctAnswer"
-      ]
-    },
     "TutorProfile": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "TutorProfile",
@@ -313,6 +118,14 @@
         "userId": {
           "type": "string",
           "description": "Reference to UserProfile. (Relationship: UserProfile 1:1 TutorProfile)"
+        },
+        "name": {
+            "type": "string",
+            "description": "Denormalized full name of the tutor for easy display."
+        },
+        "avatarUrl": {
+            "type": "string",
+            "description": "Denormalized avatar URL of the tutor for easy display."
         },
         "subjects": {
           "type": "array",
@@ -340,9 +153,9 @@
           "type": "number",
           "description": "Average rating of the tutor."
         },
-        "followersCount": {
-            "type": "number",
-            "description": "The number of students following the tutor."
+        "reviewsCount": {
+          "type": "number",
+          "description": "Total number of reviews for the tutor."
         },
         "adminVerified": {
           "type": "boolean",
@@ -375,6 +188,8 @@
       "required": [
         "id",
         "userId",
+        "name",
+        "whatsapp",
         "subjects",
         "classes",
         "monthlyRate",
@@ -400,6 +215,10 @@
           "type": "string",
           "description": "Reference to UserProfile of Student."
         },
+        "studentName": {
+            "type": "string",
+            "description": "Denormalized name of the student for easy display."
+        },
         "rating": {
           "type": "number",
           "description": "The rating value (e.g., 1-5)."
@@ -420,343 +239,6 @@
         "studentId",
         "rating",
         "createdAt"
-      ]
-    },
-    "FollowerRecord": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "FollowerRecord",
-      "type": "object",
-      "description": "Represents a student following a tutor.",
-      "properties": {
-        "studentId": {
-          "type": "string",
-          "description": "The UID of the student who is following."
-        },
-        "studentName": {
-            "type": "string",
-            "description": "The name of the student for easy display."
-        },
-        "studentAvatar": {
-            "type": "string",
-            "description": "The avatar URL of the student for easy display."
-        },
-        "followedAt": {
-          "type": "string",
-          "description": "Timestamp of when the follow action occurred.",
-          "format": "date-time"
-        }
-      },
-      "required": [ "studentId", "followedAt" ]
-    },
-    "FollowingRecord": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "FollowingRecord",
-      "type": "object",
-      "description": "Represents a tutor that a student is following.",
-      "properties": {
-        "tutorId": {
-          "type": "string"
-        },
-        "tutorName": {
-          "type": "string"
-        },
-        "tutorAvatar": {
-          "type": "string"
-        },
-        "followedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "tutorId",
-        "followedAt"
-      ]
-    },
-    "Booking": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Booking",
-      "type": "object",
-      "description": "Represents a booking for a tutoring session.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the booking."
-        },
-        "studentId": {
-          "type": "string",
-          "description": "Reference to UserProfile of Student."
-        },
-        "tutorId": {
-          "type": "string",
-          "description": "Reference to TutorProfile."
-        },
-        "subject": {
-          "type": "string",
-          "description": "Subject of the booking."
-        },
-        "studentName": {
-          "type": "string",
-          "description": "Name of the student for display."
-        },
-        "tutorName": {
-          "type": "string",
-          "description": "Name of the tutor for display."
-        },
-        "startTime": {
-          "type": "string",
-          "description": "Start time of the tutoring session.",
-          "format": "date-time"
-        },
-        "endTime": {
-          "type": "string",
-          "description": "End time of the tutoring session.",
-          "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "Status of the booking (e.g., pending, confirmed, completed, cancelled)."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Additional notes for the booking."
-        }
-      },
-      "required": [
-        "id",
-        "studentId",
-        "tutorId",
-        "subject",
-        "startTime",
-        "endTime",
-        "status",
-        "tutorName"
-      ]
-    },
-    "Payment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Payment",
-      "type": "object",
-      "description": "Represents a payment for a tutoring session or subscription.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the payment."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Payment)"
-        },
-        "bookingId": {
-          "type": "string",
-          "description": "Reference to Booking. (Relationship: Booking 1:1 Payment)"
-        },
-        "amount": {
-          "type": "number",
-          "description": "Amount paid."
-        },
-        "paymentDate": {
-          "type": "string",
-          "description": "Date of the payment.",
-          "format": "date-time"
-        },
-        "paymentMethod": {
-          "type": "string",
-          "description": "Method of payment (e.g., Stripe, mobile money)."
-        },
-        "transactionId": {
-          "type": "string",
-          "description": "Transaction ID from the payment gateway."
-        },
-        "status": {
-          "type": "string",
-          "description": "Status of the payment (e.g., pending, completed, failed)."
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "amount",
-        "paymentDate",
-        "paymentMethod",
-        "status"
-      ]
-    },
-    "StudyPlan": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "StudyPlan",
-      "type": "object",
-      "description": "Represents a personalized study plan for a student, generated by AI.",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "studentId": {
-          "type": "string"
-        },
-        "subject": {
-          "type": "string"
-        },
-        "learningGoals": {
-          "type": "string"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "lessons": {
-          "type": "array",
-          "description": "The sequence of lessons in the study plan.",
-          "items": {
-            "type": "object",
-            "properties": {
-              "title": {
-                "type": "string"
-              },
-              "description": {
-                "type": "string"
-              },
-              "duration": {
-                "type": "number"
-              },
-              "content": {
-                "type": "string",
-                "description": "The full markdown content of the lesson, generated by AI."
-              },
-              "quiz": {
-                "type": "array",
-                "description": "The quiz questions for this lesson, generated by AI.",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "questionText": {
-                      "type": "string"
-                    },
-                    "options": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "correctAnswer": {
-                      "type": "string"
-                    },
-                    "explanation": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "questionText",
-                    "options",
-                    "correctAnswer",
-                    "explanation"
-                  ]
-                }
-              }
-            },
-            "required": [
-              "title",
-              "description",
-              "duration"
-            ]
-          }
-        }
-      },
-      "required": [
-        "id",
-        "studentId",
-        "subject",
-        "createdAt",
-        "lessons"
-      ]
-    },
-    "QuizResult": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "QuizResult",
-      "type": "object",
-      "description": "Represents the result of a quiz taken by a student.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the quiz result."
-        },
-        "studentId": {
-          "type": "string",
-          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N QuizResult)"
-        },
-        "quizId": {
-          "type": "string",
-          "description": "Reference to Quiz. (Relationship: Quiz 1:N QuizResult)"
-        },
-        "score": {
-          "type": "number",
-          "description": "Score obtained in the quiz."
-        },
-        "completionDate": {
-          "type": "string",
-          "description": "Date when the quiz was completed.",
-          "format": "date-time"
-        },
-        "answers": {
-          "type": "array",
-          "description": "An array of selected answers for each question in the quiz",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "id",
-        "studentId",
-        "quizId",
-        "score",
-        "completionDate"
-      ]
-    },
-    "Notification": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Notification",
-      "type": "object",
-      "description": "Represents a notification to be sent to a user.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the notification."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Notification)"
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of notification (e.g., study reminder, tutoring session, promo)."
-        },
-        "messageFr": {
-          "type": "string",
-          "description": "Notification message in French."
-        },
-        "messageEn": {
-          "type": "string",
-          "description": "Notification message in English."
-        },
-        "sentAt": {
-          "type": "string",
-          "description": "Timestamp of when the notification was sent.",
-          "format": "date-time"
-        },
-        "targetURL": {
-          "type": "string",
-          "description": "Target URL when notification is clicked.",
-          "format": "uri"
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "type",
-        "messageFr",
-        "messageEn",
-        "sentAt"
       ]
     }
   },
@@ -802,110 +284,6 @@
         }
       },
       {
-        "path": "/subjects/{subjectId}/courses/{courseId}",
-        "definition": {
-          "entityName": "Course",
-          "schema": {
-            "$ref": "#/backend/entities/Course"
-          },
-          "description": "Stores courses within a subject. Publicly readable.",
-          "params": [
-            {
-              "name": "subjectId",
-              "description": "The unique identifier of the subject."
-            },
-            {
-              "name": "courseId",
-              "description": "The unique identifier of the course."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/subjects/{subjectId}/courses/{courseId}/lessons/{lessonId}",
-        "definition": {
-          "entityName": "Lesson",
-          "schema": {
-            "$ref": "#/backend/entities/Lesson"
-          },
-          "description": "Stores lessons within a course. Publicly readable.",
-          "params": [
-            {
-              "name": "subjectId",
-              "description": "The unique identifier of the subject."
-            },
-            {
-              "name": "courseId",
-              "description": "The unique identifier of the course."
-            },
-            {
-              "name": "lessonId",
-              "description": "The unique identifier of the lesson."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/subjects/{subjectId}/courses/{courseId}/lessons/{lessonId}/quizzes/{quizId}",
-        "definition": {
-          "entityName": "Quiz",
-          "schema": {
-            "$ref": "#/backend/entities/Quiz"
-          },
-          "description": "Stores quizzes within a lesson. Publicly readable. Includes denormalized 'courseId' and 'lessonId' for authorization independence.",
-          "params": [
-            {
-              "name": "subjectId",
-              "description": "The unique identifier of the subject."
-            },
-            {
-              "name": "courseId",
-              "description": "The unique identifier of the course."
-            },
-            {
-              "name": "lessonId",
-              "description": "The unique identifier of the lesson."
-            },
-            {
-              "name": "quizId",
-              "description": "The unique identifier of the quiz."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/subjects/{subjectId}/courses/{courseId}/lessons/{lessonId}/quizzes/{quizId}/questions/{questionId}",
-        "definition": {
-          "entityName": "Question",
-          "schema": {
-            "$ref": "#/backend/entities/Question"
-          },
-          "description": "Stores questions within a quiz. Publicly readable.",
-          "params": [
-            {
-              "name": "subjectId",
-              "description": "The unique identifier of the subject."
-            },
-            {
-              "name": "courseId",
-              "description": "The unique identifier of the course."
-            },
-            {
-              "name": "lessonId",
-              "description": "The unique identifier of the lesson."
-            },
-            {
-              "name": "quizId",
-              "description": "The unique identifier of the quiz."
-            },
-            {
-              "name": "questionId",
-              "description": "The unique identifier of the question."
-            }
-          ]
-        }
-      },
-      {
         "path": "/tutors/{tutorId}",
         "definition": {
           "entityName": "TutorProfile",
@@ -942,162 +320,6 @@
         }
       },
       {
-        "path": "/tutors/{tutorId}/followers/{studentId}",
-        "definition": {
-          "entityName": "FollowerRecord",
-          "schema": {
-            "$ref": "#/backend/entities/FollowerRecord"
-          },
-          "description": "Stores a record of a student following a tutor.",
-          "params": [
-            {
-              "name": "tutorId",
-              "description": "The unique identifier of the tutor being followed."
-            },
-            {
-              "name": "studentId",
-              "description": "The unique identifier of the student who is following."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/following/{tutorId}",
-        "definition": {
-          "entityName": "FollowingRecord",
-          "schema": {
-            "$ref": "#/backend/entities/FollowingRecord"
-          },
-          "description": "Stores a record of a tutor a student is following, enabling efficient lookups.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The student's UID."
-            },
-            {
-              "name": "tutorId",
-              "description": "The UID of the tutor being followed."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/tutors/{tutorId}/bookings/{bookingId}",
-        "definition": {
-          "entityName": "Booking",
-          "schema": {
-            "$ref": "#/backend/entities/Booking"
-          },
-          "description": "Stores booking information for a specific tutor. Accessible to the tutor and the involved student.",
-          "params": [
-            {
-              "name": "tutorId",
-              "description": "The unique identifier of the tutor."
-            },
-            {
-              "name": "bookingId",
-              "description": "The unique identifier of the booking."
-            }
-          ]
-        }
-      },
-       {
-        "path": "/users/{userId}/bookings/{bookingId}",
-        "definition": {
-          "entityName": "Booking",
-          "schema": {
-            "$ref": "#/backend/entities/Booking"
-          },
-          "description": "Stores a student's booking information, denormalized for easy access by the student.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the student."
-            },
-            {
-              "name": "bookingId",
-              "description": "The unique identifier of the booking."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/payments/{paymentId}",
-        "definition": {
-          "entityName": "Payment",
-          "schema": {
-            "$ref": "#/backend/entities/Payment"
-          },
-          "description": "Stores payment information. Accessible to the user who made the payment and admins.",
-          "params": [
-            {
-              "name": "paymentId",
-              "description": "The unique identifier of the payment."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/studyPlans/{studyPlanId}",
-        "definition": {
-          "entityName": "StudyPlan",
-          "schema": {
-            "$ref": "#/backend/entities/StudyPlan"
-          },
-          "description": "Stores study plans for a user. Accessible only to the user themselves and admins.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "studyPlanId",
-              "description": "The unique identifier of the study plan."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/quizResults/{quizResultId}",
-        "definition": {
-          "entityName": "QuizResult",
-          "schema": {
-            "$ref": "#/backend/entities/QuizResult"
-          },
-          "description": "Stores quiz results for a user. Accessible only to the user themselves and admins.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "quizResultId",
-              "description": "The unique identifier of the quiz result."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/notifications/{notificationId}",
-        "definition": {
-          "entityName": "Notification",
-          "schema": {
-            "$ref": "#/backend/entities/Notification"
-          },
-          "description": "Stores notifications for a user. Accessible only to the user themselves and admins.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "notificationId",
-              "description": "The unique identifier of the notification."
-            }
-          ]
-        }
-      },
-      {
         "path": "/roles_admin/{userId}",
         "definition": {
           "entityName": "adminRole",
@@ -1114,6 +336,8 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to provide a secure and scalable data model for the RéviseCamer application, adhering to the principles of Authorization Independence, Clarity of Intent, DBAC (Database Authentication and Authorization Control), and QAPs (Rules are not Filters). It uses denormalization to avoid complex security rules and ensures data integrity.  The core principle of this structure is Authorization Independence by denormalizing authorization context to enable atomic operations, avoiding the need for `get()` calls in security rules.\\n\\n1.  **User Profiles:** User profiles are stored in `/users/{userId}`.  This supports direct access and management of user-specific data using path-based rules.\\n\\n2.  **Subjects, Courses, Lessons, Quizzes, and Questions:** These are structured hierarchically to represent the educational content. Courses are stored under `/subjects/{subjectId}/courses/{courseId}`, lessons under `/subjects/{subjectId}/courses/{courseId}/lessons/{lessonId}`, quizzes under `/subjects/{subjectId}/courses/{courseId}/lessons/{lessonId}/quizzes/{quizId}`, and questions under `/subjects/{subjectId}/courses/{courseId}/lessons/{lessonId}/quizzes/{quizId}/questions/{questionId}`. This allows for easy querying and management of related content. The Quiz entity has a denormalized `courseId` and `lessonId` to allow direct collection queries for all quizzes in a course or lesson.\\n\\n3.  **Tutor Profiles and Subcollections:** Tutor-specific data is nested under `/tutors/{tutorId}`. This includes the tutor's public profile, as well as subcollections for `ratings`, `followers`, and now `bookings`. This structure allows tutors to easily and securely query their own related data without being able to see data from other tutors. It also simplifies security rules, as access can be granted based on the parent tutor document.\\n\\n4.  **Payments:** Payments are stored in `/payments/{paymentId}`. Access is controlled by the `userId` field.\\n\\n5.  **Study Plans and Quiz Results:** Study plans are stored under `/users/{userId}/studyPlans/{studyPlanId}` and quiz results under `/users/{userId}/quizResults/{quizResultId}`. This path-based ownership ensures only the user can access their own study plans and quiz results.\\n\\n6.  **Notifications:** Notifications are stored under `/users/{userId}/notifications/{notificationId}`, ensuring only the intended user can access their notifications.\\n\\n7. **Admin Roles:** The DBAC (Database Authentication and Authorization Control) is implemented using the dedicated collection /roles_admin/{uid}. The security rules check for the existence of a document in this collection to grant admin privileges.  Global roles leverage the **Existence over Content** principle, with dedicated collections like `/roles_admin/{uid}`.\\n\\n\\n**QAPs (Rules are not Filters):**\\nThe structure is designed to support secure `list` operations. For example, a tutor lists their bookings directly from their own `/tutors/{tutorId}/bookings` subcollection, which is inherently secure. This avoids having a global `/bookings` collection that would require complex and potentially insecure query rules. The addition of a denormalized `/users/{userId}/bookings` collection allows students to efficiently query their own bookings without compromising security."
+    "reasoning": "The Firestore structure has been radically simplified to focus on the core functionality: connecting students with tutors via WhatsApp. All entities and collections related to bookings, study plans, quizzes, courses, and payments have been removed. The structure now primarily supports user and tutor profiles, and a rating system. This clean model ensures security and scalability for the core features, adhering to principles of data minimization and clear access control.\\n\\n1.  **User & Tutor Profiles:** `/users/{userId}` and `/tutors/{tutorId}` remain the core collections for storing profile information. Access is restricted to owners or admins.\\n\\n2.  **Tutor Ratings:** `/tutors/{tutorId}/ratings/{studentId}` allows students to rate tutors. Using the student's UID as the document ID enforces a one-rating-per-student rule, which is a simple and effective security measure.\\n\\n3.  **Admin Roles:** The `/roles_admin/{userId}` collection continues to manage administrative privileges based on document existence, a secure and efficient pattern."
   }
 }
+
+    

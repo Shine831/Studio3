@@ -2,10 +2,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  BookOpen,
-  BrainCircuit,
-  LayoutDashboard,
-  Users,
+  MessageSquare,
+  Search,
+  Star,
+  UserCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,58 +19,55 @@ export default function LandingPage() {
 
   const features = [
     {
-      icon: <BookOpen className="h-10 w-10" />,
+      icon: <Search className="h-10 w-10" />,
       title: {
-        fr: 'Contenu Pédagogique Bilingue',
-        en: 'Bilingual Educational Content',
+        fr: 'Trouvez le Répétiteur Idéal',
+        en: 'Find the Ideal Tutor',
       },
       description: {
-        fr: 'Accédez à des cours et quiz structurés pour le système camerounais, en français et en anglais.',
-        en: 'Access structured courses and quizzes for the Cameroonian system, in both French and English.',
+        fr: 'Parcourez les profils de répétiteurs qualifiés et vérifiés pour toutes les matières.',
+        en: 'Browse profiles of qualified and verified tutors for all subjects.',
       },
     },
     {
-      icon: <BrainCircuit className="h-10 w-10" />,
+      icon: <MessageSquare className="h-10 w-10" />,
       title: {
-        fr: 'Plans d\'Étude sur Mesure',
-        en: 'Custom Study Plans',
+        fr: 'Contact Direct sur WhatsApp',
+        en: 'Direct Contact on WhatsApp',
       },
       description: {
-        fr: 'Décrivez vos objectifs et obtenez un plan d\'étude personnalisé généré par IA.',
-        en: 'Describe your goals and get a custom, AI-generated study plan.',
+        fr: 'Échangez directement avec les répétiteurs sur WhatsApp pour poser vos questions et organiser des cours.',
+        en: 'Chat directly with tutors on WhatsApp to ask questions and arrange lessons.',
       },
     },
     {
-      icon: <Users className="h-10 w-10" />,
+      icon: <Star className="h-10 w-10" />,
       title: {
-        fr: 'Répétiteurs Qualifiés',
-        en: 'Qualified Tutors',
+        fr: 'Évaluations Authentiques',
+        en: 'Authentic Reviews',
       },
       description: {
-        fr: 'Trouvez et réservez des sessions avec les meilleurs répétiteurs vérifiés.',
-        en: 'Find and book sessions with the best verified tutors.',
+        fr: 'Consultez les notes et les commentaires laissés par d\'autres élèves pour faire le bon choix.',
+        en: 'Check ratings and comments from other students to make the right choice.',
       },
     },
     {
-      icon: <LayoutDashboard className="h-10 w-10" />,
+      icon: <UserCheck className="h-10 w-10" />,
       title: {
-        fr: 'Suivi Personnalisé',
-        en: 'Personalized Tracking',
+        fr: 'Profils Vérifiés',
+        en: 'Verified Profiles',
       },
       description: {
-        fr: 'Suivez vos progrès avec un tableau de bord et un plan d’étude adapté à vos besoins.',
-        en: 'Track your progress with a dashboard and a study plan tailored to your needs.',
+        fr: 'Un badge de vérification vous aide à identifier les répétiteurs les plus fiables et expérimentés.',
+        en: 'A verification badge helps you identify the most reliable and experienced tutors.',
       },
     },
   ];
 
   const content = {
     fr: {
-      tagline: 'Plans d\'étude sur mesure et répétiteurs pour réussir votre lycée au Cameroun.',
-      getStarted: 'Commencer',
-      browseTutors: 'Voir les répétiteurs',
-      everythingYouNeed: 'Tout ce dont vous avez besoin pour réussir',
-      platformDescription: 'Une plateforme conçue pour les élèves camerounais.',
+      tagline: 'Le moyen le plus simple de trouver un répétiteur au Cameroun et de le contacter sur WhatsApp.',
+      getStarted: 'Trouver un répétiteur',
       features: 'Fonctionnalités',
       tutors: 'Répétiteurs',
       login: 'Se connecter',
@@ -79,11 +76,8 @@ export default function LandingPage() {
       privacy: 'Confidentialité'
     },
     en: {
-      tagline: 'Custom study plans and tutors to succeed in Cameroonian high school.',
-      getStarted: 'Get Started',
-      browseTutors: 'Browse Tutors',
-      everythingYouNeed: 'Everything you need to succeed',
-      platformDescription: 'A platform designed for Cameroonian students.',
+      tagline: 'The easiest way to find a tutor in Cameroon and connect on WhatsApp.',
+      getStarted: 'Find a Tutor',
       features: 'Features',
       tutors: 'Tutors',
       login: 'Log In',
@@ -111,12 +105,6 @@ export default function LandingPage() {
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {t.features}
-            </Link>
-            <Link
-              href="/tutors"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {t.tutors}
             </Link>
           </nav>
           <div className="flex items-center gap-4">
@@ -152,10 +140,7 @@ export default function LandingPage() {
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Button size="lg" asChild>
-                <Link href="/signup">{t.getStarted}</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/tutors">{t.browseTutors}</Link>
+                <Link href="/tutors">{t.getStarted}</Link>
               </Button>
             </div>
           </div>
@@ -165,10 +150,10 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h2 className="font-headline text-3xl font-bold text-foreground">
-                {t.everythingYouNeed}
+                Une Connexion Directe et Simple
               </h2>
               <p className="mt-4 text-muted-foreground">
-                {t.platformDescription}
+                Tout est conçu pour faciliter la mise en relation.
               </p>
             </div>
             <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -224,3 +209,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    

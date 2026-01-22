@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Menu, Search, X, BookCopy, Users } from 'lucide-react';
+import { Bell, Menu, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -16,28 +16,16 @@ import { UserNav } from './user-nav';
 import { useLanguage } from '@/context/language-context';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, doc, deleteDoc } from 'firebase/firestore';
-import type { Notification, SavedStudyPlan } from '@/lib/types';
+import type { Notification } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import React, { useState, useEffect } from 'react';
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import { useRouter } from 'next/navigation';
 import { AppSidebar } from './app-sidebar';
 
 export function AppHeader() {
-  const router = useRouter();
   const { language } = useLanguage();
   const { user } = useUser();
   const firestore = useFirestore();
-
-  const [openSearch, setOpenSearch] = useState(false);
 
   const notificationsRef = useMemoFirebase(
     () =>
@@ -51,29 +39,6 @@ export function AppHeader() {
     [firestore, user]
   );
   const { data: notifications } = useCollection<Notification>(notificationsRef);
-
-  const studyPlansRef = useMemoFirebase(
-    () => (user ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
-    [firestore, user]
-  );
-  const { data: savedPlans } = useCollection<SavedStudyPlan>(studyPlansRef);
-
-
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpenSearch((open) => !open)
-      }
-    }
-    document.addEventListener("keydown", down)
-    return () => document.removeEventListener("keydown", down)
-  }, [])
-
-  const runCommand = (command: () => unknown) => {
-    setOpenSearch(false);
-    command();
-  }
 
   const handleDeleteNotification = async (notificationId: string) => {
     if (!user) return;
@@ -90,29 +55,19 @@ export function AppHeader() {
       toggleNav: 'Basculer le menu de navigation',
       navMenu: 'Menu de navigation',
       navDescription:
-        "La navigation principale de l'application, avec des liens vers le tableau de bord, les cours, les répétiteurs, le plan d'étude et les paramètres.",
-      searchPlaceholder: 'Rechercher...',
+        "La navigation principale de l'application, avec des liens vers le tableau de bord, les répétiteurs, et les paramètres.",
       toggleNotifications: 'Basculer les notifications',
       notifications: 'Notifications',
       noNotifications: 'Aucune nouvelle notification.',
-      searchCommandPlaceholder: 'Taper une commande ou rechercher...',
-      noResults: 'Aucun résultat trouvé.',
-      tutorsGroup: 'Répétiteurs',
-      studyPlansGroup: 'Mes Plans d\'Étude',
     },
     en: {
       toggleNav: 'Toggle navigation menu',
       navMenu: 'Navigation Menu',
       navDescription:
-        'The main navigation for the application, with links to dashboard, tutors, study plan, and settings.',
-      searchPlaceholder: 'Search...',
+        'The main navigation for the application, with links to dashboard, tutors, and settings.',
       toggleNotifications: 'Toggle notifications',
       notifications: 'Notifications',
       noNotifications: 'No new notifications.',
-      searchCommandPlaceholder: 'Type a command or search...',
-      noResults: 'No results found.',
-      tutorsGroup: 'Tutors',
-      studyPlansGroup: 'My Study Plans',
     },
   };
 
@@ -120,9 +75,6 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6">
-      <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-        {/* Desktop nav can have some items, but most are in sidebar */}
-      </nav>
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="shrink-0 md:hidden">
@@ -139,20 +91,7 @@ export function AppHeader() {
         </SheetContent>
       </Sheet>
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <div className="ml-auto flex-1 sm:flex-initial">
-           <Button
-              variant="outline"
-              className="relative h-9 w-full justify-start rounded-[0.5rem] bg-background text-sm font-normal text-muted-foreground shadow-none sm:w-64"
-              onClick={() => setOpenSearch(true)}
-            >
-              <Search className="mr-2 h-4 w-4" />
-              <span className="hidden lg:inline-flex">{t.searchPlaceholder}</span>
-              <span className="inline-flex lg:hidden">{t.searchPlaceholder}</span>
-              <kbd className="pointer-events-none absolute right-[0.3rem] top-[0.3rem] hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                <span className="text-xs">⌘</span>K
-              </kbd>
-            </Button>
-        </div>
+        <div className="ml-auto flex-1 sm:flex-initial" />
         <LanguageSwitcher />
         <Sheet>
           <SheetTrigger asChild>
@@ -197,25 +136,9 @@ export function AppHeader() {
           </SheetContent>
         </Sheet>
         <UserNav />
-        <CommandDialog open={openSearch} onOpenChange={setOpenSearch}>
-          <CommandInput placeholder={t.searchCommandPlaceholder} />
-          <CommandList>
-            <CommandEmpty>{t.noResults}</CommandEmpty>
-            <CommandGroup heading={t.studyPlansGroup}>
-              {savedPlans?.map((plan) => (
-                 <CommandItem
-                    key={plan.id}
-                    value={`plan-${plan.subject}-${plan.learningGoals}`}
-                    onSelect={() => runCommand(() => router.push(`/study-plan/${plan.id}`))}
-                >
-                    <BookCopy className="mr-2 h-4 w-4" />
-                    <span>{plan.subject}</span>
-                 </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </CommandDialog>
       </div>
     </header>
   );
 }
+
+    

@@ -9,7 +9,7 @@ import {
   updateProfile,
   User,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc, Firestore, collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc, Firestore } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -51,7 +51,7 @@ const createNewUserDocument = async (
     role: 'student' | 'tutor';
     system: 'francophone' | 'anglophone';
     city: string;
-    whatsapp?: string;
+    whatsapp: string;
     classes?: string[];
     monthlyRate?: number;
   }
@@ -75,8 +75,6 @@ const createNewUserDocument = async (
           language: 'fr',
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
-          aiCredits: 5, // Give 5 free credits on signup
-          lastCreditRenewal: serverTimestamp(), // Set initial renewal date
       };
       
       await setDoc(userRef, userProfileData);
@@ -94,7 +92,6 @@ const createNewUserDocument = async (
             availability: 'Non définie', // Default value
             rating: 0,
             reviewsCount: 0,
-            followersCount: 0,
             adminVerified: false,
             whatsapp: whatsapp,
             system: system,
@@ -102,19 +99,6 @@ const createNewUserDocument = async (
         };
         await setDoc(tutorRef, tutorProfileData);
       }
-
-
-      // Add a welcome notification
-      const notificationsCollectionRef = collection(firestore, 'users', user.uid, 'notifications');
-      await addDoc(notificationsCollectionRef, {
-        userId: user.uid,
-        type: 'welcome',
-        messageFr: 'Bienvenue sur RéviseCamer ! Commencez par générer votre premier plan d\'étude.',
-        messageEn: 'Welcome to RéviseCamer! Get started by generating your first study plan.',
-        sentAt: serverTimestamp(),
-        targetURL: '/study-plan'
-      });
-
   } else {
       await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
   }
@@ -590,3 +574,5 @@ export default function SignupPage() {
     </>
   );
 }
+
+    
