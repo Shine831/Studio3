@@ -17,7 +17,7 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, deleteDoc, serverTimestamp, collection, updateDoc, increment, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, serverTimestamp, collection, updateDoc, writeBatch } from 'firebase/firestore';
 import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -132,12 +132,13 @@ export default function TutorProfilePage() {
     
     const batch = writeBatch(firestore);
     const tutorDocRef = doc(firestore, 'tutors', tutorId);
+    const currentFollowers = tutor.followersCount || 0;
 
     if (isFollowing) {
         // Unfollow action
         batch.delete(followerRef);
         batch.delete(followingRef);
-        batch.update(tutorDocRef, { followersCount: increment(-1) });
+        batch.update(tutorDocRef, { followersCount: currentFollowers - 1 });
     } else {
         // Follow action
         const now = serverTimestamp();
@@ -158,7 +159,7 @@ export default function TutorProfilePage() {
             followedAt: now,
         });
         
-        batch.update(tutorDocRef, { followersCount: increment(1) });
+        batch.update(tutorDocRef, { followersCount: currentFollowers + 1 });
 
         // Send notification to the tutor
         if(tutor.userId) {
