@@ -80,19 +80,19 @@ export function TutorDashboard() {
   
   const followersRef = useMemoFirebase(
     () => (user ? collection(firestore, 'tutors', user.uid, 'followers') : null),
-    [firestore, user]
+    [firestore, user?.uid]
   );
   const { data: followers, isLoading: isLoadingFollowers } = useCollection<FollowerRecord>(followersRef);
 
   const ratingsRef = useMemoFirebase(
     () => (user ? query(collection(firestore, 'tutors', user.uid, 'ratings'), orderBy('createdAt', 'desc'), limit(5)) : null),
-    [firestore, user]
+    [firestore, user?.uid]
   );
   const { data: ratings, isLoading: isLoadingRatings } = useCollection<TutorRating>(ratingsRef);
 
   const upcomingBookingsQuery = useMemoFirebase(
     () => (user ? query(collection(firestore, 'tutors', user.uid, 'bookings'), where('startTime', '>=', Timestamp.now()), orderBy('startTime', 'asc'), limit(5)) : null),
-    [firestore, user]
+    [firestore, user?.uid]
   );
   const { data: upcomingBookings, isLoading: isLoadingBookings } = useCollection<Booking>(upcomingBookingsQuery);
 
