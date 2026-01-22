@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -49,7 +48,7 @@ export function AppSidebar({ className }: { className?: string }) {
   const navItems = [
     { href: '/dashboard', icon: Home, label: t.dashboard, roles: ['student', 'tutor', 'admin'] },
     { href: '/study-plan', icon: BookCopy, label: t.studyPlan, roles: ['student'] },
-    { href: '/tutors', icon: Users, label: t.tutors, roles: ['student', 'tutor', 'admin'] },
+    { href: '/tutors', icon: Users, label: t.tutors, roles: ['student', 'admin'] },
     { href: '/settings', icon: Settings, label: t.settings, roles: ['student', 'tutor', 'admin'] },
   ];
   

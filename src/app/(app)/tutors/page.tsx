@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -15,10 +14,15 @@ import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@
 import { collection, query, doc } from 'firebase/firestore';
 import type { TutorProfile, UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { RoleGuard } from '@/components/role-guard';
+
 
 export default function TutorsPage() {
   const { language } = useLanguage();
   const [selectedSubject, setSelectedSubject] = useState('all');
+  const [showFollowedOnly, setShowFollowedOnly] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
 
@@ -34,18 +38,26 @@ export default function TutorsPage() {
   );
   const { data: tutorsData, isLoading: isLoadingTutors } = useCollection<TutorProfile>(tutorsQuery);
 
-  const isLoading = isLoadingTutors;
+  const followedTutorsRef = useMemoFirebase(
+    () => (user ? collection(firestore, 'users', user.uid, 'following') : null),
+    [firestore, user]
+  );
+  const { data: followedTutors, isLoading: isLoadingFollowed } = useCollection<{tutorId: string}>(followedTutorsRef);
+
+  const isLoading = isLoadingTutors || isLoadingFollowed;
 
   const content = {
     fr: {
       title: 'Trouver un répétiteur',
       filterSubject: 'Filtrer par matière',
       allSubjects: 'Toutes les matières',
+      showFollowed: 'Suivis seulement',
     },
     en: {
       title: 'Find a Tutor',
       filterSubject: 'Filter by Subject',
       allSubjects: 'All Subjects',
+      showFollowed: 'Followed only',
     },
   };
 
@@ -65,7 +77,14 @@ export default function TutorsPage() {
   const filteredTutors = useMemo(() => {
     if (!tutorsData) return [];
 
-    return tutorsData.filter((tutor) => {
+    let tutors = tutorsData;
+
+    if (showFollowedOnly && followedTutors) {
+        const followedIds = new Set(followedTutors.map(f => f.tutorId));
+        tutors = tutors.filter(tutor => followedIds.has(tutor.id));
+    }
+
+    return tutors.filter((tutor) => {
       const isSubjectMatch =
         selectedSubject === 'all' || tutor.subjects.includes(selectedSubject);
       
@@ -80,47 +99,53 @@ export default function TutorsPage() {
       
       return isSubjectMatch && isSystemMatch;
     });
-  }, [selectedSubject, tutorsData, userProfile]);
+  }, [selectedSubject, tutorsData, userProfile, showFollowedOnly, followedTutors]);
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
-      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
-        <div className="flex w-full flex-col items-stretch gap-4 sm:w-auto sm:flex-row sm:items-center">
-          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-            <SelectTrigger className="w-full sm:w-[220px] bg-card">
-              <SelectValue placeholder={t.filterSubject} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t.allSubjects}</SelectItem>
-              {allSubjects.map((subject) => (
-                <SelectItem key={subject} value={subject}>
-                  {subject}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <RoleGuard allowedRoles={['student', 'admin']}>
+        <div className="flex flex-1 flex-col gap-4">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
+            <div className="flex w-full flex-col items-stretch gap-4 sm:w-auto sm:flex-row sm:items-center">
+            <div className="flex items-center space-x-2">
+                <Switch id="followed-only" checked={showFollowedOnly} onCheckedChange={setShowFollowedOnly} />
+                <Label htmlFor="followed-only">{t.showFollowed}</Label>
+            </div>
+            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <SelectTrigger className="w-full sm:w-[220px] bg-card">
+                <SelectValue placeholder={t.filterSubject} />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="all">{t.allSubjects}</SelectItem>
+                {allSubjects.map((subject) => (
+                    <SelectItem key={subject} value={subject}>
+                    {subject}
+                    </SelectItem>
+                ))}
+                </SelectContent>
+            </Select>
+            </div>
         </div>
-      </div>
-      {isLoading ? (
-        <div className="grid gap-4 md:gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex flex-col space-y-3">
-                <Skeleton className="h-56 w-full rounded-xl" />
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
+        {isLoading ? (
+            <div className="grid gap-4 md:gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex flex-col space-y-3">
+                    <Skeleton className="h-56 w-full rounded-xl" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
                 </div>
-              </div>
+                ))}
+            </div>
+        ) : (
+            <div className="grid gap-4 md:gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredTutors.map((tutor) => (
+                <TutorCard key={tutor.id} tutor={tutor} />
             ))}
+            </div>
+        )}
         </div>
-      ) : (
-        <div className="grid gap-4 md:gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredTutors.map((tutor) => (
-            <TutorCard key={tutor.id} tutor={tutor} />
-          ))}
-        </div>
-      )}
-    </div>
+    </RoleGuard>
   );
 }
