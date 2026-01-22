@@ -16,7 +16,7 @@ export default function MyTutorsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
     const [tutorProfiles, setTutorProfiles] = useState<WithId<TutorProfile>[]>([]);
-    const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
 
     const t = {
         fr: {
@@ -40,30 +40,36 @@ export default function MyTutorsPage() {
     const { data: following, isLoading: isLoadingFollowing } = useCollection<FollowingRecord>(followingQuery);
 
     useEffect(() => {
-        if (!firestore) return;
-        
-        if (isLoadingFollowing) return;
-
-        if (!following || following.length === 0) {
-            setTutorProfiles([]);
-            setIsLoadingProfiles(false);
-            return;
-        }
-
         const fetchTutorProfiles = async () => {
-            setIsLoadingProfiles(true);
-            const tutorIds = following.map(f => f.id);
+            // Don't do anything until we have a definitive list of followed tutors.
+            if (isLoadingFollowing) {
+                return;
+            }
+
+            // If the user isn't following anyone, show the empty state.
+            if (!following || following.length === 0) {
+                setTutorProfiles([]);
+                setIsLoading(false);
+                return;
+            }
+
+            // Get the IDs of the tutors being followed.
+            const tutorIds = following.map(f => f.id).filter(id => !!id);
+
+            if (tutorIds.length === 0) {
+                setTutorProfiles([]);
+                setIsLoading(false);
+                return;
+            }
             
             try {
-                // Firestore 'in' query is limited to 30 elements at a time.
-                // We'll have to batch if it's more than 30.
+                // Fetch the profiles for the followed tutors in batches.
                 const tutorBatches: string[][] = [];
                 for (let i = 0; i < tutorIds.length; i += 30) {
                     tutorBatches.push(tutorIds.slice(i, i + 30));
                 }
 
                 const profilePromises = tutorBatches.map(batch => {
-                    if (batch.length === 0) return Promise.resolve([]);
                     const tutorsRef = collection(firestore, 'tutors');
                     const q = query(tutorsRef, where(documentId(), 'in', batch));
                     return getDocs(q);
@@ -71,7 +77,7 @@ export default function MyTutorsPage() {
 
                 const querySnapshots = await Promise.all(profilePromises);
                 const profiles = querySnapshots.flatMap(snapshot => 
-                    (snapshot as any).docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as WithId<TutorProfile>))
+                    snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<TutorProfile>))
                 );
                 
                 setTutorProfiles(profiles);
@@ -79,14 +85,14 @@ export default function MyTutorsPage() {
                 console.error("Error fetching tutor profiles: ", error);
                 setTutorProfiles([]);
             } finally {
-                setIsLoadingProfiles(false);
+                // All data fetching is complete.
+                setIsLoading(false);
             }
         };
 
         fetchTutorProfiles();
     }, [following, firestore, isLoadingFollowing]);
 
-    const isLoading = isLoadingFollowing || isLoadingProfiles;
 
     return (
         <RoleGuard allowedRoles={['student', 'admin']}>
