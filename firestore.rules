@@ -125,7 +125,7 @@ service cloud.firestore {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if (isOwner(userId) || isAdmin()) && request.resource.data.role == resource.data.role; // Allow owner to update, but not change role
+      allow update: if isOwner(userId) || isAdmin();
       allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
 
       /**
@@ -133,7 +133,7 @@ service cloud.firestore {
        * @path /users/{userId}/following/{tutorId}
        * @principle Path-based ownership for user subcollections.
        */
-      match /following/{tutorId} {
+      match /following/{document=**} {
         allow read, write: if isOwner(userId);
       }
 
