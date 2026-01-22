@@ -58,7 +58,7 @@ service cloud.firestore {
       }
 
       match /following/{tutorId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if request.auth.uid == userId;
       }
 
       match /bookings/{bookingId} {
@@ -91,8 +91,13 @@ service cloud.firestore {
       }
 
       match /followers/{studentId} {
-        allow get, list: if isOwner(tutorId) || isAdmin();
-        allow create, delete: if isOwner(studentId);
+        // A tutor can read their own followers list. An admin can read any list.
+        allow list, get: if request.auth.uid == tutorId || isAdmin();
+        
+        // A student can create/delete their own follower record.
+        allow create, delete: if request.auth.uid == studentId;
+
+        // No one can update a follower record.
         allow update: if false;
       }
 
