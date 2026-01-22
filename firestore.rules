@@ -83,7 +83,7 @@ service cloud.firestore {
     match /tutors/{tutorId} {
       allow get, list: if true;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
+      allow update: if (isTutorOwner(resource.data) || isAdmin() || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount']))) && isExistingDoc();
       allow delete: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
 
       match /ratings/{studentId} {

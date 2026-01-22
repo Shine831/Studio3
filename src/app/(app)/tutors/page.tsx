@@ -42,7 +42,7 @@ export default function TutorsPage() {
     () => (user ? collection(firestore, 'users', user.uid, 'following') : null),
     [firestore, user]
   );
-  const { data: followedTutors, isLoading: isLoadingFollowed } = useCollection<{tutorId: string}>(followedTutorsRef);
+  const { data: followedTutors, isLoading: isLoadingFollowed } = useCollection<{ followedAt: any }>(followedTutorsRef);
 
   const isLoading = isLoadingTutors || isLoadingFollowed;
 
@@ -80,7 +80,7 @@ export default function TutorsPage() {
     let tutors = tutorsData;
 
     if (showFollowedOnly && followedTutors) {
-        const followedIds = new Set(followedTutors.map(f => f.tutorId));
+        const followedIds = new Set(followedTutors.map(f => f.id));
         tutors = tutors.filter(tutor => followedIds.has(tutor.id));
     }
 

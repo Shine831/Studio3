@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
-import { Star, MessageSquare, MapPin } from 'lucide-react';
+import { Star, MessageSquare, MapPin, Heart } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, writeBatch, increment, deleteDoc } from 'firebase/firestore';
 import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -53,8 +52,15 @@ export default function TutorProfilePage() {
     return doc(firestore, 'tutors', tutorId, 'ratings', user.uid);
   }, [firestore, user?.uid, tutorId]);
   const { data: userRating, isLoading: isRatingLoading } = useDoc<TutorRating>(userRatingRef);
-
   const hasRated = !!userRating;
+  
+  const followingRef = useMemoFirebase(() => {
+    if (!user || !tutorId) return null;
+    return doc(firestore, 'users', user.uid, 'following', tutorId as string);
+  }, [firestore, user, tutorId]);
+  const { data: followingDoc, isLoading: isFollowingLoading } = useDoc(followingRef);
+  const isFollowing = !!followingDoc;
+
 
   const content = {
     fr: {
@@ -72,10 +78,15 @@ export default function TutorProfilePage() {
       submitRating: 'Soumettre l\'évaluation',
       ratingSubmitted: 'Évaluation envoyée !',
       ratingSubmittedDesc: 'Merci d\'avoir évalué ce répétiteur.',
-      loginToRate: 'Connectez-vous pour noter',
-      loginToRateDesc: 'Vous devez être connecté pour laisser une évaluation.',
+      loginToRate: 'Connectez-vous pour noter ou suivre',
+      loginToRateDesc: 'Vous devez être connecté pour laisser une évaluation ou suivre un répétiteur.',
       alreadyRated: 'Déjà évalué',
       ratingError: "Échec de l'envoi de l'évaluation. Veuillez réessayer.",
+      follow: 'Suivre',
+      following: 'Suivi',
+      followSuccess: 'Vous suivez maintenant ce répétiteur !',
+      unfollowSuccess: 'Vous ne suivez plus ce répétiteur.',
+      followError: 'Une erreur est survenue. Veuillez réessayer.',
     },
     en: {
       tutorNotFound: 'Tutor not found',
@@ -92,14 +103,59 @@ export default function TutorProfilePage() {
       submitRating: 'Submit Rating',
       ratingSubmitted: 'Rating Submitted!',
       ratingSubmittedDesc: 'Thanks for rating this tutor.',
-      loginToRate: 'Login to Rate',
-      loginToRateDesc: 'You must be logged in to leave a rating.',
+      loginToRate: 'Login to Rate or Follow',
+      loginToRateDesc: 'You must be logged in to leave a rating or follow a tutor.',
       alreadyRated: 'Already Rated',
       ratingError: 'Failed to submit rating. Please try again.',
+      follow: 'Follow',
+      following: 'Following',
+      followSuccess: 'You are now following this tutor!',
+      unfollowSuccess: 'You have unfollowed this tutor.',
+      followError: 'An error occurred. Please try again.',
     },
   };
   const t = content[language];
   
+  const handleFollowToggle = async () => {
+    if (!user || !firestore || !userProfile) {
+        toast({ variant: 'destructive', title: t.loginToRate, description: t.loginToRateDesc });
+        return;
+    }
+
+    const batch = writeBatch(firestore);
+    const tutorDocRef = doc(firestore, 'tutors', tutorId);
+    const userFollowingRef = doc(firestore, 'users', user.uid, 'following', tutorId);
+    const tutorFollowerRef = doc(firestore, 'tutors', tutorId, 'followers', user.uid);
+    
+    try {
+        if (isFollowing) {
+            // Unfollow
+            batch.delete(userFollowingRef);
+            batch.delete(tutorFollowerRef);
+            batch.update(tutorDocRef, { followersCount: increment(-1) });
+            
+            await batch.commit();
+            toast({ title: t.unfollowSuccess });
+        } else {
+            // Follow
+            batch.set(userFollowingRef, { followedAt: serverTimestamp() });
+            batch.set(tutorFollowerRef, {
+                studentId: user.uid,
+                studentName: `${userProfile.firstName} ${userProfile.lastName}`,
+                studentAvatar: userProfile.profilePicture || null,
+                followedAt: serverTimestamp()
+            });
+            batch.update(tutorDocRef, { followersCount: increment(1) });
+            
+            await batch.commit();
+            toast({ title: t.followSuccess });
+        }
+    } catch(e) {
+        console.error("Follow/unfollow failed: ", e);
+        toast({ variant: 'destructive', title: t.followError });
+    }
+  };
+
   const handleSubmitRating = async () => {
     if (!user || !firestore) {
       toast({ variant: 'destructive', title: t.loginToRate, description: t.loginToRateDesc });
@@ -196,7 +252,13 @@ export default function TutorProfilePage() {
             </div>
           </div>
           <div className="flex w-full flex-col gap-2 md:w-auto">
-             {tutor.whatsapp && (
+            {userProfile?.role === 'student' && (
+              <Button size="lg" variant="outline" onClick={handleFollowToggle} disabled={isFollowingLoading}>
+                  <Heart className={cn("mr-2", isFollowing && "fill-destructive text-destructive")} />
+                  {isFollowing ? t.following : t.follow}
+              </Button>
+            )}
+            {tutor.whatsapp && (
                 <Button size="lg" asChild>
                     <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
                         <MessageSquare className="mr-2"/>
@@ -237,45 +299,47 @@ export default function TutorProfilePage() {
                     </div>
                 </div>
             )}
-             <div className="border-t pt-6 mt-6">
-              <h4 className="font-semibold">{t.leaveRating}</h4>
-              {isRatingLoading ? (
-                  <Skeleton className="h-24 w-full" />
-              ) : (
-                <div className="mt-2 space-y-4">
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={cn(
-                          "h-7 w-7",
-                          hasRated ? "text-muted-foreground cursor-not-allowed" : "cursor-pointer",
-                          (hoverRating || rating || userRating?.rating) >= star
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-muted-foreground"
-                        )}
-                        onMouseEnter={() => !hasRated && setHoverRating(star)}
-                        onMouseLeave={() => !hasRated && setHoverRating(0)}
-                        onClick={() => !hasRated && setRating(star)}
-                      />
-                    ))}
-                  </div>
-                  {!hasRated && rating > 0 && (
-                    <Textarea 
-                        placeholder={t.yourComment}
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                    />
-                  )}
-                  {hasRated && userRating?.comment && (
-                    <p className="text-sm text-muted-foreground italic p-3 bg-muted rounded-md">"{userRating.comment}"</p>
-                  )}
-                  <Button disabled={(rating === 0 && !hasRated) || hasRated} onClick={handleSubmitRating}>
-                    {hasRated ? t.alreadyRated : t.submitRating}
-                  </Button>
+            {userProfile?.role === 'student' && (
+                <div className="border-t pt-6 mt-6">
+                <h4 className="font-semibold">{t.leaveRating}</h4>
+                {isRatingLoading ? (
+                    <Skeleton className="h-24 w-full" />
+                ) : (
+                    <div className="mt-2 space-y-4">
+                    <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                            key={star}
+                            className={cn(
+                            "h-7 w-7",
+                            hasRated ? "text-muted-foreground cursor-not-allowed" : "cursor-pointer",
+                            (hoverRating || rating || userRating?.rating) >= star
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-muted-foreground"
+                            )}
+                            onMouseEnter={() => !hasRated && setHoverRating(star)}
+                            onMouseLeave={() => !hasRated && setHoverRating(0)}
+                            onClick={() => !hasRated && setRating(star)}
+                        />
+                        ))}
+                    </div>
+                    {!hasRated && rating > 0 && (
+                        <Textarea 
+                            placeholder={t.yourComment}
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                        />
+                    )}
+                    {hasRated && userRating?.comment && (
+                        <p className="text-sm text-muted-foreground italic p-3 bg-muted rounded-md">"{userRating.comment}"</p>
+                    )}
+                    <Button disabled={(rating === 0 && !hasRated) || hasRated} onClick={handleSubmitRating}>
+                        {hasRated ? t.alreadyRated : t.submitRating}
+                    </Button>
+                    </div>
+                )}
                 </div>
-              )}
-            </div>
+            )}
         </CardContent>
       </Card>
     </div>
