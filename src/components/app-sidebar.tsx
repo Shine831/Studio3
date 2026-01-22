@@ -8,6 +8,7 @@ import {
   BookCopy,
   LayoutGrid,
   CalendarClock,
+  UserCheck,
 } from 'lucide-react';
 import { Icons } from './icons';
 import { Badge } from './ui/badge';
@@ -38,6 +39,7 @@ export function AppSidebar({ className }: { className?: string }) {
       students: 'Mes Élèves',
       schedule: 'Mon Calendrier',
       mySchedule: 'Mon Emploi du Temps',
+      myTutors: 'Mes Répétiteurs',
     },
     en: {
       dashboard: 'Dashboard',
@@ -47,6 +49,7 @@ export function AppSidebar({ className }: { className?: string }) {
       students: 'My Students',
       schedule: 'My Schedule',
       mySchedule: 'My Schedule',
+      myTutors: 'My Tutors',
     },
   };
 
@@ -57,6 +60,7 @@ export function AppSidebar({ className }: { className?: string }) {
     { href: '/tutors', icon: Users, label: t.tutors },
     { href: '/study-plan', icon: BookCopy, label: t.studyPlans },
     { href: '/my-schedule', icon: CalendarClock, label: t.mySchedule },
+    { href: '/my-tutors', icon: UserCheck, label: t.myTutors },
   ];
   
   const tutorNavItems = [
