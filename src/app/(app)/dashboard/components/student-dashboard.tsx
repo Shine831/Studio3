@@ -14,8 +14,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Overview } from './overview';
 import { RecentActivityChart } from './recent-activity-chart';
 import { useLanguage } from '@/context/language-context';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
 import type { SavedStudyPlan, QuizResult, FollowingRecord, WithId } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -32,19 +30,11 @@ const getInitials = (name: string | null | undefined) => {
 interface StudentDashboardProps {
   studyPlans: SavedStudyPlan[] | null;
   quizResults: QuizResult[] | null;
+  followedTutors: WithId<FollowingRecord>[] | null;
 }
 
-export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardProps) {
+export function StudentDashboard({ studyPlans, quizResults, followedTutors }: StudentDashboardProps) {
   const { language } = useLanguage();
-  const { user } = useUser();
-  const firestore = useFirestore();
-
-  const followedTutorsRef = useMemoFirebase(
-    () => user ? collection(firestore, 'users', user.uid, 'following') : null,
-    [firestore, user]
-  );
-  const { data: followedTutors, isLoading: areTutorsLoading } = useCollection<FollowingRecord>(followedTutorsRef);
-
 
   const content = {
     fr: {
@@ -104,12 +94,7 @@ export function StudentDashboard({ studyPlans, quizResults }: StudentDashboardPr
             </Button>
           </CardHeader>
           <CardContent className="grid gap-4">
-            {areTutorsLoading ? (
-                <div className="space-y-4">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                </div>
-            ) : followedTutors && followedTutors.length > 0 ? (
+            {followedTutors && followedTutors.length > 0 ? (
                 followedTutors.map((tutor: WithId<FollowingRecord>) => (
                     <Link href={`/tutors/${tutor.id}`} key={tutor.id} className="flex items-center gap-4 hover:bg-accent p-2 rounded-md transition-colors">
                         <Avatar className="h-10 w-10 border">

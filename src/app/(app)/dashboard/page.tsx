@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StudentDashboard } from './components/student-dashboard';
 import { TutorDashboard } from './components/tutor-dashboard';
 import { useLanguage } from '@/context/language-context';
-import type { UserProfile, SavedStudyPlan, QuizResult } from '@/lib/types';
+import type { UserProfile, SavedStudyPlan, QuizResult, FollowingRecord } from '@/lib/types';
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser();
@@ -43,6 +43,11 @@ export default function Dashboard() {
     [firestore, user]
   );
 
+  const followedTutorsRef = useMemoFirebase(
+    () => user ? collection(firestore, 'users', user.uid, 'following') : null,
+    [firestore, user]
+  );
+
   const {
     data: userProfile,
     isLoading: isProfileLoading,
@@ -51,8 +56,9 @@ export default function Dashboard() {
 
   const { data: studyPlans, isLoading: arePlansLoading } = useCollection<SavedStudyPlan>(studyPlansRef);
   const { data: quizResults, isLoading: areResultsLoading } = useCollection<QuizResult>(quizResultsRef);
+  const { data: followedTutors, isLoading: areTutorsLoading } = useCollection<FollowingRecord>(followedTutorsRef);
   
-  const isLoading = isUserLoading || isProfileLoading || arePlansLoading || areResultsLoading;
+  const isLoading = isUserLoading || isProfileLoading || arePlansLoading || areResultsLoading || areTutorsLoading;
 
   // Show a loading state while fetching user or profile data
   if (isLoading) {
@@ -90,11 +96,11 @@ export default function Dashboard() {
     
     case 'student':
     case 'admin':
-      return <StudentDashboard studyPlans={studyPlans} quizResults={quizResults} />;
+      return <StudentDashboard studyPlans={studyPlans} quizResults={quizResults} followedTutors={followedTutors} />;
 
     default:
       // This handles cases where `userProfile` is null, or `role` is not set.
       // This defaults to the student dashboard as a safe fallback for new users.
-      return <StudentDashboard studyPlans={studyPlans} quizResults={quizResults} />;
+      return <StudentDashboard studyPlans={studyPlans} quizResults={quizResults} followedTutors={followedTutors} />;
   }
 }
