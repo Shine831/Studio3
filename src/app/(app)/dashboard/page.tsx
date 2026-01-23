@@ -1,12 +1,12 @@
 'use client';
 
-import { doc, collection, query, where, Timestamp } from 'firebase/firestore';
+import { doc, collection, query } from 'firebase/firestore';
 import { useDoc, useFirestore, useUser, useMemoFirebase, useCollection } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StudentDashboard } from './components/student-dashboard';
 import { TutorDashboard } from './components/tutor-dashboard';
 import { useLanguage } from '@/context/language-context';
-import type { UserProfile, SavedStudyPlan, QuizResult, Booking, FollowerRecord } from '@/lib/types';
+import type { UserProfile, SavedStudyPlan, QuizResult } from '@/lib/types';
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser();
@@ -49,20 +49,7 @@ export default function Dashboard() {
   );
   const { data: quizResults, isLoading: areResultsLoading } = useCollection<QuizResult>(quizResultsRef);
 
-  // Tutor data
-  const tutorBookingsRef = useMemoFirebase(
-    () => (user && userProfile?.role === 'tutor' ? query(collection(firestore, 'tutors', user.uid, 'bookings'), where('startTime', '>=', Timestamp.now())) : null),
-    [firestore, user, userProfile?.role]
-  );
-  const { data: tutorBookings, isLoading: areTutorBookingsLoading } = useCollection<Booking>(tutorBookingsRef);
-
-  const tutorFollowersRef = useMemoFirebase(
-    () => (user && userProfile?.role === 'tutor' ? query(collection(firestore, 'tutors', user.uid, 'followers')) : null),
-    [firestore, user, userProfile?.role]
-  );
-  const { data: tutorFollowers, isLoading: areTutorFollowersLoading } = useCollection<FollowerRecord>(tutorFollowersRef);
-  
-  const isLoading = isUserLoading || isProfileLoading || arePlansLoading || areResultsLoading || areTutorBookingsLoading || areTutorFollowersLoading;
+  const isLoading = isUserLoading || isProfileLoading || arePlansLoading || areResultsLoading;
 
   if (isLoading) {
     return (
@@ -91,7 +78,7 @@ export default function Dashboard() {
   }
 
   if (userProfile?.role === 'tutor') {
-    return <TutorDashboard bookings={tutorBookings} followers={tutorFollowers} />;
+    return <TutorDashboard />;
   }
   
   return <StudentDashboard studyPlans={studyPlans} quizResults={quizResults} />;

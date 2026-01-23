@@ -14,15 +14,12 @@ import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@
 import { collection, query, doc } from 'firebase/firestore';
 import type { TutorProfile, UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { RoleGuard } from '@/components/role-guard';
 
 
 export default function TutorsPage() {
   const { language } = useLanguage();
   const [selectedSubject, setSelectedSubject] = useState('all');
-  const [showFollowedOnly, setShowFollowedOnly] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
 
@@ -38,26 +35,18 @@ export default function TutorsPage() {
   );
   const { data: tutorsData, isLoading: isLoadingTutors } = useCollection<TutorProfile>(tutorsQuery);
 
-  const followedTutorsRef = useMemoFirebase(
-    () => (user ? collection(firestore, 'users', user.uid, 'following') : null),
-    [firestore, user]
-  );
-  const { data: followedTutors, isLoading: isLoadingFollowed } = useCollection<{ followedAt: any }>(followedTutorsRef);
-
-  const isLoading = isLoadingTutors || isLoadingFollowed;
+  const isLoading = isLoadingTutors;
 
   const content = {
     fr: {
       title: 'Trouver un répétiteur',
       filterSubject: 'Filtrer par matière',
       allSubjects: 'Toutes les matières',
-      showFollowed: 'Suivis seulement',
     },
     en: {
       title: 'Find a Tutor',
       filterSubject: 'Filter by Subject',
       allSubjects: 'All Subjects',
-      showFollowed: 'Followed only',
     },
   };
 
@@ -79,11 +68,6 @@ export default function TutorsPage() {
 
     let tutors = tutorsData;
 
-    if (showFollowedOnly && followedTutors) {
-        const followedIds = new Set(followedTutors.map(f => f.id));
-        tutors = tutors.filter(tutor => followedIds.has(tutor.id));
-    }
-
     return tutors.filter((tutor) => {
       const isSubjectMatch =
         selectedSubject === 'all' || tutor.subjects.includes(selectedSubject);
@@ -99,7 +83,7 @@ export default function TutorsPage() {
       
       return isSubjectMatch && isSystemMatch;
     });
-  }, [selectedSubject, tutorsData, userProfile, showFollowedOnly, followedTutors]);
+  }, [selectedSubject, tutorsData, userProfile]);
 
   return (
     <RoleGuard allowedRoles={['student', 'admin']}>
@@ -107,10 +91,6 @@ export default function TutorsPage() {
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-3xl font-bold font-headline">{t.title}</h1>
             <div className="flex w-full flex-col items-stretch gap-4 sm:w-auto sm:flex-row sm:items-center">
-            <div className="flex items-center space-x-2">
-                <Switch id="followed-only" checked={showFollowedOnly} onCheckedChange={setShowFollowedOnly} />
-                <Label htmlFor="followed-only">{t.showFollowed}</Label>
-            </div>
             <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                 <SelectTrigger className="w-full sm:w-[220px] bg-card">
                 <SelectValue placeholder={t.filterSubject} />

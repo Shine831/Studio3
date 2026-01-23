@@ -27,16 +27,6 @@ service cloud.firestore {
       return isOwner(tutorProfileData.userId);
     }
 
-    function isFollowOrUnfollow() {
-      // Check that only the followersCount field is being changed
-      if (!request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount'])) {
-        return false;
-      }
-      // Check that the count is only changing by +1 or -1
-      return request.resource.data.followersCount == resource.data.followersCount + 1
-          || request.resource.data.followersCount == resource.data.followersCount - 1;
-    }
-
     // --------------------------------------------------------------------
     // User Data Collections (/users)
     // --------------------------------------------------------------------
@@ -68,17 +58,6 @@ service cloud.firestore {
         allow create: if isSignedIn();
         allow update: if false;
       }
-
-      match /following/{tutorId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      match /bookings/{bookingId} {
-        // A student can read their own booking.
-        allow read: if isOwner(userId);
-        // A student can write to their own booking, or the tutor of the booking can create/update it.
-        allow write: if isOwner(userId) || isOwner(resource.data.tutorId) || isOwner(request.resource.data.tutorId);
-      }
     }
 
     // --------------------------------------------------------------------
@@ -93,7 +72,7 @@ service cloud.firestore {
     match /tutors/{tutorId} {
       allow get, list: if true;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if (isTutorOwner(resource.data) || isAdmin() || (isSignedIn() && isFollowOrUnfollow())) && isExistingDoc();
+      allow update: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
       allow delete: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
 
       match /ratings/{studentId} {
@@ -103,21 +82,6 @@ service cloud.firestore {
                       && request.resource.data.tutorId == tutorId;
         allow update: if isOwner(studentId) && isExistingDoc();
         allow delete: if false;
-      }
-
-      match /followers/{studentId} {
-        // GET: A tutor can see any follower doc, an admin can, and a student can see their own.
-        allow get: if isOwner(tutorId) || isAdmin() || isOwner(studentId);
-        
-        // LIST: A tutor can list their followers, or an admin can.
-        allow list: if isOwner(tutorId) || isAdmin();
-
-        // WRITE: A student can add/remove their own follower record.
-        allow write: if isOwner(studentId);
-      }
-
-      match /bookings/{bookingId} {
-        allow read, write: if isOwner(tutorId) || isOwner(resource.data.studentId);
       }
     }
 

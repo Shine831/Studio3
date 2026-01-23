@@ -92,7 +92,6 @@ const createNewUserDocument = async (
             availability: 'Non définie', // Default value
             rating: 0,
             reviewsCount: 0,
-            followersCount: 0,
             whatsapp: whatsapp,
             system: system,
             city: city,
