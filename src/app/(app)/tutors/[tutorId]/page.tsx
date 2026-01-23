@@ -267,10 +267,12 @@ export default function TutorProfilePage() {
                     </a>
                 </Button>
             )}
-             <Button variant="outline" size="lg" onClick={handleShare}>
-                <Share2 className="mr-2"/>
-                {t.shareProfile}
-            </Button>
+            {user?.uid === tutorId && userProfile?.role === 'tutor' && (
+                <Button variant="outline" size="lg" onClick={handleShare}>
+                    <Share2 className="mr-2"/>
+                    {t.shareProfile}
+                </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="mt-6 space-y-6 pt-6 border-t">
