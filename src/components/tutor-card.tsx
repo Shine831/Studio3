@@ -1,9 +1,8 @@
-
 'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star } from 'lucide-react';
+import { Star, MapPin } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,10 +56,18 @@ export function TutorCard({ tutor }: TutorCardProps) {
           <CardTitle className="text-lg font-headline flex items-center gap-2">
             {tutor.name}
           </CardTitle>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span>{tutor.rating.toFixed(1)}</span>
-            <span>({tutor.reviewsCount} {t.reviews})</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
+            <div className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <span>{tutor.rating.toFixed(1)}</span>
+                <span>({tutor.reviewsCount} {t.reviews})</span>
+            </div>
+            {tutor.city && (
+                <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{tutor.city}</span>
+                </div>
+            )}
           </div>
         </div>
       </CardHeader>
