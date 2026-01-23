@@ -10,9 +10,9 @@ import {
 } from '@/components/ui/select';
 import { TutorCard } from '@/components/tutor-card';
 import { useLanguage } from '@/context/language-context';
-import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
-import { collection, query, doc } from 'firebase/firestore';
-import type { TutorProfile, UserProfile } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import type { TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RoleGuard } from '@/components/role-guard';
 
@@ -21,13 +21,6 @@ export default function TutorsPage() {
   const { language } = useLanguage();
   const [selectedSubject, setSelectedSubject] = useState('all');
   const firestore = useFirestore();
-  const { user } = useUser();
-
-  const userProfileRef = useMemoFirebase(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
-    [firestore, user]
-  );
-  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const tutorsQuery = useMemoFirebase(
     () => (firestore ? query(collection(firestore, 'tutors')) : null),
@@ -66,24 +59,13 @@ export default function TutorsPage() {
   const filteredTutors = useMemo(() => {
     if (!tutorsData) return [];
 
-    let tutors = tutorsData;
-
-    return tutors.filter((tutor) => {
+    return tutorsData.filter((tutor) => {
       const isSubjectMatch =
         selectedSubject === 'all' || tutor.subjects.includes(selectedSubject);
       
-      let isSystemMatch = true;
-      if (userProfile?.system) {
-        if (userProfile.system === 'francophone') {
-            isSystemMatch = tutor.system === 'francophone' || tutor.system === 'both';
-        } else if (userProfile.system === 'anglophone') {
-            isSystemMatch = tutor.system === 'anglophone' || tutor.system === 'both';
-        }
-      }
-      
-      return isSubjectMatch && isSystemMatch;
+      return isSubjectMatch;
     });
-  }, [selectedSubject, tutorsData, userProfile]);
+  }, [selectedSubject, tutorsData]);
 
   return (
     <RoleGuard allowedRoles={['student', 'admin']}>
