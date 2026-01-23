@@ -16,7 +16,7 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -100,22 +100,44 @@ export default function TutorProfilePage() {
   const t = content[language];
 
   const handleSubmitRating = async () => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !tutorProfileRef) {
       toast({ variant: 'destructive', title: t.loginToRate, description: t.loginToRateDesc });
       return;
     }
     if (!tutorId || !userRatingRef) return;
 
     try {
-      await setDoc(userRatingRef, {
-        id: user.uid,
-        tutorId: tutorId,
-        studentId: user.uid,
-        studentName: userProfile?.firstName + ' ' + userProfile?.lastName,
-        rating: rating,
-        comment: comment,
-        createdAt: serverTimestamp(),
-      }, { merge: true });
+        await runTransaction(firestore, async (transaction) => {
+            const tutorDoc = await transaction.get(tutorProfileRef);
+            if (!tutorDoc.exists()) {
+                throw new Error("Tutor not found.");
+            }
+
+            // Create the student's rating document
+            transaction.set(userRatingRef, {
+                id: user.uid,
+                tutorId: tutorId,
+                studentId: user.uid,
+                studentName: userProfile?.firstName + ' ' + userProfile?.lastName,
+                rating: rating,
+                comment: comment,
+                createdAt: serverTimestamp(),
+            });
+
+            // Update the tutor's aggregated rating
+            const oldData = tutorDoc.data();
+            const oldReviewsCount = oldData.reviewsCount || 0;
+            const oldAverageRating = oldData.rating || 0;
+
+            const newReviewsCount = oldReviewsCount + 1;
+            const newAverageRating = ((oldAverageRating * oldReviewsCount) + rating) / newReviewsCount;
+
+            transaction.update(tutorProfileRef, {
+                rating: newAverageRating,
+                reviewsCount: newReviewsCount,
+            });
+        });
+
 
       toast({ title: t.ratingSubmitted, description: `${t.ratingSubmittedDesc} (${rating}/5)` });
     } catch (error: any) {
@@ -123,7 +145,7 @@ export default function TutorProfilePage() {
       toast({
         variant: "destructive",
         title: language === 'fr' ? 'Erreur' : 'Error',
-        description: error.message.includes('permission-denied') ? (language === 'fr' ? 'Vous avez déjà noté ce tuteur.' : 'You have already rated this tutor.') : t.ratingError,
+        description: error.message || t.ratingError,
       });
     }
   };
