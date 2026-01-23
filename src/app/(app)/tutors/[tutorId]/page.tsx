@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { Star, MessageSquare, MapPin } from 'lucide-react';
+import { Star, MessageSquare, MapPin, Share2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,15 @@ import {
 import { useLanguage } from '@/context/language-context';
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
-import type { TutorRating, UserProfile, TutorProfile } from '@/lib/types';
+import { doc, setDoc, serverTimestamp, runTransaction, collection } from 'firebase/firestore';
+import type { TutorRating, UserProfile, TutorProfile, WithId } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { formatDistanceToNow } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
+
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -54,6 +57,11 @@ export default function TutorProfilePage() {
   const { data: userRating, isLoading: isRatingLoading } = useDoc<TutorRating>(userRatingRef);
   const hasRated = !!userRating;
   
+  const ratingsQuery = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'tutors', tutorId, 'ratings') : null),
+    [firestore, tutorId]
+  );
+  const { data: ratings, isLoading: areRatingsLoading } = useCollection<WithId<TutorRating>>(ratingsQuery);
 
   const content = {
     fr: {
@@ -75,6 +83,13 @@ export default function TutorProfilePage() {
       loginToRateDesc: 'Vous devez être connecté pour laisser une évaluation.',
       alreadyRated: 'Déjà évalué',
       ratingError: "Échec de l'envoi de l'évaluation. Veuillez réessayer.",
+      shareProfile: 'Partager le profil',
+      shareTitle: 'Profil du répétiteur',
+      shareText: 'Découvrez le profil de',
+      linkCopied: 'Lien copié !',
+      linkCopiedDesc: 'Le lien du profil a été copié dans votre presse-papiers.',
+      studentReviews: 'Avis des élèves',
+      noReviewsYet: 'Aucun avis pour le moment.',
     },
     en: {
       tutorNotFound: 'Tutor not found',
@@ -95,9 +110,38 @@ export default function TutorProfilePage() {
       loginToRateDesc: 'You must be logged in to leave a rating.',
       alreadyRated: 'Already Rated',
       ratingError: 'Failed to submit rating. Please try again.',
+      shareProfile: 'Share Profile',
+      shareTitle: 'Tutor Profile',
+      shareText: 'Check out the profile of',
+      linkCopied: 'Link Copied!',
+      linkCopiedDesc: 'The profile link has been copied to your clipboard.',
+      studentReviews: 'Student Reviews',
+      noReviewsYet: 'No reviews yet.',
     },
   };
   const t = content[language];
+
+  const handleShare = async () => {
+    if (!tutor) return;
+    const shareData = {
+        title: t.shareTitle,
+        text: `${t.shareText} ${tutor.name}`,
+        url: window.location.href,
+    };
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            console.error('Error sharing:', err);
+        }
+    } else {
+        navigator.clipboard.writeText(window.location.href);
+        toast({
+            title: t.linkCopied,
+            description: t.linkCopiedDesc,
+        });
+    }
+  };
 
   const handleSubmitRating = async () => {
     if (!user || !firestore || !tutorProfileRef) {
@@ -113,7 +157,6 @@ export default function TutorProfilePage() {
                 throw new Error("Tutor not found.");
             }
 
-            // Create the student's rating document
             transaction.set(userRatingRef, {
                 id: user.uid,
                 tutorId: tutorId,
@@ -124,7 +167,6 @@ export default function TutorProfilePage() {
                 createdAt: serverTimestamp(),
             });
 
-            // Update the tutor's aggregated rating
             const oldData = tutorDoc.data();
             const oldReviewsCount = oldData.reviewsCount || 0;
             const oldAverageRating = oldData.rating || 0;
@@ -225,6 +267,10 @@ export default function TutorProfilePage() {
                     </a>
                 </Button>
             )}
+             <Button variant="outline" size="lg" onClick={handleShare}>
+                <Share2 className="mr-2"/>
+                {t.shareProfile}
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="mt-6 space-y-6 pt-6 border-t">
@@ -258,8 +304,55 @@ export default function TutorProfilePage() {
                     </div>
                 </div>
             )}
+        </CardContent>
+
+        <CardContent className="mt-6 space-y-6 pt-6 border-t">
+            <h4 className="font-semibold text-lg">{t.studentReviews}</h4>
+            {areRatingsLoading ? (
+                <div className="space-y-4">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                </div>
+            ) : ratings && ratings.length > 0 ? (
+                <div className="space-y-6">
+                    {ratings.map((review) => (
+                        <div key={review.id} className="flex items-start gap-4">
+                            <Avatar>
+                                <AvatarFallback>{getInitials(review.studentName)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                    <p className="font-semibold">{review.studentName || 'Anonymous'}</p>
+                                    <span className="text-xs text-muted-foreground">
+                                        {review.createdAt?.toDate ? formatDistanceToNow(review.createdAt.toDate(), { addSuffix: true, locale: language === 'fr' ? fr : enUS }) : ''}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1 mt-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <Star
+                                            key={star}
+                                            className={cn(
+                                                "h-4 w-4",
+                                                review.rating >= star
+                                                    ? "fill-yellow-400 text-yellow-400"
+                                                    : "text-muted-foreground"
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                                {review.comment && <p className="mt-2 text-sm text-muted-foreground italic">"{review.comment}"</p>}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-sm text-muted-foreground">{t.noReviewsYet}</p>
+            )}
+        </CardContent>
+
+        <CardContent className="mt-6 pt-6 border-t">
             {userProfile?.role === 'student' && (
-                <div className="border-t pt-6 mt-6">
+                <div className="">
                 <h4 className="font-semibold">{t.leaveRating}</h4>
                 {isRatingLoading ? (
                     <Skeleton className="h-24 w-full" />
