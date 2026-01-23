@@ -5,7 +5,7 @@ import {
   MessageSquare,
   Search,
   Star,
-  UserCheck,
+  BrainCircuit,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,8 +25,8 @@ export default function LandingPage() {
         en: 'Find the Ideal Tutor',
       },
       description: {
-        fr: 'Parcourez les profils de répétiteurs qualifiés et vérifiés pour toutes les matières.',
-        en: 'Browse profiles of qualified and verified tutors for all subjects.',
+        fr: 'Parcourez les profils de répétiteurs qualifiés pour toutes les matières du programme.',
+        en: 'Browse profiles of qualified tutors for all subjects in the curriculum.',
       },
     },
     {
@@ -37,7 +37,18 @@ export default function LandingPage() {
       },
       description: {
         fr: 'Échangez directement avec les répétiteurs sur WhatsApp pour poser vos questions et organiser des cours.',
-        en: 'Chat directly with tutors on WhatsApp to ask questions and arrange lessons.',
+        en: 'Chat directly with tutors on WhatsApp to ask your questions and arrange lessons.',
+      },
+    },
+    {
+      icon: <BrainCircuit className="h-10 w-10" />,
+      title: {
+        fr: "Plans d'Étude Intelligents",
+        en: 'Intelligent Study Plans',
+      },
+      description: {
+        fr: "Générez des plans d'étude, des leçons et des quiz avec l'IA pour maîtriser n'importe quel sujet.",
+        en: 'Generate study plans, lessons, and quizzes with AI to master any subject.',
       },
     },
     {
@@ -47,27 +58,19 @@ export default function LandingPage() {
         en: 'Authentic Reviews',
       },
       description: {
-        fr: 'Consultez les notes et les commentaires laissés par d\'autres élèves pour faire le bon choix.',
-        en: 'Check ratings and comments from other students to make the right choice.',
-      },
-    },
-    {
-      icon: <UserCheck className="h-10 w-10" />,
-      title: {
-        fr: 'Profils Vérifiés',
-        en: 'Verified Profiles',
-      },
-      description: {
-        fr: 'Un badge de vérification vous aide à identifier les répétiteurs les plus fiables et expérimentés.',
-        en: 'A verification badge helps you identify the most reliable and experienced tutors.',
+        fr: "Consultez les notes et les commentaires laissés par d'autres élèves pour faire le bon choix.",
+        en: 'Check ratings and comments left by other students to make the right choice.',
       },
     },
   ];
 
   const content = {
     fr: {
-      tagline: 'Le moyen le plus simple de trouver un répétiteur au Cameroun et de le contacter sur WhatsApp.',
-      getStarted: 'Trouver un répétiteur',
+      headline: "Votre partenaire pour la réussite scolaire au Cameroun.",
+      tagline: "Trouvez le répétiteur idéal, générez des plans d'étude avec l'IA et réussissez vos examens.",
+      getStarted: 'Commencer',
+      featuresTitle: "Des Outils Puissants pour Votre Réussite",
+      featuresDescription: "De la recherche de tuteurs à la préparation d'examens avec l'IA, nous avons ce qu'il vous faut.",
       features: 'Fonctionnalités',
       tutors: 'Répétiteurs',
       login: 'Se connecter',
@@ -76,8 +79,11 @@ export default function LandingPage() {
       privacy: 'Confidentialité'
     },
     en: {
-      tagline: 'The easiest way to find a tutor in Cameroon and connect on WhatsApp.',
-      getStarted: 'Find a Tutor',
+      headline: "Your Partner for Academic Success in Cameroon.",
+      tagline: 'Find the ideal tutor, generate AI-powered study plans, and ace your exams.',
+      getStarted: 'Get Started',
+      featuresTitle: "Powerful Tools for Your Success",
+      featuresDescription: "From finding tutors to exam prep with AI, we've got you covered.",
       features: 'Features',
       tutors: 'Tutors',
       login: 'Log In',
@@ -133,14 +139,14 @@ export default function LandingPage() {
           />
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
-              RéviseCamer
+              {t.headline}
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               {t.tagline}
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Button size="lg" asChild>
-                <Link href="/tutors">{t.getStarted}</Link>
+                <Link href="/signup">{t.getStarted}</Link>
               </Button>
             </div>
           </div>
@@ -150,10 +156,10 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h2 className="font-headline text-3xl font-bold text-foreground">
-                Une Connexion Directe et Simple
+                {t.featuresTitle}
               </h2>
               <p className="mt-4 text-muted-foreground">
-                Tout est conçu pour faciliter la mise en relation.
+                {t.featuresDescription}
               </p>
             </div>
             <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -209,5 +215,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
