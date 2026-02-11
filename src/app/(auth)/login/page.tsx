@@ -147,6 +147,7 @@ export default function LoginPage() {
       sendCode: 'Envoyer le code',
       sendingCode: 'Envoi...',
       phoneErrorSend: "Erreur lors de l'envoi du code. Vérifiez le numéro (+237XXXX) et réessayez.",
+      phoneErrorOperationNotAllowed: "L'envoi de SMS n'est pas activé pour cette région. Le développeur doit activer cette fonctionnalité dans la console Google Cloud.",
       verifyCodeTitle: 'Vérifier le code',
       verifyCodeDesc: 'Veuillez entrer le code à 6 chiffres que vous avez reçu.',
       verificationCodeLabel: 'Code de vérification',
@@ -184,6 +185,7 @@ export default function LoginPage() {
         sendCode: 'Send Code',
         sendingCode: 'Sending...',
         phoneErrorSend: 'Error sending code. Check number format (+237XXXX) and try again.',
+        phoneErrorOperationNotAllowed: "SMS sending is not enabled for this region. The developer needs to enable this feature in the Google Cloud console.",
         verifyCodeTitle: 'Verify Code',
         verifyCodeDesc: 'Please enter the 6-digit code you received.',
         verificationCodeLabel: 'Verification Code',
@@ -283,7 +285,11 @@ export default function LoginPage() {
       setPhoneStep('code');
     } catch (error: any) {
       console.error("Phone auth error", error);
-      setPhoneError(t.phoneErrorSend);
+      if (error.code === 'auth/operation-not-allowed') {
+          setPhoneError(t.phoneErrorOperationNotAllowed);
+      } else {
+          setPhoneError(t.phoneErrorSend);
+      }
     } finally {
       setPhoneLoading(false);
     }
