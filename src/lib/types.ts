@@ -18,6 +18,13 @@ export interface UserProfile {
   lastCreditRenewal?: any; // Firestore Timestamp
 }
 
+export interface Notification {
+  messageFr: string;
+  messageEn: string;
+  sentAt: any; // Firestore Timestamp
+  targetURL?: string;
+}
+
 export interface Question {
   questionText: string;
   options: string[];

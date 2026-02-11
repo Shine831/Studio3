@@ -140,6 +140,31 @@
             }
         },
         "required": ["studentId", "planId", "score", "completionDate"]
+    },
+    "Notification": {
+        "title": "Notification",
+        "type": "object",
+        "description": "Represents a notification sent to a user.",
+        "properties": {
+            "targetURL": {
+                "type": "string",
+                "description": "The URL the notification links to."
+            },
+            "messageFr": {
+                "type": "string",
+                "description": "The notification message in French."
+            },
+            "messageEn": {
+                "type": "string",
+                "description": "The notification message in English."
+            },
+            "sentAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp of when the notification was sent."
+            }
+        },
+        "required": ["messageFr", "messageEn", "sentAt"]
     }
   },
   "auth": {
@@ -178,6 +203,16 @@
             "$ref": "#/backend/entities/QuizResult"
           },
           "description": "Stores a student's quiz results."
+        }
+      },
+      {
+        "path": "/users/{userId}/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Stores user notifications. Users can read and delete their own notifications."
         }
       }
     ],
