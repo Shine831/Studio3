@@ -42,7 +42,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal, Eye, EyeOff, Phone, Loader2 } from 'lucide-react';
-import { useFirebase, useUser } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { UserProfile } from '@/lib/types';
@@ -115,8 +115,9 @@ export default function SignupPage() {
   const [system, setSystem] = useState<'francophone' | 'anglophone' | ''>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { user, isUserLoading: isAuthLoading } = useUser();
-  const { auth, firestore, isUserLoading: isFirebaseLoading } = useFirebase();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const firestore = useFirestore();
   const { language } = useLanguage();
 
   // Phone Auth State
@@ -247,10 +248,10 @@ export default function SignupPage() {
   const t = content[language];
 
   useEffect(() => {
-    if (!isAuthLoading && user) {
-      router.push('/dashboard');
+    if (!isUserLoading && user) {
+      router.push('/study-plan');
     }
-  }, [user, isAuthLoading, router]);
+  }, [user, isUserLoading, router]);
 
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -292,7 +293,7 @@ export default function SignupPage() {
         title: t.accountCreatedTitle,
         description: t.accountCreatedDesc,
       });
-      router.push('/dashboard');
+      router.push('/study-plan');
     } catch (err: any) {
       console.error("Email/Password signup error:", err);
       let friendlyMessage = err.message || t.errorUnexpected;
@@ -308,6 +309,7 @@ export default function SignupPage() {
             friendlyMessage = t.errorInvalidEmail;
             break;
           case 'auth/configuration-not-found':
+          case 'auth/argument-error':
             friendlyMessage = t.errorFirebaseConfig;
             break;
         }
@@ -379,9 +381,9 @@ export default function SignupPage() {
     }
   };
 
-  const isDisabled = loading || isAuthLoading || isFirebaseLoading;
+  const isDisabled = loading || isUserLoading;
 
-  if (isAuthLoading || user) {
+  if (isUserLoading || user) {
     return (
         <div className="flex flex-col space-y-4 text-center">
             <Skeleton className="h-8 w-48 self-center" />

@@ -34,7 +34,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Eye, EyeOff, Phone, Loader2 } from 'lucide-react';
-import { useFirebase, useUser } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { UserProfile } from '@/lib/types';
@@ -97,8 +97,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { user, isUserLoading: isAuthLoading } = useUser();
-  const { auth, firestore, isUserLoading: isFirebaseLoading } = useFirebase();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const firestore = useFirestore();
   const { language } = useLanguage();
 
   // Phone Auth State
@@ -201,10 +202,10 @@ export default function LoginPage() {
   const t = content[language];
   
   useEffect(() => {
-    if (!isAuthLoading && user) {
+    if (!isUserLoading && user) {
       router.push('/study-plan');
     }
-  }, [user, isAuthLoading, router]);
+  }, [user, isUserLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,6 +242,7 @@ export default function LoginPage() {
               friendlyMessage = t.errorTooManyRequests;
               break;
             case 'auth/configuration-not-found':
+            case 'auth/argument-error':
               friendlyMessage = t.errorFirebaseConfig;
               break;
         }
@@ -313,9 +315,9 @@ export default function LoginPage() {
     }
   };
   
-  const isDisabled = loading || isFirebaseLoading || isAuthLoading;
+  const isDisabled = loading || isUserLoading;
 
-  if (isAuthLoading || user) {
+  if (isUserLoading || user) {
     return (
         <div className="flex flex-col space-y-4 text-center">
             <Skeleton className="h-8 w-48 self-center" />
