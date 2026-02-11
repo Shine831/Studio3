@@ -69,9 +69,6 @@
       "required": [
         "id",
         "role",
-        "email",
-        "firstName",
-        "lastName",
         "language",
         "createdAt"
       ]
@@ -137,35 +134,40 @@
         "required": ["studentId", "planId", "score", "completionDate"]
     },
     "Notification": {
-        "title": "Notification",
-        "type": "object",
-        "description": "Represents a notification sent to a user.",
-        "properties": {
-            "targetURL": {
-                "type": "string",
-                "description": "The URL the notification links to."
-            },
-            "messageFr": {
-                "type": "string",
-                "description": "The notification message in French."
-            },
-            "messageEn": {
-                "type": "string",
-                "description": "The notification message in English."
-            },
-            "sentAt": {
-                "type": "string",
-                "format": "date-time",
-                "description": "Timestamp of when the notification was sent."
-            }
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a notification sent to a user.",
+      "properties": {
+        "targetURL": {
+          "type": "string",
+          "description": "The URL the notification links to."
         },
-        "required": ["messageFr", "messageEn", "sentAt"]
+        "messageFr": {
+          "type": "string",
+          "description": "The notification message in French."
+        },
+        "messageEn": {
+          "type": "string",
+          "description": "The notification message in English."
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the notification was sent."
+        }
+      },
+      "required": [
+        "messageFr",
+        "messageEn",
+        "sentAt"
+      ]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "google.com"
+      "google.com",
+      "phone"
     ]
   },
   "firestore": {

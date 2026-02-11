@@ -4,10 +4,10 @@ export type WithId<T> = T & { id: string };
 export interface UserProfile {
   id: string;
   role: 'student' | 'admin';
-  email: string;
-  phone?: string;
-  firstName: string;
-  lastName: string;
+  email?: string | null;
+  phone?: string | null;
+  firstName?: string;
+  lastName?: string;
   profilePicture?: string;
   language: 'fr' | 'en';
   createdAt: any; // Firestore Timestamp
