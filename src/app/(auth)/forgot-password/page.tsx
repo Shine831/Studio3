@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -14,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { useAuth, useFirebase } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context'; // Import language hook
 
 export default function ForgotPasswordPage() {
@@ -24,7 +25,7 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const auth = useAuth();
-  const { isUserLoading } = useFirebase();
+  const { isUserLoading } = useUser();
   const { language } = useLanguage(); // Use language hook
 
   const content = {
@@ -88,7 +89,7 @@ export default function ForgotPasswordPage() {
     } catch (err: any) {
       let friendlyMessage = t.errorUnexpected;
       let shouldShowError = false;
-      if (err.code === 'auth/configuration-not-found') {
+      if (err.code === 'auth/configuration-not-found' || err.code === 'auth/argument-error') {
         friendlyMessage = t.errorFirebaseConfig;
         setError(friendlyMessage);
         shouldShowError = true;

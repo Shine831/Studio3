@@ -9,9 +9,6 @@ import {
   User,
   GoogleAuthProvider,
   signInWithPopup,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  ConfirmationResult,
 } from 'firebase/auth';
 import { doc, serverTimestamp, setDoc, Firestore, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -22,18 +19,9 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Eye, EyeOff, Phone, Loader2 } from 'lucide-react';
+import { Terminal, Eye, EyeOff } from 'lucide-react';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -57,8 +45,8 @@ const getOrCreateUserProfile = async (
       id: user.uid,
       email: user.email,
       phone: user.phoneNumber,
-      firstName: firstName || (user.phoneNumber ? 'Utilisateur' : 'Anonymous'),
-      lastName: lastName || (user.phoneNumber ? user.phoneNumber : ''),
+      firstName: firstName || 'Anonymous',
+      lastName: lastName || '',
       profilePicture: user.photoURL || '',
       role: 'student',
       language: 'fr',
@@ -83,12 +71,6 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-declare global {
-    interface Window {
-      recaptchaVerifier?: RecaptchaVerifier;
-    }
-}
-
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -101,24 +83,6 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { language } = useLanguage();
-
-  // Phone Auth State
-  const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
-  const [phoneStep, setPhoneStep] = useState<'number' | 'code'>('number');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [phoneLoading, setPhoneLoading] = useState(false);
-
-  useEffect(() => {
-    if (phoneDialogOpen && auth && !window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': (response: any) => { /* reCAPTCHA solved */ }
-      });
-    }
-  }, [phoneDialogOpen, auth]);
 
   const content = {
     fr: {
@@ -142,22 +106,6 @@ export default function LoginPage() {
       headsUp: 'Attention !',
       orContinueWith: 'Ou continuer avec',
       google: 'Google',
-      phone: 'Téléphone',
-      phoneAuthTitle: 'Connexion par téléphone',
-      phoneAuthDesc: 'Veuillez entrer votre numéro de téléphone pour recevoir un code de vérification.',
-      phoneNumberLabel: 'Numéro de téléphone',
-      sendCode: 'Envoyer le code',
-      sendingCode: 'Envoi...',
-      phoneErrorSend: "Erreur lors de l'envoi du code. Vérifiez le numéro (+237XXXX) et réessayez.",
-      phoneErrorOperationNotAllowed: "Envoi de SMS bloqué. Veuillez vérifier la 'Politique de région SMS' dans les paramètres d'authentification de votre console Firebase pour autoriser la région.",
-      verifyCodeTitle: 'Vérifier le code',
-      verifyCodeDesc: 'Veuillez entrer le code à 6 chiffres que vous avez reçu.',
-      verificationCodeLabel: 'Code de vérification',
-      verify: 'Vérifier',
-      verifying: 'Vérification...',
-      phoneErrorVerify: 'Code de vérification invalide.',
-      success: 'Succès',
-      loggedInSuccess: 'Connecté avec succès.',
     },
     en: {
         welcomeBack: 'Welcome back',
@@ -180,22 +128,6 @@ export default function LoginPage() {
         headsUp: 'Heads up!',
         orContinueWith: 'Or continue with',
         google: 'Google',
-        phone: 'Phone',
-        phoneAuthTitle: 'Sign in with Phone',
-        phoneAuthDesc: 'Please enter your phone number to receive a verification code.',
-        phoneNumberLabel: 'Phone Number',
-        sendCode: 'Send Code',
-        sendingCode: 'Sending...',
-        phoneErrorSend: 'Error sending code. Check number format (+237XXXX) and try again.',
-        phoneErrorOperationNotAllowed: "SMS sending blocked. Please check the 'SMS region policy' in your Firebase console's Authentication settings to allow the region.",
-        verifyCodeTitle: 'Verify Code',
-        verifyCodeDesc: 'Please enter the 6-digit code you received.',
-        verificationCodeLabel: 'Verification Code',
-        verify: 'Verify',
-        verifying: 'Verifying...',
-        phoneErrorVerify: 'Invalid verification code.',
-        success: 'Success',
-        loggedInSuccess: 'Successfully logged in.',
     }
   };
 
@@ -210,7 +142,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth || !firestore) {
-        setError('Firebase is not initialized correctly.');
+        setError(t.errorFirebaseConfig);
         return;
     }
     if (!email || !password) {
@@ -260,7 +192,10 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    if (!auth || !firestore) return;
+    if (!auth || !firestore) {
+        toast({ variant: 'destructive', title: t.loginFailedTitle, description: t.errorFirebaseConfig });
+        return;
+    }
     setLoading(true);
     try {
         const provider = new GoogleAuthProvider();
@@ -273,45 +208,6 @@ export default function LoginPage() {
         toast({ variant: 'destructive', title: t.loginFailedTitle, description: error.message || t.errorUnexpected });
     } finally {
         setLoading(false);
-    }
-  };
-
-  const handleSendCode = async () => {
-    if (!auth) return;
-    setPhoneLoading(true);
-    setPhoneError(null);
-    try {
-      const appVerifier = window.recaptchaVerifier!;
-      const formattedPhoneNumber = phoneNumber.startsWith('+') ? phoneNumber : `+237${phoneNumber.replace(/\s/g, '')}`;
-      const result = await signInWithPhoneNumber(auth, formattedPhoneNumber, appVerifier);
-      setConfirmationResult(result);
-      setPhoneStep('code');
-    } catch (error: any) {
-      console.error("Phone auth error", error);
-      if (error.code === 'auth/operation-not-allowed') {
-          setPhoneError(t.phoneErrorOperationNotAllowed);
-      } else {
-          setPhoneError(t.phoneErrorSend);
-      }
-    } finally {
-      setPhoneLoading(false);
-    }
-  };
-
-  const handleVerifyCode = async () => {
-    if (!confirmationResult || !firestore) return;
-    setPhoneLoading(true);
-    setPhoneError(null);
-    try {
-        const userCredential = await confirmationResult.confirm(verificationCode);
-        await getOrCreateUserProfile(firestore, userCredential.user);
-        toast({ title: t.success, description: t.loggedInSuccess });
-        router.push('/study-plan');
-    } catch (error) {
-        console.error("Code verification error", error);
-        setPhoneError(t.phoneErrorVerify);
-    } finally {
-        setPhoneLoading(false);
     }
   };
   
@@ -337,7 +233,6 @@ export default function LoginPage() {
 
   return (
     <>
-      <div id="recaptcha-container" />
       <div className="flex flex-col space-y-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight font-headline">
           {t.welcomeBack}
@@ -419,60 +314,10 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <Button variant="outline" onClick={handleGoogleLogin} disabled={isDisabled}>
                 <GoogleIcon className="mr-2 h-4 w-4" /> {t.google}
             </Button>
-            <Dialog open={phoneDialogOpen} onOpenChange={setPhoneDialogOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="outline" disabled={isDisabled}>
-                        <Phone className="mr-2 h-4 w-4" /> {t.phone}
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    {phoneStep === 'number' ? (
-                        <>
-                            <DialogHeader>
-                                <DialogTitle>{t.phoneAuthTitle}</DialogTitle>
-                                <DialogDescription>{t.phoneAuthDesc}</DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                <Label htmlFor="phone-number">{t.phoneNumberLabel}</Label>
-                                <Input id="phone-number" placeholder="+237 600 000 000" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} />
-                                </div>
-                                {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
-                            </div>
-                            <DialogFooter>
-                                <Button onClick={handleSendCode} disabled={phoneLoading}>
-                                {phoneLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {phoneLoading ? t.sendingCode : t.sendCode}
-                                </Button>
-                            </DialogFooter>
-                        </>
-                    ) : (
-                        <>
-                           <DialogHeader>
-                                <DialogTitle>{t.verifyCodeTitle}</DialogTitle>
-                                <DialogDescription>{t.verifyCodeDesc}</DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                <Label htmlFor="verification-code">{t.verificationCodeLabel}</Label>
-                                <Input id="verification-code" value={verificationCode} onChange={e => setVerificationCode(e.target.value)} />
-                                </div>
-                                {phoneError && <p className="text-sm text-destructive">{phoneError}</p>}
-                            </div>
-                            <DialogFooter>
-                                <Button onClick={handleVerifyCode} disabled={phoneLoading}>
-                                {phoneLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {phoneLoading ? t.verifying : t.verify}
-                                </Button>
-                            </DialogFooter>
-                        </>
-                    )}
-                </DialogContent>
-            </Dialog>
           </div>
           
           <div className="mt-4 text-center text-sm">

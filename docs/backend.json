@@ -166,8 +166,7 @@
   "auth": {
     "providers": [
       "password",
-      "google.com",
-      "phone"
+      "google.com"
     ]
   },
   "firestore": {
