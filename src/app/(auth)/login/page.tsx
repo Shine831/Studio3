@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -147,7 +148,7 @@ export default function LoginPage() {
       sendCode: 'Envoyer le code',
       sendingCode: 'Envoi...',
       phoneErrorSend: "Erreur lors de l'envoi du code. Vérifiez le numéro (+237XXXX) et réessayez.",
-      phoneErrorOperationNotAllowed: "L'envoi de SMS n'est pas activé pour cette région. Le développeur doit activer cette fonctionnalité dans la console Google Cloud.",
+      phoneErrorOperationNotAllowed: "Envoi de SMS bloqué. Veuillez vérifier la 'Politique de région SMS' dans les paramètres d'authentification de votre console Firebase pour autoriser la région.",
       verifyCodeTitle: 'Vérifier le code',
       verifyCodeDesc: 'Veuillez entrer le code à 6 chiffres que vous avez reçu.',
       verificationCodeLabel: 'Code de vérification',
@@ -185,7 +186,7 @@ export default function LoginPage() {
         sendCode: 'Send Code',
         sendingCode: 'Sending...',
         phoneErrorSend: 'Error sending code. Check number format (+237XXXX) and try again.',
-        phoneErrorOperationNotAllowed: "SMS sending is not enabled for this region. The developer needs to enable this feature in the Google Cloud console.",
+        phoneErrorOperationNotAllowed: "SMS sending blocked. Please check the 'SMS region policy' in your Firebase console's Authentication settings to allow the region.",
         verifyCodeTitle: 'Verify Code',
         verifyCodeDesc: 'Please enter the 6-digit code you received.',
         verificationCodeLabel: 'Verification Code',
