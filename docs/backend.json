@@ -56,10 +56,6 @@
             "description": "The educational system the user belongs to.",
             "enum": ["francophone", "anglophone"]
         },
-        "city": {
-          "type": "string",
-          "description": "User's city in Cameroon."
-        },
         "aiCredits": {
             "type": "number",
             "description": "Number of AI credits for generating content."
@@ -77,8 +73,7 @@
         "firstName",
         "lastName",
         "language",
-        "createdAt",
-        "city"
+        "createdAt"
       ]
     },
     "StudyPlan": {

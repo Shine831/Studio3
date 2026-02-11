@@ -31,7 +31,6 @@ import { Terminal, Eye, EyeOff } from 'lucide-react';
 import { useFirebase, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cameroonCities } from '@/lib/cameroon-cities';
 
 const createNewUserDocument = async (
   firestore: Firestore,
@@ -39,11 +38,9 @@ const createNewUserDocument = async (
   {
     fullName,
     system,
-    city,
   }: {
     fullName: string;
     system: 'francophone' | 'anglophone';
-    city: string;
   }
 ) => {
   const userRef = doc(firestore, 'users', user.uid);
@@ -61,7 +58,6 @@ const createNewUserDocument = async (
           profilePicture: user.photoURL || null,
           role: 'student', // All new users are students
           system: system,
-          city: city,
           language: 'fr',
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
@@ -84,7 +80,6 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [system, setSystem] = useState<'francophone' | 'anglophone' | ''>('');
-  const [city, setCity] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -104,8 +99,6 @@ export default function SignupPage() {
       systemPlaceholder: 'Choisissez votre système',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
-      cityLabel: 'Ville',
-      cityPlaceholder: 'Choisissez votre ville',
       createAccountButton: 'Créer mon compte',
       initializing: 'Initialisation...',
       alreadyHaveAccount: 'Vous avez déjà un compte ?',
@@ -119,7 +112,6 @@ export default function SignupPage() {
       signupFailedTitle: 'Échec de l\'inscription',
       errorFillFields: 'Veuillez remplir tous les champs obligatoires.',
       errorSelectSystem: 'Veuillez sélectionner un système éducatif.',
-      errorSelectCity: 'Veuillez sélectionner votre ville.',
       errorPasswordLength: 'Le mot de passe doit contenir au moins 6 caractères.',
       errorPasswordMismatch: 'Les mots de passe ne correspondent pas.',
       errorEmailInUse: 'Cette adresse email est déjà utilisée par un autre compte.',
@@ -141,8 +133,6 @@ export default function SignupPage() {
       systemPlaceholder: 'Select your system',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
-      cityLabel: 'City',
-      cityPlaceholder: 'Select your city',
       createAccountButton: 'Create my account',
       initializing: 'Initializing...',
       alreadyHaveAccount: 'Already have an account?',
@@ -156,7 +146,6 @@ export default function SignupPage() {
       signupFailedTitle: 'Signup Failed',
       errorFillFields: 'Please fill in all required fields.',
       errorSelectSystem: 'Please select an educational system.',
-      errorSelectCity: 'Please select your city.',
       errorPasswordLength: 'Password must be at least 6 characters long.',
       errorPasswordMismatch: 'Passwords do not match.',
       errorEmailInUse: 'This email address is already in use by another account.',
@@ -197,10 +186,6 @@ export default function SignupPage() {
         setError(t.errorSelectSystem);
         return;
     }
-    if (!city) {
-        setError(t.errorSelectCity);
-        return;
-    }
     if (password.length < 6) {
         setError(t.errorPasswordLength);
         return;
@@ -214,7 +199,6 @@ export default function SignupPage() {
       await createNewUserDocument(firestore, userCredential.user, {
           fullName,
           system: system as 'francophone' | 'anglophone',
-          city,
       });
 
       toast({
@@ -366,30 +350,17 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                  <div>
-                      <Label htmlFor="system">{t.systemLabel}</Label>
-                      <Select onValueChange={(value: 'francophone' | 'anglophone') => setSystem(value)} disabled={isDisabled} value={system}>
-                          <SelectTrigger id="system">
-                              <SelectValue placeholder={t.systemPlaceholder} />
-                          </SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="francophone">{t.francophone}</SelectItem>
-                              <SelectItem value="anglophone">{t.anglophone}</SelectItem>
-                          </SelectContent>
-                      </Select>
-                  </div>
-                    <div>
-                      <Label htmlFor="city">{t.cityLabel}</Label>
-                      <Select onValueChange={setCity} disabled={isDisabled} value={city}>
-                          <SelectTrigger id="city">
-                              <SelectValue placeholder={t.cityPlaceholder} />
-                          </SelectTrigger>
-                          <SelectContent>
-                              {cameroonCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                          </SelectContent>
-                      </Select>
-                  </div>
+              <div className="grid gap-2">
+                  <Label htmlFor="system">{t.systemLabel}</Label>
+                  <Select onValueChange={(value: 'francophone' | 'anglophone') => setSystem(value)} disabled={isDisabled} value={system}>
+                      <SelectTrigger id="system">
+                          <SelectValue placeholder={t.systemPlaceholder} />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="francophone">{t.francophone}</SelectItem>
+                          <SelectItem value="anglophone">{t.anglophone}</SelectItem>
+                      </SelectContent>
+                  </Select>
               </div>
               
               <Button type="submit" className="w-full" disabled={isDisabled}>

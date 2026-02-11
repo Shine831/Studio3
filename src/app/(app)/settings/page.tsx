@@ -35,7 +35,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cameroonCities } from '@/lib/cameroon-cities';
 import type { UserProfile } from '@/lib/types';
 import { Camera } from 'lucide-react';
 
@@ -45,7 +44,6 @@ const profileFormSchema = z.object({
   lastName: z.string().min(2, { message: 'Last name must be at least 2 characters.' }),
   email: z.string().email(),
   system: z.enum(['francophone', 'anglophone']),
-  city: z.string(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -81,7 +79,6 @@ export default function SettingsPage() {
       lastName: '',
       email: '',
       system: 'francophone',
-      city: '',
       profilePicture: '',
     },
     mode: 'onChange',
@@ -94,7 +91,6 @@ export default function SettingsPage() {
         lastName: userProfile.lastName || '',
         email: userProfile.email || '',
         system: userProfile.system || 'francophone',
-        city: userProfile.city || '',
         profilePicture: userProfile.profilePicture || '',
       };
       
@@ -124,7 +120,6 @@ export default function SettingsPage() {
         lastName: data.lastName,
         profilePicture: data.profilePicture,
         system: data.system,
-        city: data.city,
     };
 
     try {
@@ -153,8 +148,6 @@ export default function SettingsPage() {
       firstName: 'Prénom',
       lastName: 'Nom',
       email: 'Email',
-      city: 'Ville',
-      cityPlaceholder: 'Choisissez votre ville',
       system: 'Système Éducatif',
       systemPlaceholder: 'Choisissez un système',
       francophone: 'Francophone',
@@ -171,8 +164,6 @@ export default function SettingsPage() {
       firstName: 'First Name',
       lastName: 'Last Name',
       email: 'Email',
-      city: 'City',
-      cityPlaceholder: 'Select your city',
       system: 'Educational System',
       systemPlaceholder: 'Select a system',
       francophone: 'Francophone',
@@ -300,28 +291,6 @@ export default function SettingsPage() {
                       <SelectContent>
                           <SelectItem value="francophone">{t.francophone}</SelectItem>
                           <SelectItem value="anglophone">{t.anglophone}</SelectItem>
-                      </SelectContent>
-                      </Select>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-              />
-              <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>{t.city}</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
-                      <FormControl>
-                          <SelectTrigger>
-                          <SelectValue placeholder={t.cityPlaceholder} />
-                          </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                          {cameroonCities.map(c => (
-                              <SelectItem key={c} value={c}>{c}</SelectItem>
-                          ))}
                       </SelectContent>
                       </Select>
                       <FormMessage />

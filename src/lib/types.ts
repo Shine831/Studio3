@@ -13,7 +13,6 @@ export interface UserProfile {
   createdAt: any; // Firestore Timestamp
   lastLogin: any; // Firestore Timestamp
   system?: 'francophone' | 'anglophone';
-  city: string;
   aiCredits?: number;
   lastCreditRenewal?: any; // Firestore Timestamp
 }
