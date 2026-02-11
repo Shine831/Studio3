@@ -188,8 +188,6 @@ export default function SignupPage() {
       phoneErrorVerify: 'Code de vérification invalide.',
       success: 'Succès',
       loggedInSuccess: 'Connecté avec succès.',
-      errorGoogleSigninNotEnabled: 'La connexion Google n\'est pas activée. Veuillez l\'activer dans votre console Firebase (Authentication > Sign-in method).',
-      errorPhoneSigninNotEnabled: 'La connexion par téléphone n\'est pas activée. Veuillez l\'activer dans votre console Firebase (Authentication > Sign-in method).',
     },
     en: {
       createAccount: 'Create an account',
@@ -241,8 +239,6 @@ export default function SignupPage() {
       phoneErrorVerify: 'Invalid verification code.',
       success: 'Success',
       loggedInSuccess: 'Successfully logged in.',
-      errorGoogleSigninNotEnabled: 'Google Sign-in is not enabled. Please enable it in your Firebase Console (Authentication > Sign-in method).',
-      errorPhoneSigninNotEnabled: 'Phone Sign-in is not enabled. Please enable it in your Firebase Console (Authentication > Sign-in method).',
     }
   };
 
@@ -336,11 +332,7 @@ export default function SignupPage() {
         router.push('/study-plan');
     } catch (error: any) {
         console.error("Google sign up error", error);
-        let description = error.message;
-        if (error.code === 'auth/operation-not-allowed') {
-            description = t.errorGoogleSigninNotEnabled;
-        }
-        toast({ variant: 'destructive', title: t.signupFailedTitle, description });
+        toast({ variant: 'destructive', title: t.signupFailedTitle, description: error.message || t.errorUnexpected });
     } finally {
         setLoading(false);
     }
@@ -358,11 +350,7 @@ export default function SignupPage() {
       setPhoneStep('code');
     } catch (error: any) {
       console.error("Phone auth error", error);
-      let message = t.phoneErrorSend;
-      if (error.code === 'auth/operation-not-allowed') {
-        message = t.errorPhoneSigninNotEnabled;
-      }
-      setPhoneError(message);
+      setPhoneError(t.phoneErrorSend);
     } finally {
       setPhoneLoading(false);
     }
