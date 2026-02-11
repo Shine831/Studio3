@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -32,7 +31,6 @@ import { Terminal, Eye, EyeOff } from 'lucide-react';
 import { useFirebase, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import { cameroonCities } from '@/lib/cameroon-cities';
 
 const createNewUserDocument = async (
@@ -40,20 +38,12 @@ const createNewUserDocument = async (
   user: User,
   {
     fullName,
-    role,
     system,
     city,
-    whatsapp,
-    classes,
-    monthlyRate,
   }: {
     fullName: string;
-    role: 'student' | 'tutor';
     system: 'francophone' | 'anglophone';
     city: string;
-    whatsapp: string;
-    classes?: string[];
-    monthlyRate?: number;
   }
 ) => {
   const userRef = doc(firestore, 'users', user.uid);
@@ -69,7 +59,7 @@ const createNewUserDocument = async (
           firstName: firstName || '',
           lastName: lastName || '',
           profilePicture: user.photoURL || null,
-          role: role,
+          role: 'student', // All new users are students
           system: system,
           city: city,
           language: 'fr',
@@ -79,25 +69,6 @@ const createNewUserDocument = async (
       
       await setDoc(userRef, userProfileData);
 
-      if (role === 'tutor') {
-        const tutorRef = doc(firestore, 'tutors', user.uid);
-        const tutorProfileData = {
-            id: user.uid,
-            userId: user.uid,
-            name: fullName,
-            avatarUrl: user.photoURL || null,
-            subjects: [], // Tutors can add subjects later
-            classes: classes || [],
-            monthlyRate: monthlyRate || 0,
-            availability: 'Non définie', // Default value
-            rating: 0,
-            reviewsCount: 0,
-            whatsapp: whatsapp,
-            system: system,
-            city: city,
-        };
-        await setDoc(tutorRef, tutorProfileData);
-      }
   } else {
       await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
   }
@@ -112,12 +83,8 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [role, setRole] = useState<'student' | 'tutor'>('student');
   const [system, setSystem] = useState<'francophone' | 'anglophone' | ''>('');
   const [city, setCity] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [classes, setClasses] = useState('');
-  const [monthlyRate, setMonthlyRate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -127,29 +94,19 @@ export default function SignupPage() {
   const content = {
     fr: {
       createAccount: 'Créer un compte',
-      enterInfo: 'Entrez vos informations pour créer un compte',
+      enterInfo: 'Entrez vos informations pour créer votre compte élève.',
       fullNameLabel: 'Nom complet',
       fullNamePlaceholder: 'Votre Nom',
       emailLabel: 'Email',
       passwordLabel: 'Mot de passe',
       confirmPasswordLabel: 'Confirmer le mot de passe',
-      iAmA: 'Je suis un(e)',
-      student: 'Élève',
-      tutor: 'Répétiteur',
       systemLabel: 'Système Éducatif',
       systemPlaceholder: 'Choisissez votre système',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
       cityLabel: 'Ville',
       cityPlaceholder: 'Choisissez votre ville',
-      whatsappLabel: 'Numéro WhatsApp',
-      whatsappPlaceholder: '+237 6XX XXX XXX',
-      classesLabel: 'Classes Enseignées',
-      classesPlaceholder: 'Ex: 6ème, Seconde A, Terminale C',
-      classesDescription: 'Séparez les classes par une virgule.',
-      monthlyRateLabel: 'Tarif Mensuel par Matière (FCFA)',
-      monthlyRatePlaceholder: 'Ex: 25000',
-      createAccountButton: 'Créer un compte',
+      createAccountButton: 'Créer mon compte',
       initializing: 'Initialisation...',
       alreadyHaveAccount: 'Vous avez déjà un compte ?',
       login: 'Se connecter',
@@ -163,9 +120,6 @@ export default function SignupPage() {
       errorFillFields: 'Veuillez remplir tous les champs obligatoires.',
       errorSelectSystem: 'Veuillez sélectionner un système éducatif.',
       errorSelectCity: 'Veuillez sélectionner votre ville.',
-      errorWhatsapp: 'Veuillez entrer un numéro WhatsApp.',
-      errorClasses: 'Veuillez renseigner les classes que vous enseignez.',
-      errorRate: 'Veuillez renseigner votre tarif mensuel.',
       errorPasswordLength: 'Le mot de passe doit contenir au moins 6 caractères.',
       errorPasswordMismatch: 'Les mots de passe ne correspondent pas.',
       errorEmailInUse: 'Cette adresse email est déjà utilisée par un autre compte.',
@@ -177,29 +131,19 @@ export default function SignupPage() {
     },
     en: {
       createAccount: 'Create an account',
-      enterInfo: 'Enter your information to create an account',
+      enterInfo: 'Enter your information to create your student account.',
       fullNameLabel: 'Full Name',
       fullNamePlaceholder: 'Your Name',
       emailLabel: 'Email',
       passwordLabel: 'Password',
       confirmPasswordLabel: 'Confirm Password',
-      iAmA: 'I am a',
-      student: 'Student',
-      tutor: 'Tutor',
       systemLabel: 'Educational System',
       systemPlaceholder: 'Select your system',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
       cityLabel: 'City',
       cityPlaceholder: 'Select your city',
-      whatsappLabel: 'WhatsApp Number',
-      whatsappPlaceholder: '+237 6XX XXX XXX',
-      classesLabel: 'Classes Taught',
-      classesPlaceholder: 'E.g., Form 1, Form 5, Lower Sixth',
-      classesDescription: 'Separate classes with a comma.',
-      monthlyRateLabel: 'Monthly Rate per Subject (FCFA)',
-      monthlyRatePlaceholder: 'E.g., 25000',
-      createAccountButton: 'Create account',
+      createAccountButton: 'Create my account',
       initializing: 'Initializing...',
       alreadyHaveAccount: 'Already have an account?',
       login: 'Log in',
@@ -213,9 +157,6 @@ export default function SignupPage() {
       errorFillFields: 'Please fill in all required fields.',
       errorSelectSystem: 'Please select an educational system.',
       errorSelectCity: 'Please select your city.',
-      errorWhatsapp: 'Please enter a WhatsApp number.',
-      errorClasses: 'Please enter the classes you teach.',
-      errorRate: 'Please enter your monthly rate.',
       errorPasswordLength: 'Password must be at least 6 characters long.',
       errorPasswordMismatch: 'Passwords do not match.',
       errorEmailInUse: 'This email address is already in use by another account.',
@@ -244,7 +185,7 @@ export default function SignupPage() {
       setError(t.errorFirebaseConfig);
       return;
     }
-    if (!fullName || !email || !password || !role) {
+    if (!fullName || !email || !password) {
       setError(t.errorFillFields);
       return;
     }
@@ -260,18 +201,6 @@ export default function SignupPage() {
         setError(t.errorSelectCity);
         return;
     }
-    if (role === 'tutor' && !whatsapp) {
-        setError(t.errorWhatsapp);
-        return;
-    }
-    if (role === 'tutor' && !classes) {
-        setError(t.errorClasses);
-        return;
-    }
-     if (role === 'tutor' && !monthlyRate) {
-        setError(t.errorRate);
-        return;
-    }
     if (password.length < 6) {
         setError(t.errorPasswordLength);
         return;
@@ -282,17 +211,10 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: fullName });
       
-      const classesArray = role === 'tutor' ? classes.split(',').map(c => c.trim()).filter(Boolean) : [];
-      const rateNumber = role === 'tutor' ? parseInt(monthlyRate, 10) : undefined;
-
       await createNewUserDocument(firestore, userCredential.user, {
           fullName,
-          role,
           system: system as 'francophone' | 'anglophone',
           city,
-          whatsapp,
-          classes: classesArray,
-          monthlyRate: rateNumber
       });
 
       toast({
@@ -444,102 +366,32 @@ export default function SignupPage() {
                 </div>
               </div>
 
-               <div className="grid gap-2">
-                  <Label>{t.iAmA}</Label>
-                  <RadioGroup
-                    defaultValue="student"
-                    className="grid grid-cols-2 gap-4"
-                    onValueChange={(value: 'student' | 'tutor') => setRole(value)}
-                    disabled={isDisabled}
-                  >
+              <div className="grid grid-cols-2 gap-4">
+                  <div>
+                      <Label htmlFor="system">{t.systemLabel}</Label>
+                      <Select onValueChange={(value: 'francophone' | 'anglophone') => setSystem(value)} disabled={isDisabled} value={system}>
+                          <SelectTrigger id="system">
+                              <SelectValue placeholder={t.systemPlaceholder} />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="francophone">{t.francophone}</SelectItem>
+                              <SelectItem value="anglophone">{t.anglophone}</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
                     <div>
-                      <RadioGroupItem value="student" id="student" className="peer sr-only" />
-                      <Label
-                        htmlFor="student"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                      >
-                        {t.student}
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="tutor" id="tutor" className="peer sr-only" />
-                      <Label
-                        htmlFor="tutor"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                      >
-                        {t.tutor}
-                      </Label>
-                    </div>
-                  </RadioGroup>
-               </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <Label htmlFor="system">{t.systemLabel}</Label>
-                        <Select onValueChange={(value: 'francophone' | 'anglophone') => setSystem(value)} disabled={isDisabled} value={system}>
-                            <SelectTrigger id="system">
-                                <SelectValue placeholder={t.systemPlaceholder} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="francophone">{t.francophone}</SelectItem>
-                                <SelectItem value="anglophone">{t.anglophone}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                     <div>
-                        <Label htmlFor="city">{t.cityLabel}</Label>
-                        <Select onValueChange={setCity} disabled={isDisabled} value={city}>
-                            <SelectTrigger id="city">
-                                <SelectValue placeholder={t.cityPlaceholder} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {cameroonCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                
-                {role === 'tutor' && (
-                  <>
-                    <div className="grid gap-2">
-                      <Label htmlFor="whatsapp">{t.whatsappLabel}</Label>
-                      <Input
-                        id="whatsapp"
-                        placeholder={t.whatsappPlaceholder}
-                        required
-                        value={whatsapp}
-                        onChange={(e) => setWhatsapp(e.target.value)}
-                        disabled={isDisabled}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="rate">{t.monthlyRateLabel}</Label>
-                        <Input
-                            id="rate"
-                            type="number"
-                            placeholder={t.monthlyRatePlaceholder}
-                            required
-                            value={monthlyRate}
-                            onChange={(e) => setMonthlyRate(e.target.value)}
-                            disabled={isDisabled}
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="classes">{t.classesLabel}</Label>
-                        <Textarea
-                            id="classes"
-                            placeholder={t.classesPlaceholder}
-                            required
-                            value={classes}
-                            onChange={(e) => setClasses(e.target.value)}
-                            disabled={isDisabled}
-                        />
-                        <p className="text-sm text-muted-foreground">{t.classesDescription}</p>
-                    </div>
-                  </>
-                )}
-
-
+                      <Label htmlFor="city">{t.cityLabel}</Label>
+                      <Select onValueChange={setCity} disabled={isDisabled} value={city}>
+                          <SelectTrigger id="city">
+                              <SelectValue placeholder={t.cityPlaceholder} />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {cameroonCities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          </SelectContent>
+                      </Select>
+                  </div>
+              </div>
+              
               <Button type="submit" className="w-full" disabled={isDisabled}>
                 {isDisabled ? t.initializing : t.createAccountButton}
               </Button>

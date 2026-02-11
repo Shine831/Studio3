@@ -13,7 +13,7 @@
         },
         "role": {
           "type": "string",
-          "description": "User's role: student, tutor, or admin."
+          "description": "User's role: student or admin."
         },
         "email": {
           "type": "string",
@@ -81,171 +81,6 @@
         "city"
       ]
     },
-    "Subject": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Subject",
-      "type": "object",
-      "description": "Represents a subject offered in the RéviseCamer application.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the subject."
-        },
-        "nameFr": {
-          "type": "string",
-          "description": "Subject name in French."
-        },
-        "nameEn": {
-          "type": "string",
-          "description": "Subject name in English."
-        },
-        "descriptionFr": {
-          "type": "string",
-          "description": "Subject description in French."
-        },
-        "descriptionEn": {
-          "type": "string",
-          "description": "Subject description in English."
-        }
-      },
-      "required": [
-        "id",
-        "nameFr",
-        "nameEn"
-      ]
-    },
-    "TutorProfile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "TutorProfile",
-      "type": "object",
-      "description": "Represents a tutor's profile in the RéviseCamer application.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the tutor profile."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to UserProfile. (Relationship: UserProfile 1:1 TutorProfile)"
-        },
-        "name": {
-            "type": "string",
-            "description": "Denormalized full name of the tutor for easy display."
-        },
-        "avatarUrl": {
-            "type": "string",
-            "description": "Denormalized avatar URL of the tutor for easy display."
-        },
-        "subjects": {
-          "type": "array",
-          "description": "Subjects the tutor is qualified to teach.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "classes": {
-            "type": "array",
-            "description": "Classes the tutor is qualified to teach.",
-            "items": {
-                "type": "string"
-            }
-        },
-        "monthlyRate": {
-          "type": "number",
-          "description": "Monthly rate per subject charged by the tutor in FCFA."
-        },
-        "availability": {
-          "type": "string",
-          "description": "Tutor's availability schedule."
-        },
-        "rating": {
-          "type": "number",
-          "description": "Average rating of the tutor."
-        },
-        "reviewsCount": {
-          "type": "number",
-          "description": "Total number of reviews for the tutor."
-        },
-        "cvUrl": {
-          "type": "string",
-          "description": "URL to the tutor's CV.",
-          "format": "uri"
-        },
-        "identificationDocumentUrl": {
-          "type": "string",
-          "description": "URL to the tutor's identification document.",
-          "format": "uri"
-        },
-        "whatsapp": {
-            "type": "string",
-            "description": "Tutor's WhatsApp number for easy contact."
-        },
-        "system": {
-            "type": "string",
-            "description": "The educational system the tutor teaches in.",
-            "enum": ["francophone", "anglophone", "both"]
-        },
-        "city": {
-          "type": "string",
-          "description": "Tutor's city in Cameroon."
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "name",
-        "whatsapp",
-        "subjects",
-        "classes",
-        "monthlyRate",
-        "availability",
-        "city"
-      ]
-    },
-    "TutorRating": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "TutorRating",
-      "type": "object",
-      "description": "Represents a rating given by a student to a tutor.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the rating, same as the student's UID."
-        },
-        "tutorId": {
-          "type": "string",
-          "description": "Reference to TutorProfile."
-        },
-        "studentId": {
-          "type": "string",
-          "description": "Reference to UserProfile of Student."
-        },
-        "studentName": {
-            "type": "string",
-            "description": "Denormalized name of the student for easy display."
-        },
-        "rating": {
-          "type": "number",
-          "description": "The rating value (e.g., 1-5)."
-        },
-        "comment": {
-          "type": "string",
-          "description": "The student's comment."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp of when the rating was submitted.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "tutorId",
-        "studentId",
-        "rating",
-        "createdAt"
-      ]
-    },
     "StudyPlan": {
         "title": "Study Plan",
         "type": "object",
@@ -310,7 +145,6 @@
   "auth": {
     "providers": [
       "password",
-      "phone",
       "google.com"
     ]
   },
@@ -345,48 +179,8 @@
           },
           "description": "Stores a student's quiz results."
         }
-      },
-      {
-        "path": "/subjects/{subjectId}",
-        "definition": {
-          "entityName": "Subject",
-          "schema": {
-            "$ref": "#/backend/entities/Subject"
-          },
-          "description": "Stores subjects offered in the application. Publicly readable."
-        }
-      },
-      {
-        "path": "/tutors/{tutorId}",
-        "definition": {
-          "entityName": "TutorProfile",
-          "schema": {
-            "$ref": "#/backend/entities/TutorProfile"
-          },
-          "description": "Stores tutor profiles. Publicly readable, but only the tutor and admins can edit."
-        }
-      },
-      {
-        "path": "/tutors/{tutorId}/ratings/{studentId}",
-        "definition": {
-          "entityName": "TutorRating",
-          "schema": {
-            "$ref": "#/backend/entities/TutorRating"
-          },
-          "description": "Stores individual ratings for a tutor. Each student can only create one rating per tutor, using their UID as the ratingId."
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "adminRole",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Stores admin roles. Existence of a document grants admin privileges. Accessible only to admins."
-        }
       }
     ],
-    "reasoning": "The Firestore structure has been radically simplified to focus on the core functionality: connecting students with tutors via WhatsApp. All entities and collections related to bookings, and courses have been removed. The structure now primarily supports user and tutor profiles, a rating system, and student-centric features like study plans and quiz results. This clean model ensures security and scalability for the core features, adhering to principles of data minimization and clear access control.\\n\\n1.  **User & Tutor Profiles:** `/users/{userId}` and `/tutors/{tutorId}` remain the core collections for storing profile information. Access is restricted to owners or admins.\\n\\n2.  **Student Features:** Study plans and quiz results are stored in subcollections under the user's document (`/users/{userId}/studyPlans` and `/users/{userId}/quizResults`) to ensure data privacy and easy access for the student.\\n\\n3.  **Tutor Ratings:** `/tutors/{tutorId}/ratings/{studentId}` allows students to rate tutors. Using the student's UID as the document ID enforces a one-rating-per-student rule, which is a simple and effective security measure.\\n\\n4.  **Admin Roles:** The `/roles_admin/{userId}` collection continues to manage administrative privileges based on document existence, a secure and efficient pattern."
+    "reasoning": "The structure is simplified to focus on users and their study-related data. All tutor, subject, and public-facing collections have been removed to align with the core functionality of AI-driven study plan generation and tracking."
   }
 }

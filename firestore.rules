@@ -23,10 +23,6 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
     
-    function isTutorOwner(tutorProfileData) {
-      return isOwner(tutorProfileData.userId);
-    }
-
     // --------------------------------------------------------------------
     // User Data Collections (/users)
     // --------------------------------------------------------------------
@@ -51,66 +47,15 @@ service cloud.firestore {
         allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc();
         allow delete: if (isOwner(userId) || isAdmin()) && isExistingDoc();
       }
-
-      match /notifications/{notificationId} {
-        allow get, list, delete: if isOwner(userId);
-        // Allow signed-in users (like tutors) to create notifications for other users.
-        allow create: if isSignedIn();
-        allow update: if false;
-      }
-    }
-
-    // --------------------------------------------------------------------
-    // Public Content & Tutor Collections
-    // --------------------------------------------------------------------
-
-    match /subjects/{path=**} {
-      allow get, list: if true;
-      allow write: if isAdmin();
-    }
-
-    match /tutors/{tutorId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      // Allow tutor owner to update, OR allow a student to submit a rating update
-      allow update: if (isTutorOwner(resource.data) || isAdmin() || 
-                      (
-                        isSignedIn() &&
-                        // The user must be creating a new rating for this to be valid
-                        !exists(/databases/$(database)/documents/tutors/$(tutorId)/ratings/$(request.auth.uid)) &&
-                        // Check that only rating fields are changing, and in a valid way
-                        request.resource.data.reviewsCount == resource.data.reviewsCount + 1 &&
-                        request.resource.data.rating >= 0 && request.resource.data.rating <= 5 &&
-                        // Check that core fields are not modified
-                        request.resource.data.userId == resource.data.userId &&
-                        request.resource.data.name == resource.data.name
-                      )
-                    ) && isExistingDoc();
-      allow delete: if (isTutorOwner(resource.data) || isAdmin()) && isExistingDoc();
-
-      match /ratings/{studentId} {
-        allow get, list: if true;
-        // A student can only create a rating for themself
-        allow create: if isOwner(studentId)
-                      && request.resource.data.studentId == studentId
-                      && request.resource.data.tutorId == tutorId;
-        // A student can update their own rating (e.g. the comment)
-        allow update: if isOwner(studentId) && isExistingDoc();
-        allow delete: if false;
-      }
     }
 
     // --------------------------------------------------------------------
     // Administrative Collections
     // --------------------------------------------------------------------
 
-    match /roles_admin/{userId} {
-      allow get, list, create, update, delete: if isAdmin();
-    }
-    
     match /bug_reports/{reportId} {
       allow create: if isSignedIn();
-      allow read, update, delete: if false;
+      allow read, update, delete: if isAdmin();
     }
   }
 }

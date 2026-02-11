@@ -20,7 +20,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: 'RéviseCamer',
-  description: 'Cours, quiz et répétiteurs pour réussir votre lycée au Cameroun.',
+  description: "Générez des plans d'étude, des leçons et des quiz pour réussir votre lycée au Cameroun.",
 };
 
 export default function RootLayout({

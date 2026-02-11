@@ -89,7 +89,7 @@ export default function LoginPage() {
   
   useEffect(() => {
     if (!isAuthLoading && user) {
-      router.push('/dashboard');
+      router.push('/study-plan');
     }
   }, [user, isAuthLoading, router]);
 
@@ -112,7 +112,7 @@ export default function LoginPage() {
         title: t.loginSuccessTitle,
         description: t.loginSuccessDesc,
       });
-      router.push('/dashboard');
+      router.push('/study-plan');
     } catch (err: any) {
       console.error("Email/Password login error:", err);
       let friendlyMessage = err.message || t.errorUnexpected;

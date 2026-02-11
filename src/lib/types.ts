@@ -3,7 +3,7 @@ export type WithId<T> = T & { id: string };
 
 export interface UserProfile {
   id: string;
-  role: 'student' | 'tutor' | 'admin';
+  role: 'student' | 'admin';
   email: string;
   phone?: string;
   firstName: string;
@@ -16,34 +16,6 @@ export interface UserProfile {
   city: string;
   aiCredits?: number;
   lastCreditRenewal?: any; // Firestore Timestamp
-}
-
-export interface TutorProfile {
-    id: string;
-    userId: string;
-    name: string;
-    avatarUrl?: string;
-    subjects: string[];
-    classes: string[];
-    monthlyRate: number;
-    availability: string;
-    rating: number;
-    reviewsCount: number;
-    cvUrl?: string;
-    identificationDocumentUrl?: string;
-    whatsapp: string;
-    system?: 'francophone' | 'anglophone' | 'both';
-    city: string;
-}
-
-export interface TutorRating {
-  id: string; // studentUID
-  tutorId: string;
-  studentId: string;
-  studentName?: string;
-  rating: number;
-  comment?: string;
-  createdAt: any; // Firestore Timestamp
 }
 
 export interface Question {
@@ -78,14 +50,4 @@ export interface QuizResult {
   score: number;
   completionDate: any; // Firestore Timestamp
   answers: Array<{ questionIndex: number; answer: string }>;
-}
-
-export interface Notification {
-    id: string;
-    userId: string;
-    type: string;
-    messageFr: string;
-    messageEn: string;
-    sentAt: any; // Firestore timestamp
-    targetURL?: string;
 }

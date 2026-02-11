@@ -13,11 +13,11 @@ export default function AuthLayout({
 
   const content = {
     fr: {
-        quote: "« Cette plateforme a changé la donne pour ma préparation aux examens. Les répétiteurs sont excellents et le contenu est de premier ordre. »",
+        quote: "« Cette plateforme a changé la donne pour ma préparation aux examens. Les plans d'étude IA et les quiz sont parfaits pour réviser efficacement. »",
         author: "A. Ndiaye, Élève de Terminale S"
     },
     en: {
-        quote: "“This platform has been a game-changer for my exam preparation. The tutors are excellent and the content is top-notch.”",
+        quote: "“This platform has been a game-changer for my exam preparation. The AI study plans and quizzes are perfect for efficient revision.”",
         author: "A. Ndiaye, Terminale S Student"
     }
   };

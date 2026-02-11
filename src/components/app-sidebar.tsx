@@ -4,7 +4,6 @@ import Link from 'next/link';
 import {
   Home,
   Settings,
-  Users,
   BookCopy,
 } from 'lucide-react';
 import { Icons } from './icons';
@@ -30,14 +29,10 @@ export function AppSidebar({ className }: { className?: string }) {
 
   const content = {
     fr: {
-      dashboard: 'Tableau de bord',
-      tutors: 'Répétiteurs',
       settings: 'Paramètres',
       studyPlan: "Plans d'étude",
     },
     en: {
-      dashboard: 'Dashboard',
-      tutors: 'Tutors',
       settings: 'Settings',
       studyPlan: "Study Plans",
     },
@@ -46,10 +41,8 @@ export function AppSidebar({ className }: { className?: string }) {
   const t = content[language];
   
   const navItems = [
-    { href: '/dashboard', icon: Home, label: t.dashboard, roles: ['student', 'tutor', 'admin'] },
-    { href: '/study-plan', icon: BookCopy, label: t.studyPlan, roles: ['student'] },
-    { href: '/tutors', icon: Users, label: t.tutors, roles: ['student', 'admin'] },
-    { href: '/settings', icon: Settings, label: t.settings, roles: ['student', 'tutor', 'admin'] },
+    { href: '/study-plan', icon: BookCopy, label: t.studyPlan, roles: ['student', 'admin'] },
+    { href: '/settings', icon: Settings, label: t.settings, roles: ['student', 'admin'] },
   ];
   
   const isLoading = isProfileLoading;
@@ -59,7 +52,7 @@ export function AppSidebar({ className }: { className?: string }) {
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-16 items-center border-b px-4 lg:px-6">
           <Link
-            href="/dashboard"
+            href="/study-plan"
             className="flex items-center gap-2 font-semibold font-headline"
           >
             <Icons.logo className="h-6 w-6 text-primary" />
@@ -72,7 +65,6 @@ export function AppSidebar({ className }: { className?: string }) {
                 <div className="space-y-2 py-2">
                     <Skeleton className="h-8 w-full" />
                     <Skeleton className="h-8 w-full" />
-                    <Skeleton className="h-8 w-full" />
                 </div>
             ) : (
                 navItems
@@ -82,7 +74,7 @@ export function AppSidebar({ className }: { className?: string }) {
                       key={label}
                       href={href}
                       className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted", {
-                          "bg-muted text-primary": pathname.startsWith(href) && (href !== '/dashboard' || pathname === href)
+                          "bg-muted text-primary": pathname.startsWith(href)
                       })}
                   >
                     <Icon className="h-4 w-4" />

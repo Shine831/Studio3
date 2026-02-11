@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 
 import {
   useFirestore,
@@ -21,7 +20,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -37,9 +35,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import { cameroonCities } from '@/lib/cameroon-cities';
-import type { UserProfile, TutorProfile, WithId } from '@/lib/types';
+import type { UserProfile } from '@/lib/types';
 import { Camera } from 'lucide-react';
 
 const profileFormSchema = z.object({
@@ -49,11 +46,6 @@ const profileFormSchema = z.object({
   email: z.string().email(),
   system: z.enum(['francophone', 'anglophone']),
   city: z.string(),
-  // Tutor-specific fields
-  subjects: z.string().optional(),
-  whatsapp: z.string().optional(),
-  classes: z.string().optional(),
-  monthlyRate: z.coerce.number().positive().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -66,7 +58,6 @@ const getInitials = (name: string) => {
     }
     return name.substring(0, 1).toUpperCase();
 }
-
 
 export default function SettingsPage() {
   const { language } = useLanguage();
@@ -82,12 +73,6 @@ export default function SettingsPage() {
     [firestore, user]
   );
   const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userProfileRef);
-  
-  const tutorProfileRef = useMemoFirebase(
-    () => (user && userProfile?.role === 'tutor' ? doc(firestore, 'tutors', user.uid) : null),
-    [firestore, user, userProfile?.role]
-  );
-  const { data: tutorProfile, isLoading: isTutorProfileLoading } = useDoc<WithId<TutorProfile>>(tutorProfileRef);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -97,10 +82,6 @@ export default function SettingsPage() {
       email: '',
       system: 'francophone',
       city: '',
-      subjects: '',
-      whatsapp: '',
-      classes: '',
-      monthlyRate: 0,
       profilePicture: '',
     },
     mode: 'onChange',
@@ -116,18 +97,11 @@ export default function SettingsPage() {
         city: userProfile.city || '',
         profilePicture: userProfile.profilePicture || '',
       };
-
-      if (userProfile.role === 'tutor' && tutorProfile) {
-        defaultVals.subjects = Array.isArray(tutorProfile.subjects) ? tutorProfile.subjects.join(', ') : '';
-        defaultVals.whatsapp = tutorProfile.whatsapp || '';
-        defaultVals.classes = Array.isArray(tutorProfile.classes) ? tutorProfile.classes.join(', ') : '';
-        defaultVals.monthlyRate = tutorProfile.monthlyRate ?? 0;
-      }
       
       form.reset(defaultVals as ProfileFormValues);
       setPreview(userProfile.profilePicture || null);
     }
-  }, [userProfile, tutorProfile, form]);
+  }, [userProfile, form]);
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -142,7 +116,6 @@ export default function SettingsPage() {
     }
   };
 
-
   async function onSubmit(data: ProfileFormValues) {
     if (!userProfileRef || !user || !firestore) return;
     
@@ -156,33 +129,6 @@ export default function SettingsPage() {
 
     try {
       await updateDoc(userProfileRef, { ...userProfileData });
-
-      if (userProfile?.role === 'tutor' && tutorProfileRef) {
-        const tutorDoc = await getDoc(tutorProfileRef);
-        const tutorDataToUpdate: Partial<TutorProfile> = {
-          userId: user.uid,
-          name: `${data.firstName} ${data.lastName}`,
-          avatarUrl: data.profilePicture,
-          whatsapp: data.whatsapp,
-          monthlyRate: data.monthlyRate,
-          subjects: data.subjects?.split(',').map(s => s.trim()).filter(Boolean),
-          classes: data.classes?.split(',').map(c => c.trim()).filter(Boolean),
-          city: data.city,
-          system: data.system as 'francophone' | 'anglophone' | 'both' | undefined,
-        };
-        
-        if (tutorDoc.exists()) {
-             await updateDoc(tutorProfileRef, tutorDataToUpdate);
-        } else {
-             await setDoc(tutorProfileRef, {
-                ...tutorDataToUpdate,
-                id: user.uid,
-                availability: 'Non définie',
-                rating: 0,
-                reviewsCount: 0,
-             });
-        }
-      }
 
       toast({
         title: content[language].updateSuccessTitle,
@@ -213,15 +159,6 @@ export default function SettingsPage() {
       systemPlaceholder: 'Choisissez un système',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
-      whatsapp: 'Numéro WhatsApp',
-      whatsappDesc: 'Visible par les étudiants qui vous contactent.',
-      subjectsLabel: 'Matières Enseignées',
-      subjectsPlaceholder: 'Ex: Mathématiques, Physique...',
-      subjectsDesc: 'Séparez les matières par une virgule.',
-      classes: 'Classes Enseignées',
-      classesDesc: 'Séparez les classes par une virgule (ex: 6ème, 5ème).',
-      monthlyRate: 'Tarif Mensuel (par matière)',
-      monthlyRatePlaceholder: "Ex: 25000",
       updateButton: 'Mettre à jour le profil',
       updateSuccessTitle: 'Profil mis à jour',
       updateSuccessDesc: 'Vos informations ont été sauvegardées avec succès.',
@@ -240,15 +177,6 @@ export default function SettingsPage() {
       systemPlaceholder: 'Select a system',
       francophone: 'Francophone',
       anglophone: 'Anglophone',
-      whatsapp: 'WhatsApp Number',
-      whatsappDesc: 'Visible to students who contact you.',
-      subjectsLabel: 'Subjects Taught',
-      subjectsPlaceholder: 'E.g., Mathematics, Physics...',
-      subjectsDesc: 'Separate subjects with a comma.',
-      classes: 'Classes Taught',
-      classesDesc: 'Separate classes with a comma (e.g., Form 1, Form 2).',
-      monthlyRate: 'Monthly Rate (per subject)',
-      monthlyRatePlaceholder: "E.g., 25000",
       updateButton: 'Update Profile',
       updateSuccessTitle: 'Profile Updated',
       updateSuccessDesc: 'Your information has been successfully saved.',
@@ -258,9 +186,7 @@ export default function SettingsPage() {
 
   const t = content[language];
 
-  const isLoading = isProfileLoading || (userProfile?.role === 'tutor' && isTutorProfileLoading);
-
-  if (isLoading) {
+  if (isProfileLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-1/4" />
@@ -358,135 +284,52 @@ export default function SettingsPage() {
             )}
           />
           
-          {userProfile?.role === 'student' ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <FormField
                   control={form.control}
                   name="system"
                   render={({ field }) => (
-                    <FormItem className="hidden">
+                  <FormItem>
                       <FormLabel>{t.system}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ''}>
-                        <FormControl>
+                      <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder={t.systemPlaceholder} />
+                          <SelectValue placeholder={t.systemPlaceholder} />
                           </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                      </FormControl>
+                      <SelectContent>
                           <SelectItem value="francophone">{t.francophone}</SelectItem>
                           <SelectItem value="anglophone">{t.anglophone}</SelectItem>
-                        </SelectContent>
+                      </SelectContent>
                       </Select>
                       <FormMessage />
-                    </FormItem>
+                  </FormItem>
                   )}
-                />
-          ) : null}
-
-          {userProfile?.role === 'tutor' && (
-            <>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <FormField
-                        control={form.control}
-                        name="system"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>{t.system}</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''}>
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder={t.systemPlaceholder} />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="francophone">{t.francophone}</SelectItem>
-                                <SelectItem value="anglophone">{t.anglophone}</SelectItem>
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>{t.city}</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ''}>
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder={t.cityPlaceholder} />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {cameroonCities.map(c => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                </div>
-                <FormField
-                control={form.control}
-                name="whatsapp"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>{t.whatsapp}</FormLabel>
-                    <FormControl>
-                        <Input placeholder="+237 6XX XXX XXX" {...field} value={field.value || ''} />
-                    </FormControl>
-                    <FormDescription>{t.whatsappDesc}</FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="monthlyRate"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>{t.monthlyRate} (FCFA)</FormLabel>
-                        <FormControl>
-                            <Input type="number" placeholder={t.monthlyRatePlaceholder} {...field} value={field.value || 0} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="subjects"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>{t.subjectsLabel}</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder={t.subjectsPlaceholder} {...field} value={field.value || ''} />
-                        </FormControl>
-                         <FormDescription>{t.subjectsDesc}</FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="classes"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>{t.classes}</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="e.g., 6ème, 5ème, Form 1, Form 2" {...field} value={field.value || ''} />
-                        </FormControl>
-                         <FormDescription>{t.classesDesc}</FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </>
-          )}
-
+              />
+              <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>{t.city}</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                          <SelectTrigger>
+                          <SelectValue placeholder={t.cityPlaceholder} />
+                          </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                          {cameroonCities.map(c => (
+                              <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                      </SelectContent>
+                      </Select>
+                      <FormMessage />
+                  </FormItem>
+                  )}
+              />
+          </div>
+         
           <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>{t.updateButton}</Button>
         </form>
       </Form>

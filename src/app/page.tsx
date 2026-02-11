@@ -2,10 +2,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  MessageSquare,
-  Search,
-  Star,
   BrainCircuit,
+  BookCopy,
+  BarChart3,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,73 +19,71 @@ export default function LandingPage() {
 
   const features = [
     {
-      icon: <Search className="h-10 w-10" />,
-      title: {
-        fr: 'Trouvez le Répétiteur Idéal',
-        en: 'Find the Ideal Tutor',
-      },
-      description: {
-        fr: 'Parcourez les profils de répétiteurs qualifiés pour toutes les matières du programme.',
-        en: 'Browse profiles of qualified tutors for all subjects in the curriculum.',
-      },
-    },
-    {
-      icon: <MessageSquare className="h-10 w-10" />,
-      title: {
-        fr: 'Contact Direct sur WhatsApp',
-        en: 'Direct Contact on WhatsApp',
-      },
-      description: {
-        fr: 'Échangez directement avec les répétiteurs sur WhatsApp pour poser vos questions et organiser des cours.',
-        en: 'Chat directly with tutors on WhatsApp to ask your questions and arrange lessons.',
-      },
-    },
-    {
       icon: <BrainCircuit className="h-10 w-10" />,
       title: {
-        fr: "Plans d'Étude Intelligents",
-        en: 'Intelligent Study Plans',
+        fr: "Plans d'Étude sur Mesure",
+        en: 'Custom Study Plans',
       },
       description: {
-        fr: "Générez des plans d'étude, des leçons et des quiz avec l'IA pour maîtriser n'importe quel sujet.",
-        en: 'Generate study plans, lessons, and quizzes with AI to master any subject.',
+        fr: "Décrivez vos objectifs et notre IA vous crée un plan d'étude personnalisé et structuré.",
+        en: 'Describe your goals and our AI will create a personalized and structured study plan for you.',
       },
     },
     {
-      icon: <Star className="h-10 w-10" />,
+      icon: <BookCopy className="h-10 w-10" />,
       title: {
-        fr: 'Évaluations Authentiques',
-        en: 'Authentic Reviews',
+        fr: 'Leçons et Quiz à la Demande',
+        en: 'On-Demand Lessons & Quizzes',
       },
       description: {
-        fr: "Consultez les notes et les commentaires laissés par d'autres élèves pour faire le bon choix.",
-        en: 'Check ratings and comments left by other students to make the right choice.',
+        fr: "Générez des leçons complètes et des quiz interactifs pour chaque chapitre de votre plan.",
+        en: 'Generate complete lessons and interactive quizzes for each chapter of your plan.',
       },
     },
+    {
+      icon: <BarChart3 className="h-10 w-10" />,
+      title: {
+        fr: 'Suivi de Votre Progression',
+        en: 'Track Your Progress',
+      },
+      description: {
+        fr: "Visualisez votre progression, vos scores aux quiz et le temps d'étude sur votre tableau de bord.",
+        en: 'Visualize your progress, quiz scores, and study time on your dashboard.',
+      },
+    },
+    {
+        icon: <Sparkles className="h-10 w-10" />,
+        title: {
+          fr: 'Apprentissage Autonome',
+          en: 'Autonomous Learning',
+        },
+        description: {
+          fr: "Prenez en main votre réussite scolaire avec des outils conçus pour l'auto-apprentissage.",
+          en: 'Take control of your academic success with tools designed for self-directed learning.',
+        },
+      },
   ];
 
   const content = {
     fr: {
-      headline: "Votre partenaire pour la réussite scolaire au Cameroun.",
-      tagline: "Trouvez le répétiteur idéal, générez des plans d'étude avec l'IA et réussissez vos examens.",
+      headline: "Votre partenaire IA pour la réussite scolaire au Cameroun.",
+      tagline: "Générez des plans d'étude, des leçons et des quiz. Maîtrisez n'importe quel sujet à votre rythme.",
       getStarted: 'Commencer',
       featuresTitle: "Des Outils Puissants pour Votre Réussite",
-      featuresDescription: "De la recherche de tuteurs à la préparation d'examens avec l'IA, nous avons ce qu'il vous faut.",
+      featuresDescription: "Prenez en main votre apprentissage avec une suite d'outils intelligents.",
       features: 'Fonctionnalités',
-      tutors: 'Répétiteurs',
       login: 'Se connecter',
       signup: 'S\'inscrire',
       terms: 'Conditions',
       privacy: 'Confidentialité'
     },
     en: {
-      headline: "Your Partner for Academic Success in Cameroon.",
-      tagline: 'Find the ideal tutor, generate AI-powered study plans, and ace your exams.',
+      headline: "Your AI Partner for Academic Success in Cameroon.",
+      tagline: 'Generate study plans, lessons, and quizzes. Master any subject at your own pace.',
       getStarted: 'Get Started',
       featuresTitle: "Powerful Tools for Your Success",
-      featuresDescription: "From finding tutors to exam prep with AI, we've got you covered.",
+      featuresDescription: "Take control of your learning with a suite of intelligent tools.",
       features: 'Features',
-      tutors: 'Tutors',
       login: 'Log In',
       signup: 'Sign Up',
       terms: 'Terms',
@@ -119,7 +117,7 @@ export default function LandingPage() {
               <Link href="/login">{t.login}</Link>
             </Button>
             <Button asChild>
-              <Link href="/signup">{t.signup}</Link>
+              <Link href="/signup">{t.getStarted}</Link>
             </Button>
           </div>
         </div>
@@ -135,7 +133,7 @@ export default function LandingPage() {
             alt="Hero background"
             fill
             className="-z-20 object-cover opacity-5"
-            data-ai-hint="classroom student"
+            data-ai-hint="student learning"
           />
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">

@@ -1,4 +1,3 @@
-import type { Tutor } from '@/lib/types';
 import type { ImagePlaceholder } from './placeholder-images';
 
 export const placeholderImages: ImagePlaceholder[] = [
@@ -31,24 +30,6 @@ export const placeholderImages: ImagePlaceholder[] = [
       description: "DNA helix strand",
       imageUrl: "https://picsum.photos/seed/bio1/600/400",
       imageHint: "dna helix"
-    },
-    {
-      id: "tutor-1",
-      description: "Profile picture of a female tutor",
-      imageUrl: "https://picsum.photos/seed/tutor1/100/100",
-      imageHint: "woman portrait"
-    },
-    {
-      id: "tutor-2",
-      description: "Profile picture of a male tutor",
-      imageUrl: "https://picsum.photos/seed/tutor2/100/100",
-      imageHint: "man portrait"
-    },
-    {
-      id: "tutor-3",
-      description: "Profile picture of a female tutor",
-      imageUrl: "https://picsum.photos/seed/tutor3/100/100",
-      imageHint: "person portrait"
     },
     {
         id: "user-avatar-1",

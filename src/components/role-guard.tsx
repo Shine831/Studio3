@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { AlertTriangle } from 'lucide-react';
 
 interface RoleGuardProps {
-  allowedRoles: Array<'student' | 'tutor' | 'admin'>;
+  allowedRoles: Array<'student' | 'admin'>;
   children: React.ReactNode;
 }
 
@@ -59,5 +59,3 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
 
   return <>{children}</>;
 }
-
-    
