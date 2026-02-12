@@ -150,15 +150,12 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
         });
 
         // Decrement AI credits or handle unlimited
-        const userProfileRef = doc(firestore, 'users', user.uid);
-        const userProfileSnap = await getDoc(userProfileRef);
-        const currentProfile = userProfileSnap.data() as UserProfile;
+        if (userProfile) {
+            const userProfileRef = doc(firestore, 'users', user.uid);
+            const lastRenewal = userProfile.lastCreditRenewal?.toDate();
+            const isUnlimited = lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile.aiCredits === Infinity;
 
-        if (currentProfile) {
-            const lastRenewal = currentProfile.lastCreditRenewal?.toDate();
-            const isUnlimited = lastRenewal && isSameDay(new Date(), lastRenewal) && currentProfile.aiCredits === Infinity;
-
-            if (!isUnlimited && currentProfile.aiCredits) {
+            if (!isUnlimited) {
                  await updateDoc(userProfileRef, { aiCredits: increment(-1) });
             }
         }
