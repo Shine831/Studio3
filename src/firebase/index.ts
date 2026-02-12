@@ -8,15 +8,7 @@ import { getFirestore } from 'firebase/firestore'
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
   if (!getApps().length) {
-    let firebaseApp;
-    try {
-      // Attempt to initialize via environment variables
-      firebaseApp = initializeApp();
-    } catch (e) {
-      // Fallback to the config object if automatic initialization fails
-      firebaseApp = initializeApp(firebaseConfig);
-    }
-
+    const firebaseApp = initializeApp(firebaseConfig);
     return getSdks(firebaseApp);
   }
 
