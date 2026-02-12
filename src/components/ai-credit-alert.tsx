@@ -8,15 +8,15 @@ export function AiCreditAlert({ language }: { language: 'fr' | 'en' }) {
     const t = {
         fr: {
             noCreditsTitle: "Crédits Quotidiens Épuisés",
-            noCreditsDescription: "Vous avez utilisé tous vos crédits pour aujourd'hui. Revenez demain pour en avoir plus ou rechargez pour un accès illimité.",
-            rechargeButton: "Recharger (1200 FCFA)",
-            rechargeDescription: "Payez via Orange Money au 699 477 055 pour un accès illimité pour le reste de la journée.",
+            noCreditsDescription: "Vous avez utilisé tous vos crédits pour aujourd'hui. Revenez demain pour en avoir plus.",
+            rechargeButton: "Recharger (Bientôt disponible)",
+            rechargeDescription: "Un système de paiement automatisé via Mobile Money sera bientôt intégré. Après le paiement, vos crédits seront ajoutés instantanément.",
         },
         en: {
             noCreditsTitle: "Daily Credits Exhausted",
-            noCreditsDescription: "You have used all your credits for today. Check back tomorrow for more or recharge for unlimited access.",
-            rechargeButton: "Recharge (1200 FCFA)",
-            rechargeDescription: "Pay via Orange Money to 699 477 055 for unlimited access for the rest of the day.",
+            noCreditsDescription: "You have used all your credits for today. Check back tomorrow for more.",
+            rechargeButton: "Recharge (Coming Soon)",
+            rechargeDescription: "An automated payment system via Mobile Money will be integrated soon. After payment, your credits will be added instantly.",
         }
     }[language];
 

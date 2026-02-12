@@ -15,6 +15,7 @@ export interface UserProfile {
   system?: 'francophone' | 'anglophone';
   aiCredits?: number;
   lastCreditRenewal?: any; // Firestore Timestamp
+  lastTransactionId?: string;
 }
 
 export interface Notification {

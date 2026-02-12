@@ -64,6 +64,10 @@
             "type": "string",
             "description": "Timestamp of the last AI credit renewal.",
             "format": "date-time"
+        },
+        "lastTransactionId": {
+            "type": "string",
+            "description": "The ID of the last successful payment transaction."
         }
       },
       "required": [
