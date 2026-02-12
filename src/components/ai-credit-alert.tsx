@@ -8,14 +8,14 @@ export function AiCreditAlert({ language }: { language: 'fr' | 'en' }) {
     const t = {
         fr: {
             noCreditsTitle: "Crédits Quotidiens Épuisés",
-            description: "Pour un accès illimité à la génération de contenu, vous pouvez recharger votre compte.",
-            rechargeButton: "Recharger mes crédits (Bientôt disponible)",
+            description: "Pour un accès illimité à la génération de contenu pour toute la journée, vous pouvez recharger votre compte.",
+            rechargeButton: "Recharger (1200 FCFA) - Bientôt disponible",
             automatedSystemSoon: "Notre système de paiement automatisé et sécurisé via Neero est en cours de finalisation."
         },
         en: {
             noCreditsTitle: "Daily Credits Exhausted",
-            description: "For unlimited content generation, you can recharge your account.",
-            rechargeButton: "Recharge Credits (Coming Soon)",
+            description: "For unlimited content generation for the whole day, you can recharge your account.",
+            rechargeButton: "Recharge (1200 FCFA) - Coming Soon",
             automatedSystemSoon: "Our automated and secure payment system via Neero is being finalized."
         }
     }[language];
