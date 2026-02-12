@@ -10,7 +10,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc, Firestore, getDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, Firestore, getDoc, addDoc, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -56,6 +56,16 @@ const getOrCreateUserProfile = async (
     };
     
     await setDoc(userRef, userProfileData);
+
+    // Send a welcome notification
+    const notificationsCollectionRef = collection(firestore, 'users', user.uid, 'notifications');
+    await addDoc(notificationsCollectionRef, {
+      messageFr: "Bienvenue sur RéviseCamer ! Créez votre premier plan d'étude pour commencer.",
+      messageEn: "Welcome to RéviseCamer! Create your first study plan to get started.",
+      sentAt: serverTimestamp(),
+      targetURL: "/study-plan",
+    });
+
   } else {
     await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
   }
@@ -135,7 +145,7 @@ export default function LoginPage() {
   
   useEffect(() => {
     if (!isUserLoading && user) {
-      router.push('/study-plan');
+      router.push('/dashboard');
     }
   }, [user, isUserLoading, router]);
 
@@ -158,7 +168,7 @@ export default function LoginPage() {
         title: t.loginSuccessTitle,
         description: t.loginSuccessDesc,
       });
-      router.push('/study-plan');
+      router.push('/dashboard');
     } catch (err: any) {
       console.error("Email/Password login error:", err);
       let friendlyMessage = err.message || t.errorUnexpected;
@@ -202,7 +212,7 @@ export default function LoginPage() {
         const result = await signInWithPopup(auth, provider);
         await getOrCreateUserProfile(firestore, result.user);
         toast({ title: t.loginSuccessTitle, description: t.loginSuccessDesc });
-        router.push('/study-plan');
+        router.push('/dashboard');
     } catch (error: any) {
         console.error("Google sign in error", error);
         toast({ variant: 'destructive', title: t.loginFailedTitle, description: error.message || t.errorUnexpected });

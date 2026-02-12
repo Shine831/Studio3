@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -29,10 +30,12 @@ export function AppSidebar({ className }: { className?: string }) {
 
   const content = {
     fr: {
+      dashboard: 'Tableau de bord',
       settings: 'Paramètres',
       studyPlan: "Plans d'étude",
     },
     en: {
+      dashboard: 'Dashboard',
       settings: 'Settings',
       studyPlan: "Study Plans",
     },
@@ -41,6 +44,7 @@ export function AppSidebar({ className }: { className?: string }) {
   const t = content[language];
   
   const navItems = [
+    { href: '/dashboard', icon: Home, label: t.dashboard, roles: ['student', 'admin'] },
     { href: '/study-plan', icon: BookCopy, label: t.studyPlan, roles: ['student', 'admin'] },
     { href: '/settings', icon: Settings, label: t.settings, roles: ['student', 'admin'] },
   ];
@@ -52,7 +56,7 @@ export function AppSidebar({ className }: { className?: string }) {
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-16 items-center border-b px-4 lg:px-6">
           <Link
-            href="/study-plan"
+            href="/dashboard"
             className="flex items-center gap-2 font-semibold font-headline"
           >
             <Icons.logo className="h-6 w-6 text-primary" />
@@ -63,6 +67,7 @@ export function AppSidebar({ className }: { className?: string }) {
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             {isLoading ? (
                 <div className="space-y-2 py-2">
+                    <Skeleton className="h-8 w-full" />
                     <Skeleton className="h-8 w-full" />
                     <Skeleton className="h-8 w-full" />
                 </div>
