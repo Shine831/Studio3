@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import { doc, updateDoc, DocumentReference, addDoc, collection, serverTimestamp, Firestore, increment } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import { isSameDay } from 'date-fns';
 
 import {
   generateQuiz,
@@ -37,6 +36,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import Link from 'next/link';
 import { RoleGuard } from '@/components/role-guard';
 import { AiCreditAlert } from '@/components/ai-credit-alert';
+import { hasUnlimitedAccess } from '@/lib/utils';
 
 interface Answer {
   questionIndex: number;
@@ -252,8 +252,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
 
     const checkCredits = () => {
         if (!userProfile) return false;
-        const lastRenewal = userProfile.lastCreditRenewal?.toDate();
-        const isUnlimited = !!(lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile.aiCredits === Infinity);
+        const isUnlimited = hasUnlimitedAccess(userProfile);
         
         if (isUnlimited || (userProfile.aiCredits || 0) > 0) {
             return true;
@@ -272,10 +271,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
             newLessons[lessonIndex].content = result.lessonContent;
             await updateDoc(planRef, { lessons: newLessons });
 
-            const lastRenewal = userProfile?.lastCreditRenewal?.toDate();
-            const isUnlimited = !!(lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile?.aiCredits === Infinity);
-
-            if (!isUnlimited) {
+            if (!hasUnlimitedAccess(userProfile)) {
                 await updateDoc(userProfileRef, { aiCredits: increment(-1) });
             }
         } catch (e) {
@@ -299,10 +295,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
                 newLessons[lessonIndex].quiz = result.questions;
                 await updateDoc(planRef, { lessons: newLessons });
 
-                const lastRenewal = userProfile?.lastCreditRenewal?.toDate();
-                const isUnlimited = !!(lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile?.aiCredits === Infinity);
-
-                if (!isUnlimited) {
+                if (!hasUnlimitedAccess(userProfile)) {
                     await updateDoc(userProfileRef, { aiCredits: increment(-1) });
                 }
             } else {

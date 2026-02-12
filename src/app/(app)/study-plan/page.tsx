@@ -67,6 +67,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { type SavedStudyPlan, type WithId, type UserProfile } from '@/lib/types';
 import { RoleGuard } from '@/components/role-guard';
 import { AiCreditAlert } from '@/components/ai-credit-alert';
+import { hasUnlimitedAccess } from '@/lib/utils';
 
 
 // Schema for the form
@@ -151,10 +152,7 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
 
         // Decrement AI credits or handle unlimited
         const userProfileRef = doc(firestore, 'users', user.uid);
-        const lastRenewal = userProfile.lastCreditRenewal?.toDate();
-        const isUnlimited = lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile.aiCredits === Infinity;
-
-        if (!isUnlimited) {
+        if (!hasUnlimitedAccess(userProfile)) {
              await updateDoc(userProfileRef, { aiCredits: increment(-1) });
         }
 
@@ -254,13 +252,13 @@ export default function StudyPlanPage() {
     if (!user || !firestore || !userProfile || isProfileLoading || hasCheckedCredits.current) return;
 
     const checkAndRenewCredits = async () => {
-        const now = new Date();
-        const lastRenewal = userProfile.lastCreditRenewal?.toDate();
-
-        if (lastRenewal && isSameDay(now, lastRenewal) && userProfile.aiCredits === Infinity) {
+        if (hasUnlimitedAccess(userProfile)) {
             hasCheckedCredits.current = true;
             return;
         }
+
+        const now = new Date();
+        const lastRenewal = userProfile.lastCreditRenewal?.toDate();
 
         if (!lastRenewal || !isSameDay(now, lastRenewal)) {
             hasCheckedCredits.current = true;
@@ -320,7 +318,7 @@ export default function StudyPlanPage() {
   
   const isLoading = isUserLoading || isProfileLoading || arePlansLoading;
   
-  const isUnlimited = !!(userProfile?.lastCreditRenewal?.toDate() && isSameDay(new Date(), userProfile.lastCreditRenewal.toDate()) && userProfile.aiCredits === Infinity);
+  const isUnlimited = hasUnlimitedAccess(userProfile);
   const hasCredits = userProfile ? isUnlimited || (userProfile.aiCredits || 0) > 0 : false;
 
   const handleDeletePlan = async (planId: string) => {
