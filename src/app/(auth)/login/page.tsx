@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import {
   signInWithEmailAndPassword,
@@ -83,6 +83,8 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -145,9 +147,9 @@ export default function LoginPage() {
   
   useEffect(() => {
     if (!isUserLoading && user) {
-      router.push('/dashboard');
+      router.push(callbackUrl);
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, callbackUrl]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,7 +170,7 @@ export default function LoginPage() {
         title: t.loginSuccessTitle,
         description: t.loginSuccessDesc,
       });
-      router.push('/dashboard');
+      router.push(callbackUrl);
     } catch (err: any) {
       console.error("Email/Password login error:", err);
       let friendlyMessage = err.message || t.errorUnexpected;
@@ -212,7 +214,7 @@ export default function LoginPage() {
         const result = await signInWithPopup(auth, provider);
         await getOrCreateUserProfile(firestore, result.user);
         toast({ title: t.loginSuccessTitle, description: t.loginSuccessDesc });
-        router.push('/dashboard');
+        router.push(callbackUrl);
     } catch (error: any) {
         console.error("Google sign in error", error);
         toast({ variant: 'destructive', title: t.loginFailedTitle, description: error.message || t.errorUnexpected });

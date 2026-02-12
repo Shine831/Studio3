@@ -1,14 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Menu, Search, X } from 'lucide-react';
+import { Bell, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { LanguageSwitcher } from './language-switcher';
@@ -19,7 +16,7 @@ import { collection, query, orderBy, limit, doc, deleteDoc } from 'firebase/fire
 import type { Notification } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AppSidebar } from './app-sidebar';
 
 export function AppHeader() {
@@ -53,18 +50,12 @@ export function AppHeader() {
   const content = {
     fr: {
       toggleNav: 'Basculer le menu de navigation',
-      navMenu: 'Menu de navigation',
-      navDescription:
-        "La navigation principale de l'application, avec des liens vers le tableau de bord, les répétiteurs, et les paramètres.",
       toggleNotifications: 'Basculer les notifications',
       notifications: 'Notifications',
       noNotifications: 'Aucune nouvelle notification.',
     },
     en: {
       toggleNav: 'Toggle navigation menu',
-      navMenu: 'Navigation Menu',
-      navDescription:
-        'The main navigation for the application, with links to dashboard, tutors, and settings.',
       toggleNotifications: 'Toggle notifications',
       notifications: 'Notifications',
       noNotifications: 'No new notifications.',
@@ -83,10 +74,6 @@ export function AppHeader() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0">
-          <SheetTitle className="sr-only">{t.navMenu}</SheetTitle>
-          <SheetDescription className="sr-only">
-            {t.navDescription}
-          </SheetDescription>
           <AppSidebar className="block" />
         </SheetContent>
       </Sheet>

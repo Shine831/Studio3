@@ -37,6 +37,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import type { UserProfile } from '@/lib/types';
 import { Camera } from 'lucide-react';
+import { getInitials } from '@/lib/utils';
 
 const profileFormSchema = z.object({
   profilePicture: z.string().optional(),
@@ -47,15 +48,6 @@ const profileFormSchema = z.object({
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
-
-const getInitials = (name: string) => {
-    if (!name) return 'U';
-    const names = name.trim().split(' ').filter(n => n);
-    if (names.length > 1) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 1).toUpperCase();
-}
 
 export default function SettingsPage() {
   const { language } = useLanguage();

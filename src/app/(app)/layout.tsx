@@ -3,7 +3,7 @@
 import { AppHeader } from '@/components/app-header';
 import { AppSidebar } from '@/components/app-sidebar';
 import { useUser } from '@/firebase/auth/use-user';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -12,18 +12,21 @@ export default function AppLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { user, loading } = useUser();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!isUserLoading && !user) {
+      const loginUrl = new URL('/login', window.location.origin);
+      loginUrl.searchParams.set('callbackUrl', pathname);
+      router.push(loginUrl.toString());
     }
-  }, [user, loading, router]);
+  }, [user, isUserLoading, router, pathname]);
 
   // While loading or if there's no user, show a full-page skeleton UI.
   // This prevents content flashing and layout shifts before the redirect is complete.
-  if (loading || !user) {
+  if (isUserLoading || !user) {
     return (
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
         <div className="hidden border-r bg-card md:block">

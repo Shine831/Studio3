@@ -33,6 +33,7 @@ import { useLanguage } from '@/context/language-context';
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { ReportBugDialog } from '@/components/report-bug-dialog';
+import { getInitials } from '@/lib/utils';
 
 
 export function UserNav() {
@@ -88,15 +89,6 @@ export function UserNav() {
     });
     router.push('/');
   };
-
-  const getInitials = (name: string | null | undefined) => {
-    if (!name) return 'U';
-    const names = name.trim().split(' ').filter(n => n);
-    if (names.length > 1) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 1).toUpperCase();
-  }
 
   return (
     <>
