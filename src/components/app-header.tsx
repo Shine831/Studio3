@@ -6,17 +6,19 @@ import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { LanguageSwitcher } from './language-switcher';
 import { UserNav } from './user-nav';
 import { useLanguage } from '@/context/language-context';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, doc, deleteDoc } from 'firebase/firestore';
 import type { Notification } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AppSidebar } from './app-sidebar';
 
 export function AppHeader() {
@@ -24,7 +26,7 @@ export function AppHeader() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const notificationsRef = useMemoFirebase(
+  const notificationsRef = useMemo(
     () =>
       user
         ? query(
@@ -127,5 +129,3 @@ export function AppHeader() {
     </header>
   );
 }
-
-    

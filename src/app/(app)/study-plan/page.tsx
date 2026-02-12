@@ -13,7 +13,7 @@ import {
   generatePersonalizedStudyPlan,
 } from '@/ai/flows/generate-personalized-study-plan';
 import { useLanguage } from '@/context/language-context';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -237,13 +237,13 @@ export default function StudyPlanPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const userProfileRef = useMemoFirebase(
+  const userProfileRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  const studyPlansRef = useMemoFirebase(
+  const studyPlansRef = useMemo(
     () => (user ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
     [firestore, user]
   );

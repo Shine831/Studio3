@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import type { UserProfile, SavedStudyPlan, QuizResult, WithId } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,13 +20,13 @@ export default function DashboardPage() {
   const { language } = useLanguage();
 
   // Data fetching
-  const studyPlansRef = useMemoFirebase(
+  const studyPlansRef = useMemo(
     () => (user ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
     [firestore, user]
   );
   const { data: studyPlans, isLoading: arePlansLoading, error: plansError } = useCollection<SavedStudyPlan>(studyPlansRef);
 
-  const quizResultsRef = useMemoFirebase(
+  const quizResultsRef = useMemo(
     () => (user ? query(collection(firestore, 'users', user.uid, 'quizResults'), orderBy('completionDate', 'desc'), limit(10)) : null),
     [firestore, user]
   );

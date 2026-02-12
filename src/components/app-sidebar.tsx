@@ -10,11 +10,12 @@ import {
 import { Icons } from './icons';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/language-context';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc, useFirestore } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import { doc } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import { usePathname } from 'next/navigation';
+import { useMemo } from 'react';
 
 export function AppSidebar({ className }: { className?: string }) {
   const { language } = useLanguage();
@@ -22,7 +23,7 @@ export function AppSidebar({ className }: { className?: string }) {
   const firestore = useFirestore();
   const pathname = usePathname();
 
-  const userProfileRef = useMemoFirebase(
+  const userProfileRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );

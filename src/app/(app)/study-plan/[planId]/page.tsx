@@ -16,7 +16,7 @@ import {
   generateLessonContent,
 } from '@/ai/flows/generate-lesson-content';
 import { useLanguage } from '@/context/language-context';
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, useDoc } from '@/firebase';
 import type { SavedStudyPlan, WithId, Lesson, UserProfile } from '@/lib/types';
 import {
   Card,
@@ -397,13 +397,13 @@ export default function StudyPlanDetailPage() {
   const firestore = useFirestore();
   const { language } = useLanguage();
 
-  const planRef = useMemoFirebase(
+  const planRef = useMemo(
     () => (user && planId ? doc(firestore, 'users', user.uid, 'studyPlans', planId as string) : null),
     [firestore, user, planId]
   );
   const { data: plan, isLoading: isPlanLoading, error: planError } = useDoc<WithId<SavedStudyPlan>>(planRef);
 
-  const userProfileRef = useMemoFirebase(
+  const userProfileRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );

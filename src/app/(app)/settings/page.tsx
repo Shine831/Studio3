@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -10,7 +10,6 @@ import {
   useFirestore,
   useUser,
   useDoc,
-  useMemoFirebase,
 } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { useToast } from '@/hooks/use-toast';
@@ -58,7 +57,7 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
-  const userProfileRef = useMemoFirebase(
+  const userProfileRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );

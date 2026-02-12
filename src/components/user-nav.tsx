@@ -9,7 +9,7 @@ import {
   Bug,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth, useFirestore, useDoc } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +46,7 @@ export function UserNav() {
   const { language } = useLanguage();
   const [reportBugOpen, setReportBugOpen] = useState(false);
 
-  const userProfileRef = useMemoFirebase(
+  const userProfileRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );
