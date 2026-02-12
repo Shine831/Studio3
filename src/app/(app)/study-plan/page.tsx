@@ -79,7 +79,7 @@ const StudyPlanFormSchema = z.object({
 });
 type StudyPlanFormValues = z.infer<typeof StudyPlanFormSchema>;
 
-function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: UserProfile, onPlanGenerated: () => void }) {
+function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: UserProfile | null, onPlanGenerated: () => void }) {
   const { language } = useLanguage();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -123,7 +123,7 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
   });
 
   async function onSubmit(data: StudyPlanFormValues) {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !userProfile) return;
     setIsLoading(true);
     setError(null);
 
@@ -150,14 +150,12 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
         });
 
         // Decrement AI credits or handle unlimited
-        if (userProfile) {
-            const userProfileRef = doc(firestore, 'users', user.uid);
-            const lastRenewal = userProfile.lastCreditRenewal?.toDate();
-            const isUnlimited = lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile.aiCredits === Infinity;
+        const userProfileRef = doc(firestore, 'users', user.uid);
+        const lastRenewal = userProfile.lastCreditRenewal?.toDate();
+        const isUnlimited = lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile.aiCredits === Infinity;
 
-            if (!isUnlimited) {
-                 await updateDoc(userProfileRef, { aiCredits: increment(-1) });
-            }
+        if (!isUnlimited) {
+             await updateDoc(userProfileRef, { aiCredits: increment(-1) });
         }
 
         onPlanGenerated();
@@ -322,7 +320,7 @@ export default function StudyPlanPage() {
   
   const isLoading = isUserLoading || isProfileLoading || arePlansLoading;
   
-  const isUnlimited = userProfile?.aiCredits === Infinity;
+  const isUnlimited = !!(userProfile?.lastCreditRenewal?.toDate() && isSameDay(new Date(), userProfile.lastCreditRenewal.toDate()) && userProfile.aiCredits === Infinity);
   const hasCredits = userProfile ? isUnlimited || (userProfile.aiCredits || 0) > 0 : false;
 
   const handleDeletePlan = async (planId: string) => {

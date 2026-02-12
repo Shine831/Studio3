@@ -253,7 +253,8 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
     const checkCredits = () => {
         if (!userProfile) return false;
         const lastRenewal = userProfile.lastCreditRenewal?.toDate();
-        const isUnlimited = lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile.aiCredits === Infinity;
+        const isUnlimited = !!(lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile.aiCredits === Infinity);
+        
         if (isUnlimited || (userProfile.aiCredits || 0) > 0) {
             return true;
         }
@@ -270,7 +271,13 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
             const newLessons = [...plan.lessons];
             newLessons[lessonIndex].content = result.lessonContent;
             await updateDoc(planRef, { lessons: newLessons });
-            await updateDoc(userProfileRef, { aiCredits: increment(-1) });
+
+            const lastRenewal = userProfile?.lastCreditRenewal?.toDate();
+            const isUnlimited = !!(lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile?.aiCredits === Infinity);
+
+            if (!isUnlimited) {
+                await updateDoc(userProfileRef, { aiCredits: increment(-1) });
+            }
         } catch (e) {
             console.error(e);
             setError(t.contentError);
@@ -291,7 +298,13 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
                 const newLessons = [...plan.lessons];
                 newLessons[lessonIndex].quiz = result.questions;
                 await updateDoc(planRef, { lessons: newLessons });
-                await updateDoc(userProfileRef, { aiCredits: increment(-1) });
+
+                const lastRenewal = userProfile?.lastCreditRenewal?.toDate();
+                const isUnlimited = !!(lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile?.aiCredits === Infinity);
+
+                if (!isUnlimited) {
+                    await updateDoc(userProfileRef, { aiCredits: increment(-1) });
+                }
             } else {
                 setError(t.quizError);
             }
