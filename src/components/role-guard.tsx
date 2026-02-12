@@ -1,11 +1,12 @@
 'use client';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc, useFirestore } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import { doc } from 'firebase/firestore';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from './ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { AlertTriangle } from 'lucide-react';
+import { useMemo } from 'react';
 
 interface RoleGuardProps {
   allowedRoles: Array<'student' | 'admin'>;
@@ -17,7 +18,7 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
   const firestore = useFirestore();
   const { language } = useLanguage();
   
-  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
+  const userProfileRef = useMemo(() => (user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading } = useDoc<UserProfile>(userProfileRef);
 
   const t = {
