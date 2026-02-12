@@ -9,18 +9,18 @@ export function AiCreditAlert({ language }: { language: 'fr' | 'en' }) {
     const t = {
         fr: {
             noCreditsTitle: "Crédits Quotidiens Épuisés",
-            rechargeTitle: "Recharger manuellement vos crédits",
-            step1: "1. Effectuez un dépôt Orange Money de 1200 FCFA au numéro :",
+            rechargeTitle: "Recharger vos crédits via Neero",
+            step1: "1. Ouvrez votre application Neero et effectuez un transfert de 1200 FCFA au contact :",
             number: "+237 699477055",
-            step2: "2. Envoyez la capture d'écran de la transaction par WhatsApp pour validation.",
+            step2: "2. Envoyez la capture d'écran de la transaction via WhatsApp pour validation.",
             step3: "Vos crédits seront ajoutés manuellement dans les plus brefs délais.",
             contactWhatsApp: "Contacter par WhatsApp",
             automatedSystemSoon: "Un système de paiement automatisé sera bientôt disponible."
         },
         en: {
             noCreditsTitle: "Daily Credits Exhausted",
-            rechargeTitle: "Manually Recharge Your Credits",
-            step1: "1. Make an Orange Money deposit of 1200 FCFA to the number:",
+            rechargeTitle: "Recharge Your Credits via Neero",
+            step1: "1. Open your Neero app and make a transfer of 1200 FCFA to the contact:",
             number: "+237 699477055",
             step2: "2. Send the transaction screenshot via WhatsApp for validation.",
             step3: "Your credits will be added manually as soon as possible.",
