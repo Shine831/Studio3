@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Overview } from './components/overview';
-import { RecentQuizzes } from './components/recent-quizzes';
+import { RecentQuizzes } from './components/recent-activity-chart';
 import { RoleGuard } from '@/components/role-guard';
 
 export default function DashboardPage() {
