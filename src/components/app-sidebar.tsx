@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -6,6 +5,7 @@ import {
   Home,
   Settings,
   BookCopy,
+  Users,
 } from 'lucide-react';
 import { Icons } from './icons';
 import { cn } from '@/lib/utils';
@@ -34,11 +34,13 @@ export function AppSidebar({ className }: { className?: string }) {
       dashboard: 'Tableau de bord',
       settings: 'Paramètres',
       studyPlan: "Plans d'étude",
+      users: "Utilisateurs",
     },
     en: {
       dashboard: 'Dashboard',
       settings: 'Settings',
       studyPlan: "Study Plans",
+      users: "Users",
     },
   };
 
@@ -47,6 +49,7 @@ export function AppSidebar({ className }: { className?: string }) {
   const navItems = [
     { href: '/dashboard', icon: Home, label: t.dashboard, roles: ['student', 'admin'] },
     { href: '/study-plan', icon: BookCopy, label: t.studyPlan, roles: ['student', 'admin'] },
+    { href: '/admin/users', icon: Users, label: t.users, roles: ['admin'] },
     { href: '/settings', icon: Settings, label: t.settings, roles: ['student', 'admin'] },
   ];
   
