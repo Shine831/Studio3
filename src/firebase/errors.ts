@@ -107,7 +107,7 @@ ${JSON.stringify(requestObject, null, 2)}`;
 }
 
 /**
- * A custom error class designed to be consumed by an LLM for debugging.
+ * A custom error class that provides detailed context for debugging permission issues.
  * It structures the error information to mimic the request object
  * available in Firestore Security Rules.
  */

@@ -212,6 +212,6 @@
         }
       }
     ],
-    "reasoning": "The structure is simplified to focus on users and their study-related data. All tutor, subject, and public-facing collections have been removed to align with the core functionality of AI-driven study plan generation and tracking."
+    "reasoning": "User-centric data model. Collections for tutors, public subjects, etc., are out of scope for the current MVP, which focuses on individual user study plans and progress tracking."
   }
 }
