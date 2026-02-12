@@ -30,7 +30,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-       <head>
+      <head>
+        {/* Google Tag Manager */}
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`
             (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -40,6 +41,7 @@ export default function RootLayout({
             })(window,document,'script','dataLayer','GTM-5FVZRSKR');
           `}
         </Script>
+        {/* End Google Tag Manager */}
       </head>
       <body
         className={cn(
@@ -48,7 +50,8 @@ export default function RootLayout({
           spaceGrotesk.variable
         )}
       >
-         <noscript>
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
           <iframe
             src="https://www.googletagmanager.com/ns.html?id=GTM-5FVZRSKR"
             height="0"
@@ -56,6 +59,7 @@ export default function RootLayout({
             style={{ display: 'none', visibility: 'hidden' }}
           ></iframe>
         </noscript>
+        {/* End Google Tag Manager (noscript) */}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
