@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { doc, addDoc, setDoc, serverTimestamp, collection, deleteDoc, getDoc } from 'firebase/firestore';
+import { doc, addDoc, setDoc, serverTimestamp, collection, deleteDoc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { isSameDay } from 'date-fns';
 
 import {
@@ -36,7 +36,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookCopy, PlusCircle, AlertCircle, Zap, ArrowRight, Trash2, MoreVertical } from 'lucide-react';
+import { BookCopy, PlusCircle, AlertCircle, ArrowRight, Trash2, MoreVertical } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -66,6 +66,7 @@ import {
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { type SavedStudyPlan, type WithId, type UserProfile } from '@/lib/types';
 import { RoleGuard } from '@/components/role-guard';
+import { AiCreditAlert } from '@/components/ai-credit-alert';
 
 
 // Schema for the form
@@ -158,7 +159,7 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
             const isUnlimited = lastRenewal && isSameDay(new Date(), lastRenewal) && currentProfile.aiCredits === Infinity;
 
             if (!isUnlimited && currentProfile.aiCredits) {
-                 await setDoc(userProfileRef, { aiCredits: currentProfile.aiCredits - 1 }, { merge: true });
+                 await updateDoc(userProfileRef, { aiCredits: increment(-1) });
             }
         }
 
@@ -229,39 +230,6 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
       </DialogContent>
     </Dialog>
   );
-}
-
-function AiCreditAlert({ language }: { language: 'fr' | 'en' }) {
-    const t = {
-        fr: {
-            noCreditsTitle: "Crédits Quotidiens Épuisés",
-            noCreditsDescription: "Vous avez utilisé tous vos crédits pour aujourd'hui. Revenez demain pour en avoir plus ou rechargez pour un accès illimité.",
-            rechargeButton: "Recharger (1200 FCFA)",
-            rechargeDescription: "Payez via Orange Money au 699 477 055 pour un accès illimité pour le reste de la journée.",
-        },
-        en: {
-            noCreditsTitle: "Daily Credits Exhausted",
-            noCreditsDescription: "You have used all your credits for today. Check back tomorrow for more or recharge for unlimited access.",
-            rechargeButton: "Recharge (1200 FCFA)",
-            rechargeDescription: "Pay via Orange Money to 699 477 055 for unlimited access for the rest of the day.",
-        }
-    }[language];
-
-    return (
-        <Alert>
-            <Zap className="h-4 w-4" />
-            <AlertTitle>{t.noCreditsTitle}</AlertTitle>
-            <AlertDescription>
-                {t.noCreditsDescription}
-                <div className="mt-4">
-                    <Button disabled>
-                        {t.rechargeButton}
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2">{t.rechargeDescription}</p>
-                </div>
-            </AlertDescription>
-        </Alert>
-    )
 }
 
 export default function StudyPlanPage() {
@@ -412,7 +380,7 @@ export default function StudyPlanPage() {
         {savedPlans && savedPlans.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {savedPlans.map(plan => (
-                    <Card key={(plan as WithId<SavedStudyPlan>).id} className="flex flex-col group">
+                    <Card key={(plan as WithId<SavedStudyPlan>).id} className="flex flex-col group transition-all hover:shadow-lg hover:border-primary">
                         <CardHeader>
                             <div className="flex justify-between items-start">
                                 <CardTitle className="flex items-center gap-3">
@@ -469,9 +437,12 @@ export default function StudyPlanPage() {
                 ))}
             </div>
         ) : (
-            <div className="text-center py-16 border-2 border-dashed rounded-lg">
+            <div className="text-center py-16 border-2 border-dashed rounded-lg flex flex-col items-center justify-center">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                    <BookCopy className="h-8 w-8 text-muted-foreground" />
+                </div>
                 <h4 className="text-lg font-semibold">{t.noPlans}</h4>
-                <p className="text-muted-foreground mt-2">{t.noPlansDesc}</p>
+                <p className="text-muted-foreground mt-2 max-w-sm">{t.noPlansDesc}</p>
             </div>
         )}
         </div>

@@ -4,8 +4,9 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
-import { doc, updateDoc, DocumentReference, addDoc, collection, serverTimestamp, Firestore } from 'firebase/firestore';
+import { doc, updateDoc, DocumentReference, addDoc, collection, serverTimestamp, Firestore, increment } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
+import { isSameDay } from 'date-fns';
 
 import {
   generateQuiz,
@@ -16,7 +17,7 @@ import {
 } from '@/ai/flows/generate-lesson-content';
 import { useLanguage } from '@/context/language-context';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import type { SavedStudyPlan, WithId, Lesson } from '@/lib/types';
+import type { SavedStudyPlan, WithId, Lesson, UserProfile } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -35,6 +36,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Link from 'next/link';
 import { RoleGuard } from '@/components/role-guard';
+import { AiCreditAlert } from '@/components/ai-credit-alert';
 
 interface Answer {
   questionIndex: number;
@@ -188,7 +190,7 @@ function QuizResults({
      <Card>
         <CardHeader>
             <CardTitle>{t.resultsTitle}</CardTitle>
-            <CardDescription>{`${t.yourScore}: ${score.toFixed(0)}%`}</CardDescription>
+            <CardDescription className="text-2xl font-bold">{`${t.yourScore}: ${score.toFixed(0)}%`}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
             <h3 className="font-bold text-lg">{t.review}</h3>
@@ -221,34 +223,46 @@ function QuizResults({
   )
 }
 
-function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, user, firestore }: { lesson: Lesson, subject: string, language: 'fr' | 'en', plan: WithId<SavedStudyPlan>, lessonIndex: number, planRef: DocumentReference | null, user: User | null, firestore: Firestore | null }) {
+function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, user, firestore, userProfile, userProfileRef }: { lesson: Lesson, subject: string, language: 'fr' | 'en', plan: WithId<SavedStudyPlan>, lessonIndex: number, planRef: DocumentReference | null, user: User | null, firestore: Firestore | null, userProfile: UserProfile | null, userProfileRef: DocumentReference | null }) {
     const [isContentLoading, setIsContentLoading] = useState(false);
     const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [quizScore, setQuizScore] = useState<number | null>(null);
     const [userAnswers, setUserAnswers] = useState<Answer[]>([]);
+    const [showCreditError, setShowCreditError] = useState(false);
 
     const t = {
         fr: {
-            generateLesson: "Générer la leçon",
+            generateLesson: "Générer la leçon (1 crédit)",
             generatingLesson: "Génération de la leçon...",
-            takeQuiz: "Faire le Quiz",
+            takeQuiz: "Faire le Quiz (1 crédit)",
             generatingQuiz: "Génération du quiz...",
             quizError: "Une erreur est survenue lors de la génération du quiz. Veuillez réessayer.",
             contentError: "Impossible de charger le contenu de la leçon. Veuillez réessayer.",
         },
         en: {
-            generateLesson: "Generate Lesson",
+            generateLesson: "Generate Lesson (1 credit)",
             generatingLesson: "Generating lesson...",
-            takeQuiz: "Take the Quiz",
+            takeQuiz: "Take the Quiz (1 credit)",
             generatingQuiz: "Generating quiz...",
             quizError: "An error occurred while generating the quiz. Please try again.",
             contentError: "Could not load lesson content. Please try again.",
         }
     }[language];
 
+    const checkCredits = () => {
+        if (!userProfile) return false;
+        const lastRenewal = userProfile.lastCreditRenewal?.toDate();
+        const isUnlimited = lastRenewal && isSameDay(new Date(), lastRenewal) && userProfile.aiCredits === Infinity;
+        if (isUnlimited || (userProfile.aiCredits || 0) > 0) {
+            return true;
+        }
+        setShowCreditError(true);
+        return false;
+    }
+
     const handleGenerateContent = async () => {
-        if (!planRef) return;
+        if (!planRef || !userProfileRef || !checkCredits()) return;
         setIsContentLoading(true);
         setError(null);
         try {
@@ -256,6 +270,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
             const newLessons = [...plan.lessons];
             newLessons[lessonIndex].content = result.lessonContent;
             await updateDoc(planRef, { lessons: newLessons });
+            await updateDoc(userProfileRef, { aiCredits: increment(-1) });
         } catch (e) {
             console.error(e);
             setError(t.contentError);
@@ -265,7 +280,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
     };
 
     const handleGenerateQuiz = async () => {
-        if (!planRef) return;
+        if (!planRef || !userProfileRef || !checkCredits()) return;
         setIsLoadingQuiz(true);
         setError(null);
         setQuizScore(null);
@@ -276,6 +291,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
                 const newLessons = [...plan.lessons];
                 newLessons[lessonIndex].quiz = result.questions;
                 await updateDoc(planRef, { lessons: newLessons });
+                await updateDoc(userProfileRef, { aiCredits: increment(-1) });
             } else {
                 setError(t.quizError);
             }
@@ -314,7 +330,16 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
     const handleRestartQuiz = () => {
         setQuizScore(null);
         setUserAnswers([]);
+        setShowCreditError(false);
     };
+
+    if (showCreditError) {
+        return (
+            <div className="p-4">
+                <AiCreditAlert language={language} />
+            </div>
+        )
+    }
 
     if (!lesson.content) {
         return (
@@ -376,7 +401,13 @@ export default function StudyPlanDetailPage() {
     () => (user && planId ? doc(firestore, 'users', user.uid, 'studyPlans', planId as string) : null),
     [firestore, user, planId]
   );
-  const { data: plan, isLoading, error } = useDoc<WithId<SavedStudyPlan>>(planRef);
+  const { data: plan, isLoading: isPlanLoading, error: planError } = useDoc<WithId<SavedStudyPlan>>(planRef);
+
+  const userProfileRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
+  );
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const t = {
       fr: {
@@ -395,6 +426,7 @@ export default function StudyPlanDetailPage() {
       }
   }[language];
   
+  const isLoading = isPlanLoading || isProfileLoading;
 
   if (isLoading) {
     return (
@@ -412,7 +444,7 @@ export default function StudyPlanDetailPage() {
     );
   }
 
-  if (error) {
+  if (planError) {
     return <Alert variant="destructive">{t.error}</Alert>
   }
 
@@ -424,9 +456,9 @@ export default function StudyPlanDetailPage() {
     <RoleGuard allowedRoles={['student', 'admin']}>
         <div className="space-y-6">
             <div>
-                <Button asChild variant="ghost" className="mb-4">
+                <Button asChild variant="ghost" className="mb-4 -ml-4">
                     <Link href="/study-plan">
-                        <ArrowLeft className="mr-2" />
+                        <ArrowLeft className="mr-2 h-4 w-4" />
                         {t.back}
                     </Link>
                 </Button>
@@ -451,7 +483,18 @@ export default function StudyPlanDetailPage() {
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                            <LessonContent lesson={lesson} subject={plan.subject} language={language} plan={plan} lessonIndex={index} planRef={planRef} user={user} firestore={firestore} />
+                            <LessonContent 
+                                lesson={lesson} 
+                                subject={plan.subject} 
+                                language={language} 
+                                plan={plan} 
+                                lessonIndex={index} 
+                                planRef={planRef} 
+                                user={user} 
+                                firestore={firestore}
+                                userProfile={userProfile}
+                                userProfileRef={userProfileRef}
+                            />
                         </AccordionContent>
                     </AccordionItem>
                 ))}

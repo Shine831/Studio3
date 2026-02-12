@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { Icons } from '@/components/icons';
-import { placeholderImages } from '@/lib/data';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useLanguage } from '@/context/language-context';
 
 export default function LandingPage() {
@@ -81,9 +81,9 @@ export default function LandingPage() {
       headline: "Your AI Partner for Academic Success in Cameroon.",
       tagline: 'Generate study plans, lessons, and quizzes. Master any subject at your own pace.',
       getStarted: 'Get Started',
+      features: 'Features',
       featuresTitle: "Powerful Tools for Your Success",
       featuresDescription: "Take control of your learning with a suite of intelligent tools.",
-      features: 'Features',
       login: 'Log In',
       signup: 'Sign Up',
       terms: 'Terms',
@@ -92,6 +92,7 @@ export default function LandingPage() {
   };
 
   const t = content[language];
+  const heroImage = PlaceHolderImages.find(img => img.id === 'hero-1');
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -128,13 +129,13 @@ export default function LandingPage() {
             aria-hidden="true"
             className="absolute inset-0 top-0 -z-10 h-1/2 w-full bg-gradient-to-b from-primary/10 to-background"
           ></div>
-          <Image
-            src={placeholderImages[0].imageUrl}
-            alt="Hero background"
+          {heroImage && <Image
+            src={heroImage.imageUrl}
+            alt={heroImage.description}
             fill
             className="-z-20 object-cover opacity-5"
-            data-ai-hint="student learning"
-          />
+            data-ai-hint={heroImage.imageHint}
+          />}
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
               {t.headline}
@@ -162,7 +163,7 @@ export default function LandingPage() {
             </div>
             <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
               {features.map((feature, index) => (
-                <Card key={index} className="bg-background/50">
+                <Card key={index} className="bg-background/50 border-border transition-all hover:border-primary hover:shadow-lg">
                   <CardHeader>
                     <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       {feature.icon}
