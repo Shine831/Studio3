@@ -58,3 +58,13 @@ export interface QuizResult {
   completionDate: any; // Firestore Timestamp
   answers: Array<{ questionIndex: number; answer: string }>;
 }
+
+export interface BugReport {
+  description: string;
+  userId: string;
+  userEmail: string;
+  createdAt: any; // Firestore Timestamp
+  status: 'new' | 'in-progress' | 'resolved';
+  url: string;
+  userAgent: string;
+}

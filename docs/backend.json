@@ -165,6 +165,21 @@
         "messageEn",
         "sentAt"
       ]
+    },
+    "BugReport": {
+      "title": "Bug Report",
+      "type": "object",
+      "description": "Represents a bug report submitted by a user.",
+      "properties": {
+        "description": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string", "format": "email" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["new", "in-progress", "resolved"] },
+        "url": { "type": "string", "format": "uri" },
+        "userAgent": { "type": "string" }
+      },
+      "required": ["description", "userId", "createdAt", "status"]
     }
   },
   "auth": {
@@ -213,6 +228,16 @@
             "$ref": "#/backend/entities/Notification"
           },
           "description": "Stores user notifications. Users can read and delete their own notifications."
+        }
+      },
+      {
+        "path": "/bug_reports/{reportId}",
+        "definition": {
+          "entityName": "BugReport",
+          "schema": {
+            "$ref": "#/backend/entities/BugReport"
+          },
+          "description": "Stores bug reports submitted by users. Admins can read, update, and delete them."
         }
       }
     ],
