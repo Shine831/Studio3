@@ -239,6 +239,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
             generatingQuiz: "Génération du quiz...",
             quizError: "Une erreur est survenue lors de la génération du quiz. Veuillez réessayer.",
             contentError: "Impossible de charger le contenu de la leçon. Veuillez réessayer.",
+            errorTitle: "Erreur"
         },
         en: {
             generateLesson: "Generate Lesson (1 credit)",
@@ -247,6 +248,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
             generatingQuiz: "Generating quiz...",
             quizError: "An error occurred while generating the quiz. Please try again.",
             contentError: "Could not load lesson content. Please try again.",
+            errorTitle: "Error"
         }
     }[language];
 
@@ -377,7 +379,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
                 )}
                 {error && (
                     <Alert variant="destructive">
-                        <AlertTitle>Erreur</AlertTitle>
+                        <AlertTitle>{t.errorTitle}</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 )}

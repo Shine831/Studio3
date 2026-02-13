@@ -52,22 +52,25 @@
           "format": "date-time"
         },
         "system": {
-            "type": "string",
-            "description": "The educational system the user belongs to.",
-            "enum": ["francophone", "anglophone"]
+          "type": "string",
+          "description": "The educational system the user belongs to.",
+          "enum": [
+            "francophone",
+            "anglophone"
+          ]
         },
         "aiCredits": {
-            "type": "number",
-            "description": "Number of AI credits for generating content."
+          "type": "number",
+          "description": "Number of AI credits for generating content."
         },
         "lastCreditRenewal": {
-            "type": "string",
-            "description": "Timestamp of the last AI credit renewal.",
-            "format": "date-time"
+          "type": "string",
+          "description": "Timestamp of the last AI credit renewal.",
+          "format": "date-time"
         },
         "lastTransactionId": {
-            "type": "string",
-            "description": "The ID of the last successful payment transaction."
+          "type": "string",
+          "description": "The ID of the last successful payment transaction."
         }
       },
       "required": [
@@ -78,64 +81,120 @@
       ]
     },
     "StudyPlan": {
-        "title": "Study Plan",
-        "type": "object",
-        "description": "A personalized study plan for a student.",
-        "properties": {
-            "studentId": { "type": "string" },
-            "subject": { "type": "string" },
-            "learningGoals": { "type": "string" },
-            "lessons": {
+      "title": "Study Plan",
+      "type": "object",
+      "description": "A personalized study plan for a student.",
+      "properties": {
+        "studentId": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "learningGoals": {
+          "type": "string"
+        },
+        "lessons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "duration": {
+                "type": "number"
+              },
+              "content": {
+                "type": "string"
+              },
+              "quiz": {
                 "type": "array",
                 "items": {
-                    "type": "object",
-                    "properties": {
-                        "title": { "type": "string" },
-                        "description": { "type": "string" },
-                        "duration": { "type": "number" },
-                        "content": { "type": "string" },
-                        "quiz": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "questionText": { "type": "string" },
-                                    "options": { "type": "array", "items": { "type": "string" } },
-                                    "correctAnswer": { "type": "string" },
-                                    "explanation": { "type": "string" }
-                                }
-                            }
-                        }
+                  "type": "object",
+                  "properties": {
+                    "questionText": {
+                      "type": "string"
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "correctAnswer": {
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "type": "string"
                     }
+                  }
                 }
-            },
-            "createdAt": { "type": "string", "format": "date-time" }
+              }
+            }
+          }
         },
-        "required": ["studentId", "subject", "learningGoals", "lessons", "createdAt"]
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "studentId",
+        "subject",
+        "learningGoals",
+        "lessons",
+        "createdAt"
+      ]
     },
     "QuizResult": {
-        "title": "Quiz Result",
-        "type": "object",
-        "description": "Results of a quiz taken by a student.",
-        "properties": {
-            "studentId": { "type": "string" },
-            "planId": { "type": "string" },
-            "planSubject": { "type": "string" },
-            "lessonTitle": { "type": "string" },
-            "score": { "type": "number" },
-            "completionDate": { "type": "string", "format": "date-time" },
-            "answers": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "questionIndex": { "type": "number" },
-                        "answer": { "type": "string" }
-                    }
-                }
-            }
+      "title": "Quiz Result",
+      "type": "object",
+      "description": "Results of a quiz taken by a student.",
+      "properties": {
+        "studentId": {
+          "type": "string"
         },
-        "required": ["studentId", "planId", "score", "completionDate"]
+        "planId": {
+          "type": "string"
+        },
+        "planSubject": {
+          "type": "string"
+        },
+        "lessonTitle": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number"
+        },
+        "completionDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "answers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "questionIndex": {
+                "type": "number"
+              },
+              "answer": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "studentId",
+        "planId",
+        "score",
+        "completionDate"
+      ]
     },
     "Notification": {
       "title": "Notification",
@@ -171,15 +230,42 @@
       "type": "object",
       "description": "Represents a bug report submitted by a user.",
       "properties": {
-        "description": { "type": "string" },
-        "userId": { "type": "string" },
-        "userEmail": { "type": "string", "format": "email" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["new", "in-progress", "resolved"] },
-        "url": { "type": "string", "format": "uri" },
-        "userAgent": { "type": "string" }
+        "description": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "userEmail": {
+          "type": "string",
+          "format": "email"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "new",
+            "in-progress",
+            "resolved"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "userAgent": {
+          "type": "string"
+        }
       },
-      "required": ["description", "userId", "createdAt", "status"]
+      "required": [
+        "description",
+        "userId",
+        "createdAt",
+        "status"
+      ]
     }
   },
   "auth": {
@@ -189,58 +275,35 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Stores user profiles. Accessible only to the user themselves and admins."
-        }
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
       },
-      {
-        "path": "/users/{userId}/studyPlans/{studyPlanId}",
-        "definition": {
-          "entityName": "StudyPlan",
-          "schema": {
-            "$ref": "#/backend/entities/StudyPlan"
-          },
-          "description": "Stores a student's personalized study plans."
-        }
+      "description": "Stores user profiles. Accessible only to the user themselves and admins."
+    },
+    "/users/{userId}/studyPlans/{studyPlanId}": {
+      "schema": {
+        "$ref": "#/entities/StudyPlan"
       },
-      {
-        "path": "/users/{userId}/quizResults/{quizResultId}",
-        "definition": {
-          "entityName": "QuizResult",
-          "schema": {
-            "$ref": "#/backend/entities/QuizResult"
-          },
-          "description": "Stores a student's quiz results."
-        }
+      "description": "Stores a student's personalized study plans."
+    },
+    "/users/{userId}/quizResults/{quizResultId}": {
+      "schema": {
+        "$ref": "#/entities/QuizResult"
       },
-      {
-        "path": "/users/{userId}/notifications/{notificationId}",
-        "definition": {
-          "entityName": "Notification",
-          "schema": {
-            "$ref": "#/backend/entities/Notification"
-          },
-          "description": "Stores user notifications. Users can read and delete their own notifications."
-        }
+      "description": "Stores a student's quiz results."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": {
+        "$ref": "#/entities/Notification"
       },
-      {
-        "path": "/bug_reports/{reportId}",
-        "definition": {
-          "entityName": "BugReport",
-          "schema": {
-            "$ref": "#/backend/entities/BugReport"
-          },
-          "description": "Stores bug reports submitted by users. Admins can read, update, and delete them."
-        }
-      }
-    ],
-    "reasoning": "User-centric data model. Collections for tutors, public subjects, etc., are out of scope for the current MVP, which focuses on individual user study plans and progress tracking."
+      "description": "Stores user notifications. Users can read and delete their own notifications."
+    },
+    "/bug_reports/{reportId}": {
+      "schema": {
+        "$ref": "#/entities/BugReport"
+      },
+      "description": "Stores bug reports submitted by users. Admins can read, update, and delete them."
+    }
   }
 }
