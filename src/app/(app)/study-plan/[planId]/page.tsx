@@ -468,7 +468,7 @@ export default function StudyPlanDetailPage() {
                         {t.back}
                     </Link>
                 </Button>
-                <h1 className="text-3xl font-bold font-headline flex items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-bold font-headline flex items-center gap-3">
                     <BookCopy className="h-8 w-8 text-primary" />
                     {plan.subject}
                 </h1>

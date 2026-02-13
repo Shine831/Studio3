@@ -348,7 +348,7 @@ export default function StudyPlanPage() {
         <div className="space-y-6">
         <div className="flex justify-between items-start">
             <div>
-                <h3 className="text-2xl font-bold font-headline">{t.title}</h3>
+                <h3 className="text-xl md:text-2xl font-bold font-headline">{t.title}</h3>
                 <p className="text-muted-foreground">{t.description}</p>
             </div>
             {hasCredits && userProfile && (

@@ -15,6 +15,8 @@ import { RoleGuard } from '@/components/role-guard';
 import {
   Card,
   CardContent,
+  CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -30,7 +32,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, ShieldCheck, Users } from 'lucide-react';
+import { AlertCircle, ShieldCheck, Users, Mail, Calendar, GraduationCap } from 'lucide-react';
 
 export default function AdminUsersPage() {
   const firestore = useFirestore();
@@ -146,11 +148,10 @@ export default function AdminUsersPage() {
           </h1>
           <p className="text-muted-foreground">{t.description}</p>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
+        
+        {/* Desktop Table View */}
+        <Card className="hidden md:block">
+          <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -166,7 +167,7 @@ export default function AdminUsersPage() {
                 {users && users.length > 0 ? (
                   users.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">{`${user.firstName || ''} ${user.lastName || ''}`}</TableCell>
+                      <TableCell className="font-medium">{`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A'}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{user.system}</TableCell>
                       <TableCell>
@@ -195,13 +196,64 @@ export default function AdminUsersPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center">{t.noUsers}</TableCell>
+                    <TableCell colSpan={6} className="text-center h-24">{t.noUsers}</TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
+
+        {/* Mobile Card View */}
+        <div className="grid gap-4 md:hidden">
+            {users && users.length > 0 ? (
+                users.map(user => (
+                    <Card key={user.id} className="transition-shadow hover:shadow-md">
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <CardTitle>{`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A'}</CardTitle>
+                                    <CardDescription className="flex items-center gap-2 pt-1">
+                                        <Mail className="h-3 w-3" />
+                                        {user.email}
+                                    </CardDescription>
+                                </div>
+                                {hasUnlimitedAccess(user) ? (
+                                <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                                    {t.active}
+                                </Badge>
+                                ) : (
+                                <Badge variant="secondary">{t.inactive}</Badge>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                                <GraduationCap className="h-4 w-4" />
+                                <span>{t.system}: {user.system || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                <span>{t.lastLogin}: {user.lastLogin?.toDate ? format(user.lastLogin.toDate(), 'P p', { locale: language === 'fr' ? fr : enUS }) : 'N/A'}</span>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                             <Button
+                                size="sm"
+                                onClick={() => handleGrantAccess(user.id)}
+                                disabled={hasUnlimitedAccess(user)}
+                                className="w-full"
+                                >
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                {hasUnlimitedAccess(user) ? t.accessGranted : t.grantAccess}
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))
+            ) : (
+                <p className="text-muted-foreground text-center py-8">{t.noUsers}</p>
+            )}
+        </div>
       </div>
     </RoleGuard>
   );
