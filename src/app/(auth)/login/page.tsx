@@ -114,6 +114,7 @@ function LoginPageContent() {
       errorTooManyRequests: "L'accès à ce compte a été temporairement désactivé en raison de nombreuses tentatives de connexion échouées. Vous pouvez le restaurer immédiatement en réinitialisant votre mot de passe ou réessayer plus tard.",
       errorFirebaseConfig: "La configuration de Firebase est manquante. L'application n'est pas correctement connectée à Firebase.",
       errorUnexpected: "Une erreur inattendue s'est produite. Veuillez réessayer.",
+      errorUnauthorizedDomain: "Ce domaine n'est pas autorisé pour l'authentification. L'administrateur doit l'ajouter dans la console Firebase.",
       headsUp: 'Attention !',
       orContinueWith: 'Ou continuer avec',
       google: 'Google',
@@ -136,6 +137,7 @@ function LoginPageContent() {
         errorTooManyRequests: 'Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.',
         errorFirebaseConfig: 'Firebase configuration is missing. The app is not properly connected to Firebase.',
         errorUnexpected: 'An unexpected error occurred. Please try again.',
+        errorUnauthorizedDomain: "This domain is not authorized for authentication. The administrator needs to add it in the Firebase console.",
         headsUp: 'Heads up!',
         orContinueWith: 'Or continue with',
         google: 'Google',
@@ -216,7 +218,11 @@ function LoginPageContent() {
         router.push(callbackUrl);
     } catch (error: any) {
         console.error("Google sign in error", error);
-        toast({ variant: 'destructive', title: t.loginFailedTitle, description: error.message || t.errorUnexpected });
+        let friendlyMessage = error.message || t.errorUnexpected;
+        if (error.code === 'auth/unauthorized-domain') {
+            friendlyMessage = t.errorUnauthorizedDomain;
+        }
+        toast({ variant: 'destructive', title: t.loginFailedTitle, description: friendlyMessage });
     } finally {
         setLoading(false);
     }

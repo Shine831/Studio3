@@ -144,6 +144,7 @@ export default function SignupPage() {
       errorInvalidEmail: 'L\'adresse email n\'est pas valide.',
       errorFirebaseConfig: 'La configuration de Firebase est manquante. L\'application n\'est pas correctement connectée à Firebase.',
       errorUnexpected: "Une erreur inattendue s'est produite. Veuillez réessayer.",
+      errorUnauthorizedDomain: "Ce domaine n'est pas autorisé pour l'authentification. L'administrateur doit l'ajouter dans la console Firebase.",
       headsUp: 'Attention !',
       orContinueWith: 'Ou continuer avec',
       google: 'Google',
@@ -180,6 +181,7 @@ export default function SignupPage() {
       errorInvalidEmail: 'The email address is not valid.',
       errorFirebaseConfig: 'Firebase configuration is missing. The app is not properly connected to Firebase.',
       errorUnexpected: 'An unexpected error occurred. Please try again.',
+      errorUnauthorizedDomain: "This domain is not authorized for authentication. The administrator needs to add it in the Firebase console.",
       headsUp: 'Heads up!',
       orContinueWith: 'Or continue with',
       google: 'Google',
@@ -280,7 +282,11 @@ export default function SignupPage() {
         router.push('/dashboard');
     } catch (error: any) {
         console.error("Google sign up error", error);
-        toast({ variant: 'destructive', title: t.signupFailedTitle, description: error.message || t.errorUnexpected });
+        let friendlyMessage = error.message || t.errorUnexpected;
+        if (error.code === 'auth/unauthorized-domain') {
+            friendlyMessage = t.errorUnauthorizedDomain;
+        }
+        toast({ variant: 'destructive', title: t.signupFailedTitle, description: friendlyMessage });
     } finally {
         setLoading(false);
     }
