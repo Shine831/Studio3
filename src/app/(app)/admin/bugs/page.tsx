@@ -25,6 +25,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Bug, Calendar, User, Info, Link as LinkIcon, MonitorSmartphone } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminBugsPage() {
   const firestore = useFirestore();
   const { language } = useLanguage();

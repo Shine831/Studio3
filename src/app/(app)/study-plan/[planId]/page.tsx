@@ -38,6 +38,8 @@ import { RoleGuard } from '@/components/role-guard';
 import { AiCreditAlert } from '@/components/ai-credit-alert';
 import { hasUnlimitedAccess } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 interface Answer {
   questionIndex: number;
   answer: string;

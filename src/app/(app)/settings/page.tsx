@@ -41,6 +41,8 @@ import type { UserProfile } from '@/lib/types';
 import { Camera } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 const profileFormSchema = z.object({
   profilePicture: z.string().optional(),
   firstName: z.string().min(2, { message: 'First name must be at least 2 characters.' }),

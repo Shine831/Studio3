@@ -69,6 +69,7 @@ import { RoleGuard } from '@/components/role-guard';
 import { AiCreditAlert } from '@/components/ai-credit-alert';
 import { hasUnlimitedAccess } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
 
 // Schema for the form
 const StudyPlanFormSchema = z.object({

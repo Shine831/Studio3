@@ -14,6 +14,8 @@ import { Overview } from './components/overview';
 import { RecentQuizzes } from './components/recent-activity-chart';
 import { RoleGuard } from '@/components/role-guard';
 
+export const dynamic = 'force-dynamic';
+
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();

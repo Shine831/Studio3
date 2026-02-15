@@ -35,6 +35,7 @@ import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { UserProfile } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
 
 const getOrCreateUserProfile = (
   firestore: Firestore,

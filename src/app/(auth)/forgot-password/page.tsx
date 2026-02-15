@@ -20,6 +20,8 @@ import { Terminal, MailCheck } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 
+export const dynamic = 'force-dynamic';
+
 export default function ForgotPasswordPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');

@@ -34,6 +34,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ShieldCheck, Users, Mail, Calendar, GraduationCap } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminUsersPage() {
   const firestore = useFirestore();
   const { language } = useLanguage();
