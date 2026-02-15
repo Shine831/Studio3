@@ -7,8 +7,18 @@ import { getFirestore } from 'firebase/firestore';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
-  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  return getSdks(app);
+  try {
+    const isConfigValid = firebaseConfig.apiKey && firebaseConfig.projectId;
+    if (!isConfigValid) {
+      console.error("Firebase configuration is invalid. Please check your environment variables.");
+      return { firebaseApp: null, auth: null, firestore: null };
+    }
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    return getSdks(app);
+  } catch (error) {
+    console.error("Firebase initialization failed:", error);
+    return { firebaseApp: null, auth: null, firestore: null };
+  }
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
