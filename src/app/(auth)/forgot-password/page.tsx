@@ -94,6 +94,8 @@ export default function ForgotPasswordPage() {
         setError(friendlyMessage);
         shouldShowError = true;
       } else {
+        // For security reasons (to prevent email enumeration), we show the success message
+        // even if the user is not found.
         setSubmitted(true); 
         toast({
             title: t.checkYourEmailTitle,
