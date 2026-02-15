@@ -27,7 +27,11 @@ const nextConfig = {
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Exclude server-only modules from the client-side bundle
-      config.externals.push('@opentelemetry/instrumentation');
+      config.externals = [
+        ...config.externals,
+        '@opentelemetry/instrumentation',
+        '@opentelemetry/sdk-node',
+      ];
     }
     return config;
   },
