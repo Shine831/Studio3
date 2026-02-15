@@ -9,14 +9,16 @@ import {
   Card,
   CardContent,
   CardHeader,
+  CardDescription,
+  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { Terminal, MailCheck } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
-import { useLanguage } from '@/context/language-context'; // Import language hook
+import { useLanguage } from '@/context/language-context';
 
 export default function ForgotPasswordPage() {
   const { toast } = useToast();
@@ -26,14 +28,14 @@ export default function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
   const auth = useAuth();
   const { isUserLoading } = useUser();
-  const { language } = useLanguage(); // Use language hook
+  const { language } = useLanguage();
 
   const content = {
     fr: {
-      forgotPassword: 'Mot de passe oublié',
-      enterEmail: 'Entrez votre email pour recevoir un lien de réinitialisation.',
+      forgotPassword: 'Mot de passe oublié ?',
+      enterEmail: "Ne vous inquiétez pas. Entrez votre email et nous vous enverrons un lien pour le réinitialiser.",
       emailLabel: 'Email',
-      sendResetLink: 'Envoyer le lien',
+      sendResetLink: 'Envoyer le lien de réinitialisation',
       initializing: 'Initialisation...',
       rememberedPassword: 'Vous vous souvenez de votre mot de passe ?',
       login: 'Se connecter',
@@ -44,11 +46,12 @@ export default function ForgotPasswordPage() {
       errorAuthService: "Le service d'authentification n'est pas disponible.",
       errorFirebaseConfig: 'La configuration de Firebase est manquante. L\'application n\'est pas correctement connectée à Firebase.',
       errorUnexpected: 'Une erreur inattendue s\'est produite. Veuillez réessayer.',
+      submissionTitle: "Lien envoyé !",
       submissionMessage: 'Si un compte avec cet email existe, un lien de réinitialisation a été envoyé. Veuillez vérifier votre boîte de réception (et votre dossier spam).',
     },
     en: {
-      forgotPassword: 'Forgot Password',
-      enterEmail: 'Enter your email to receive a password reset link.',
+      forgotPassword: 'Forgot Password?',
+      enterEmail: "No worries. Enter your email and we'll send you a reset link.",
       emailLabel: 'Email',
       sendResetLink: 'Send Reset Link',
       initializing: 'Initializing...',
@@ -61,6 +64,7 @@ export default function ForgotPasswordPage() {
       errorAuthService: 'Authentication service is not available.',
       errorFirebaseConfig: 'Firebase configuration is missing. The app is not properly connected to Firebase.',
       errorUnexpected: 'An unexpected error occurred. Please try again.',
+      submissionTitle: 'Link Sent!',
       submissionMessage: 'If an account with that email exists, a password reset link has been sent. Please check your inbox (and your spam folder).',
     }
   };
@@ -82,11 +86,10 @@ export default function ForgotPasswordPage() {
     try {
       await sendPasswordResetEmail(auth, email);
       setSubmitted(true);
-      toast({
-        title: t.checkYourEmailTitle,
-        description: t.checkYourEmailDesc,
-      });
     } catch (err: any) {
+      // For security reasons (to prevent email enumeration), we show the success message
+      // even if the user is not found or another error occurs.
+      // We only show a specific error for major configuration issues.
       let friendlyMessage = t.errorUnexpected;
       let shouldShowError = false;
       if (err.code === 'auth/configuration-not-found' || err.code === 'auth/argument-error') {
@@ -94,13 +97,7 @@ export default function ForgotPasswordPage() {
         setError(friendlyMessage);
         shouldShowError = true;
       } else {
-        // For security reasons (to prevent email enumeration), we show the success message
-        // even if the user is not found.
         setSubmitted(true); 
-        toast({
-            title: t.checkYourEmailTitle,
-            description: t.checkYourEmailDesc,
-        });
       }
        console.error("Password Reset Error:", err);
        if (shouldShowError) {
@@ -128,21 +125,24 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
       <Card>
-        <CardHeader>
+        <CardContent className="pt-6">
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mb-4">
               <Terminal className="h-4 w-4" />
               <AlertTitle>{t.error}</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-        </CardHeader>
-        <CardContent>
+
           {submitted ? (
-            <div className="text-center">
-              <p>
-                {t.submissionMessage}
-              </p>
+            <div className="text-center p-4">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <MailCheck className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="mt-4 text-lg font-medium font-headline">{t.submissionTitle}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    {t.submissionMessage}
+                </p>
             </div>
           ) : (
             <form onSubmit={handleResetPassword}>
@@ -165,14 +165,13 @@ export default function ForgotPasswordPage() {
               </div>
             </form>
           )}
-          <div className="mt-4 text-center text-sm">
-            {t.rememberedPassword}{' '}
-            <Link href="/login" className="underline">
-              {t.login}
-            </Link>
-          </div>
         </CardContent>
       </Card>
+      <div className="text-center text-sm">
+        <Link href="/login" className="underline text-muted-foreground hover:text-primary">
+          {t.rememberedPassword} {t.login}
+        </Link>
+      </div>
     </>
   );
 }

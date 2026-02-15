@@ -9,7 +9,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc, Firestore, getDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, Firestore, getDoc, addDoc, collection, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -256,21 +256,7 @@ function LoginPageContent() {
   const isDisabled = loading || isUserLoading;
 
   if (isUserLoading || user) {
-    return (
-        <div className="flex flex-col space-y-4 text-center">
-            <Skeleton className="h-8 w-48 self-center" />
-            <Skeleton className="h-4 w-full" />
-            <Card>
-                <CardContent className="pt-6">
-                    <div className="space-y-4">
-                        <Skeleton className="h-10 w-full"/>
-                        <Skeleton className="h-10 w-full"/>
-                        <Skeleton className="h-10 w-full"/>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    );
+    return <LoginPageSkeleton />;
   }
 
   return (
@@ -379,7 +365,7 @@ function LoginPageSkeleton() {
       <>
         <div className="flex flex-col space-y-2 text-center">
           <Skeleton className="h-8 w-48 self-center" />
-          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full max-w-sm" />
         </div>
         <Card>
           <CardHeader />
@@ -393,7 +379,13 @@ function LoginPageSkeleton() {
                 <Skeleton className="h-4 w-12" />
                 <Skeleton className="h-10 w-full" />
               </div>
-              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full mt-2" />
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+              </div>
+              <Skeleton className="h-10 w-full mt-2" />
             </div>
           </CardContent>
         </Card>
