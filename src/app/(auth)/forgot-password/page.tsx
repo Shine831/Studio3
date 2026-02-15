@@ -38,13 +38,13 @@ export default function ForgotPasswordPage() {
       rememberedPassword: 'Vous vous souvenez de votre mot de passe ?',
       login: 'Se connecter',
       checkYourEmailTitle: 'Vérifiez vos emails',
-      checkYourEmailDesc: 'Si un compte existe pour cet email, un lien de réinitialisation de mot de passe a été envoyé.',
+      checkYourEmailDesc: "Si un compte existe pour cet email, un lien de réinitialisation a été envoyé. N'oubliez pas de vérifier vos courriers indésirables !",
       error: 'Erreur',
       errorNoEmail: 'Veuillez entrer votre adresse email.',
       errorAuthService: "Le service d'authentification n'est pas disponible.",
       errorFirebaseConfig: 'La configuration de Firebase est manquante. L\'application n\'est pas correctement connectée à Firebase.',
       errorUnexpected: 'Une erreur inattendue s\'est produite. Veuillez réessayer.',
-      submissionMessage: 'Si un compte avec cet email existe, un lien de réinitialisation a été envoyé. Veuillez vérifier votre boîte de réception.',
+      submissionMessage: 'Si un compte avec cet email existe, un lien de réinitialisation a été envoyé. Veuillez vérifier votre boîte de réception (et votre dossier spam).',
     },
     en: {
       forgotPassword: 'Forgot Password',
@@ -55,13 +55,13 @@ export default function ForgotPasswordPage() {
       rememberedPassword: 'Remembered your password?',
       login: 'Log in',
       checkYourEmailTitle: 'Check your email',
-      checkYourEmailDesc: 'If an account exists for this email, a password reset link has been sent.',
+      checkYourEmailDesc: 'If an account exists for this email, a password reset link has been sent. Remember to check your spam folder!',
       error: 'Error',
       errorNoEmail: 'Please enter your email address.',
       errorAuthService: 'Authentication service is not available.',
       errorFirebaseConfig: 'Firebase configuration is missing. The app is not properly connected to Firebase.',
       errorUnexpected: 'An unexpected error occurred. Please try again.',
-      submissionMessage: 'If an account with that email exists, a password reset link has been sent. Please check your inbox.',
+      submissionMessage: 'If an account with that email exists, a password reset link has been sent. Please check your inbox (and your spam folder).',
     }
   };
   const t = content[language];
