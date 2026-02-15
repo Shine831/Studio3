@@ -11,13 +11,13 @@ export function initializeFirebase() {
     const isConfigValid = firebaseConfig.apiKey && firebaseConfig.projectId;
     if (!isConfigValid) {
       console.error("Firebase configuration is invalid. Please check your environment variables.");
-      return { firebaseApp: null, auth: null, firestore: null };
+      return null;
     }
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     return getSdks(app);
   } catch (error) {
     console.error("Firebase initialization failed:", error);
-    return { firebaseApp: null, auth: null, firestore: null };
+    return null;
   }
 }
 
