@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
       error: 'Erreur',
       errorNoEmail: 'Veuillez entrer votre adresse email.',
       errorAuthService: "Le service d'authentification n'est pas disponible.",
-      errorFirebaseConfig: 'La configuration de Firebase est manquante. L\'application n\'est pas correctement connectée à Firebase.',
+      errorFirebaseConfig: "Configuration Firebase manquante. Assurez-vous que vos variables d'environnement (ex: .env.local) sont correctement configurées pour cet environnement d'aperçu.",
       errorUnexpected: 'Une erreur inattendue s\'est produite. Veuillez réessayer.',
       submissionTitle: "Lien envoyé !",
       submissionMessage: 'Si un compte avec cet email existe, un lien de réinitialisation a été envoyé. Veuillez vérifier votre boîte de réception (et votre dossier spam).',
@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
       error: 'Error',
       errorNoEmail: 'Please enter your email address.',
       errorAuthService: 'Authentication service is not available.',
-      errorFirebaseConfig: 'Firebase configuration is missing. The app is not properly connected to Firebase.',
+      errorFirebaseConfig: 'Firebase configuration is missing. Ensure your environment variables (e.g., .env.local) are correctly set up for this preview environment.',
       errorUnexpected: 'An unexpected error occurred. Please try again.',
       submissionTitle: 'Link Sent!',
       submissionMessage: 'If an account with that email exists, a password reset link has been sent. Please check your inbox (and your spam folder).',
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth) {
-        setError(t.errorAuthService);
+        setError(t.errorFirebaseConfig);
         return;
     }
     if (!email) {
