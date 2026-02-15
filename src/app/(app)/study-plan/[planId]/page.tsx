@@ -15,7 +15,7 @@ import {
   generateLessonContent,
 } from '@/ai/flows/generate-lesson-content';
 import { useLanguage } from '@/context/language-context';
-import { useFirestore, useUser, useDoc } from '@/firebase';
+import { useFirestore, useUser, useDoc, FirestorePermissionError, errorEmitter } from '@/firebase';
 import type { SavedStudyPlan, WithId, Lesson, UserProfile } from '@/lib/types';
 import {
   Card,
@@ -271,10 +271,23 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
             const result = await generateLessonContent({ courseTitle: lesson.title, subject, language });
             const newLessons = [...plan.lessons];
             newLessons[lessonIndex].content = result.lessonContent;
-            await updateDoc(planRef, { lessons: newLessons });
+            
+            updateDoc(planRef, { lessons: newLessons }).catch((error) => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: planRef.path,
+                    operation: 'update',
+                    requestResourceData: { lessons: '[...]' }
+                }));
+            });
 
             if (!hasUnlimitedAccess(userProfile)) {
-                await updateDoc(userProfileRef, { aiCredits: increment(-1) });
+                updateDoc(userProfileRef, { aiCredits: increment(-1) }).catch((error) => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({
+                        path: userProfileRef.path,
+                        operation: 'update',
+                        requestResourceData: { aiCredits: 'increment(-1)' }
+                    }));
+                });
             }
         } catch (e) {
             console.error(e);
@@ -295,10 +308,23 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
             if (result && result.questions.length > 0) {
                 const newLessons = [...plan.lessons];
                 newLessons[lessonIndex].quiz = result.questions;
-                await updateDoc(planRef, { lessons: newLessons });
+                
+                updateDoc(planRef, { lessons: newLessons }).catch(error => {
+                     errorEmitter.emit('permission-error', new FirestorePermissionError({
+                        path: planRef.path,
+                        operation: 'update',
+                        requestResourceData: { lessons: '[...]' }
+                    }));
+                });
 
                 if (!hasUnlimitedAccess(userProfile)) {
-                    await updateDoc(userProfileRef, { aiCredits: increment(-1) });
+                    updateDoc(userProfileRef, { aiCredits: increment(-1) }).catch(error => {
+                        errorEmitter.emit('permission-error', new FirestorePermissionError({
+                            path: userProfileRef.path,
+                            operation: 'update',
+                            requestResourceData: { aiCredits: 'increment(-1)' }
+                        }));
+                    });
                 }
             } else {
                 setError(t.quizError);
@@ -311,7 +337,7 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
         }
     };
 
-    const handleQuizComplete = async (score: number, answers: Answer[]) => {
+    const handleQuizComplete = (score: number, answers: Answer[]) => {
         setQuizScore(score);
         setUserAnswers(answers);
     
@@ -327,12 +353,14 @@ function LessonContent({ lesson, subject, language, plan, lessonIndex, planRef, 
           answers: answers,
         };
     
-        try {
-          const quizResultsCollectionRef = collection(firestore, 'users', user.uid, 'quizResults');
-          await addDoc(quizResultsCollectionRef, quizResultData);
-        } catch (error) {
-          console.error("Failed to save quiz result: ", error);
-        }
+        const quizResultsCollectionRef = collection(firestore, 'users', user.uid, 'quizResults');
+        addDoc(quizResultsCollectionRef, quizResultData).catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: quizResultsCollectionRef.path,
+                operation: 'create',
+                requestResourceData: quizResultData,
+            }));
+        });
     };
 
     const handleRestartQuiz = () => {

@@ -5,7 +5,7 @@ import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { useToast } from '@/hooks/use-toast';
 import type { BugReport, WithId } from '@/lib/types';
@@ -74,22 +74,31 @@ export default function AdminBugsPage() {
     },
   }[language];
 
-  const handleStatusChange = async (reportId: string, newStatus: BugReport['status']) => {
+  const handleStatusChange = (reportId: string, newStatus: BugReport['status']) => {
+    if (!firestore) return;
     const reportDocRef = doc(firestore, 'bug_reports', reportId);
-    try {
-      await updateDoc(reportDocRef, { status: newStatus });
-      toast({
-        title: t.successTitle,
-        description: t.successDesc,
+    const updatedData = { status: newStatus };
+
+    updateDoc(reportDocRef, updatedData)
+      .then(() => {
+        toast({
+          title: t.successTitle,
+          description: t.successDesc,
+        });
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: reportDocRef.path,
+          operation: 'update',
+          requestResourceData: updatedData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({
+            variant: 'destructive',
+            title: t.errorTitle,
+            description: t.errorDesc,
+        });
       });
-    } catch (e) {
-      console.error("Failed to update status:", e);
-      toast({
-        variant: 'destructive',
-        title: t.errorTitle,
-        description: t.errorDesc,
-      });
-    }
   };
 
   const getStatusBadgeVariant = (status: BugReport['status']) => {

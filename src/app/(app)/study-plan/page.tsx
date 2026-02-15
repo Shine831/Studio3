@@ -13,7 +13,7 @@ import {
   generatePersonalizedStudyPlan,
 } from '@/ai/flows/generate-personalized-study-plan';
 import { useLanguage } from '@/context/language-context';
-import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, FirestorePermissionError, errorEmitter } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -140,20 +140,32 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
       } else if (result.plan.length === 0) {
         setError(t.noPlanGenerated);
       } else {
-        // Save the plan to Firestore
         const plansCollectionRef = collection(firestore, 'users', user.uid, 'studyPlans');
-        await addDoc(plansCollectionRef, {
+        const newPlan = {
           studentId: user.uid,
           subject: data.subject,
           learningGoals: data.learningGoals,
           lessons: result.plan,
           createdAt: serverTimestamp(),
+        };
+
+        addDoc(plansCollectionRef, newPlan).catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: plansCollectionRef.path,
+                operation: 'create',
+                requestResourceData: newPlan
+            }));
         });
 
-        // Decrement AI credits or handle unlimited
         const userProfileRef = doc(firestore, 'users', user.uid);
         if (!hasUnlimitedAccess(userProfile)) {
-             await updateDoc(userProfileRef, { aiCredits: increment(-1) });
+            updateDoc(userProfileRef, { aiCredits: increment(-1) }).catch(error => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: userProfileRef.path,
+                    operation: 'update',
+                    requestResourceData: { aiCredits: 'increment(-1)' }
+                }));
+            });
         }
 
         onPlanGenerated();
@@ -251,7 +263,7 @@ export default function StudyPlanPage() {
   useEffect(() => {
     if (!user || !firestore || !userProfile || isProfileLoading || hasCheckedCredits.current) return;
 
-    const checkAndRenewCredits = async () => {
+    const checkAndRenewCredits = () => {
         if (hasUnlimitedAccess(userProfile)) {
             hasCheckedCredits.current = true;
             return;
@@ -263,14 +275,17 @@ export default function StudyPlanPage() {
         if (!lastRenewal || !isSameDay(now, lastRenewal)) {
             hasCheckedCredits.current = true;
             const userDocRef = doc(firestore, 'users', user.uid);
-            try {
-                await setDoc(userDocRef, {
-                    aiCredits: DAILY_CREDIT_LIMIT,
-                    lastCreditRenewal: serverTimestamp(),
-                }, { merge: true });
-            } catch (error) {
-                console.error("Failed to renew credits:", error);
-            }
+            const dataToSet = {
+                aiCredits: DAILY_CREDIT_LIMIT,
+                lastCreditRenewal: serverTimestamp(),
+            };
+            setDoc(userDocRef, dataToSet, { merge: true }).catch(error => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'update', // set with merge is an update
+                    requestResourceData: dataToSet
+                }));
+            });
         } else {
             hasCheckedCredits.current = true;
         }
@@ -321,14 +336,15 @@ export default function StudyPlanPage() {
   const isUnlimited = hasUnlimitedAccess(userProfile);
   const hasCredits = userProfile ? isUnlimited || (userProfile.aiCredits || 0) > 0 : false;
 
-  const handleDeletePlan = async (planId: string) => {
-    if (!user) return;
+  const handleDeletePlan = (planId: string) => {
+    if (!user || !firestore) return;
     const planDocRef = doc(firestore, 'users', user.uid, 'studyPlans', planId);
-    try {
-        await deleteDoc(planDocRef);
-    } catch(e) {
-        console.error("Error deleting study plan:", e);
-    }
+    deleteDoc(planDocRef).catch(e => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: planDocRef.path,
+            operation: 'delete'
+        }));
+    });
   }
 
   if (isLoading) {

@@ -10,6 +10,8 @@ import {
   useFirestore,
   useUser,
   useDoc,
+  FirestorePermissionError,
+  errorEmitter,
 } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { useToast } from '@/hooks/use-toast';
@@ -113,22 +115,26 @@ export default function SettingsPage() {
         system: data.system,
     };
 
-    try {
-      await updateDoc(userProfileRef, { ...userProfileData });
-
-      toast({
-        title: content[language].updateSuccessTitle,
-        description: content[language].updateSuccessDesc,
+    updateDoc(userProfileRef, { ...userProfileData })
+      .then(() => {
+        toast({
+          title: content[language].updateSuccessTitle,
+          description: content[language].updateSuccessDesc,
+        });
+      })
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
+          path: userProfileRef.path,
+          operation: 'update',
+          requestResourceData: userProfileData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({
+          variant: 'destructive',
+          title: content[language].updateErrorTitle,
+          description: error.message,
+        });
       });
-
-    } catch (error: any) {
-      console.error('Error updating profile:', error);
-      toast({
-        variant: 'destructive',
-        title: content[language].updateErrorTitle,
-        description: error.message,
-      });
-    }
   }
 
   const content = {

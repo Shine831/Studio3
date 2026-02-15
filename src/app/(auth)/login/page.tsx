@@ -21,53 +21,78 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Eye, EyeOff } from 'lucide-react';
-import { useAuth, useFirestore, useUser } from '@/firebase';
+import { useAuth, useFirestore, useUser, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { UserProfile } from '@/lib/types';
 
 
 // Helper to ensure user profile exists
-const getOrCreateUserProfile = async (
+const getOrCreateUserProfile = (
   firestore: Firestore,
   user: User
 ) => {
   if (!user) return;
   const userRef = doc(firestore, 'users', user.uid);
-  const docSnap = await getDoc(userRef);
+  
+  getDoc(userRef).then(docSnap => {
+    if (!docSnap.exists()) {
+      const [firstName, ...lastNameParts] = (user.displayName || '').split(' ');
+      const lastName = lastNameParts.join(' ');
+      
+      const userProfileData: UserProfile = {
+        id: user.uid,
+        email: user.email,
+        phone: user.phoneNumber,
+        firstName: firstName || 'Anonymous',
+        lastName: lastName || '',
+        profilePicture: user.photoURL || '',
+        role: 'student',
+        language: 'fr',
+        system: 'francophone',
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+      };
+      
+      setDoc(userRef, userProfileData).catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'create',
+            requestResourceData: userProfileData,
+        }));
+      });
 
-  if (!docSnap.exists()) {
-    const [firstName, ...lastNameParts] = (user.displayName || '').split(' ');
-    const lastName = lastNameParts.join(' ');
-    
-    const userProfileData: UserProfile = {
-      id: user.uid,
-      email: user.email,
-      phone: user.phoneNumber,
-      firstName: firstName || 'Anonymous',
-      lastName: lastName || '',
-      profilePicture: user.photoURL || '',
-      role: 'student',
-      language: 'fr',
-      system: 'francophone',
-      createdAt: serverTimestamp(),
-      lastLogin: serverTimestamp(),
-    };
-    
-    await setDoc(userRef, userProfileData);
+      // Send a welcome notification
+      const notificationsCollectionRef = collection(firestore, 'users', user.uid, 'notifications');
+      const notificationData = {
+        messageFr: "Bienvenue sur RéviseCamer ! Créez votre premier plan d'étude pour commencer.",
+        messageEn: "Welcome to RéviseCamer! Create your first study plan to get started.",
+        sentAt: serverTimestamp(),
+        targetURL: "/study-plan",
+      };
+      addDoc(notificationsCollectionRef, notificationData).catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: notificationsCollectionRef.path,
+            operation: 'create',
+            requestResourceData: notificationData,
+        }));
+      });
 
-    // Send a welcome notification
-    const notificationsCollectionRef = collection(firestore, 'users', user.uid, 'notifications');
-    await addDoc(notificationsCollectionRef, {
-      messageFr: "Bienvenue sur RéviseCamer ! Créez votre premier plan d'étude pour commencer.",
-      messageEn: "Welcome to RéviseCamer! Create your first study plan to get started.",
-      sentAt: serverTimestamp(),
-      targetURL: "/study-plan",
-    });
-
-  } else {
-    await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
-  }
+    } else {
+      updateDoc(userRef, { lastLogin: serverTimestamp() }).catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'update',
+            requestResourceData: { lastLogin: 'serverTimestamp()' },
+        }));
+      });
+    }
+  }).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: userRef.path,
+        operation: 'get',
+    }));
+  });
 };
 
 
@@ -166,7 +191,7 @@ function LoginPageContent() {
     setError(null);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await getOrCreateUserProfile(firestore, userCredential.user);
+      getOrCreateUserProfile(firestore, userCredential.user);
       toast({
         title: t.loginSuccessTitle,
         description: t.loginSuccessDesc,
@@ -213,7 +238,7 @@ function LoginPageContent() {
     try {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
-        await getOrCreateUserProfile(firestore, result.user);
+        getOrCreateUserProfile(firestore, result.user);
         toast({ title: t.loginSuccessTitle, description: t.loginSuccessDesc });
         router.push(callbackUrl);
     } catch (error: any) {

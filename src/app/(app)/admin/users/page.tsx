@@ -5,7 +5,7 @@ import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { format } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/lib/types';
@@ -87,25 +87,37 @@ export default function AdminUsersPage() {
     },
   }[language];
 
-  const handleGrantAccess = async (userId: string) => {
+  const handleGrantAccess = (userId: string) => {
+    if (!firestore) return;
     const userDocRef = doc(firestore, 'users', userId);
-    try {
-      await updateDoc(userDocRef, {
-        aiCredits: Infinity,
-        lastCreditRenewal: serverTimestamp(),
+    const updatedData = {
+      aiCredits: Infinity,
+      lastCreditRenewal: serverTimestamp(),
+    };
+
+    updateDoc(userDocRef, updatedData)
+      .then(() => {
+        toast({
+          title: t.successTitle,
+          description: t.successDesc,
+        });
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'update',
+          requestResourceData: {
+            aiCredits: 'Infinity',
+            lastCreditRenewal: 'serverTimestamp()',
+          }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({
+          variant: 'destructive',
+          title: t.errorTitle,
+          description: t.errorDesc,
+        });
       });
-      toast({
-        title: t.successTitle,
-        description: t.successDesc,
-      });
-    } catch (e) {
-      console.error("Failed to grant access:", e);
-      toast({
-        variant: 'destructive',
-        title: t.errorTitle,
-        description: t.errorDesc,
-      });
-    }
   };
 
   if (isLoading) {

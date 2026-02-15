@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { useToast } from '@/hooks/use-toast';
 
@@ -81,27 +81,35 @@ export function ReportBugDialog({ open, onOpenChange }: { open: boolean, onOpenC
     if (!user || !firestore) return;
     setIsLoading(true);
 
-    try {
-      const reportsCollection = collection(firestore, 'bug_reports');
-      await addDoc(reportsCollection, {
-        description: data.description,
-        userId: user.uid,
-        userEmail: user.email,
-        createdAt: serverTimestamp(),
-        status: 'new',
-        url: window.location.href,
-        userAgent: navigator.userAgent,
-      });
+    const reportsCollection = collection(firestore, 'bug_reports');
+    const reportData = {
+      description: data.description,
+      userId: user.uid,
+      userEmail: user.email,
+      createdAt: serverTimestamp(),
+      status: 'new',
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+    };
 
-      toast({ title: t.successTitle, description: t.successDesc });
-      form.reset();
-      onOpenChange(false);
-    } catch (error) {
-      console.error("Error submitting bug report:", error);
-      toast({ variant: 'destructive', title: t.errorTitle, description: t.errorDesc });
-    } finally {
-      setIsLoading(false);
-    }
+    addDoc(reportsCollection, reportData)
+      .then(() => {
+        toast({ title: t.successTitle, description: t.successDesc });
+        form.reset();
+        onOpenChange(false);
+      })
+      .catch((error) => {
+        const permissionError = new FirestorePermissionError({
+          path: reportsCollection.path,
+          operation: 'create',
+          requestResourceData: reportData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: 'destructive', title: t.errorTitle, description: t.errorDesc });
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }
 
   return (

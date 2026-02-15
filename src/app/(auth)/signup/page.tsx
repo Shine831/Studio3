@@ -11,7 +11,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc, Firestore, collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc, Firestore, collection, addDoc, updateDoc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -30,13 +30,13 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Terminal, Eye, EyeOff } from 'lucide-react';
-import { useAuth, useFirestore, useUser } from '@/firebase';
+import { useAuth, useFirestore, useUser, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { useLanguage } from '@/context/language-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { UserProfile } from '@/lib/types';
 
 
-const getOrCreateUserProfile = async (
+const getOrCreateUserProfile = (
   firestore: Firestore,
   user: User,
   extraData: {
@@ -46,41 +46,66 @@ const getOrCreateUserProfile = async (
 ) => {
   if (!user) return;
   const userRef = doc(firestore, 'users', user.uid);
-  const docSnap = await getDoc(userRef);
+  
+  getDoc(userRef).then(docSnap => {
+    if (!docSnap.exists()) {
+        const name = extraData.fullName || user.displayName || '';
+        const [firstName, ...lastNameParts] = name.split(' ');
+        const lastName = lastNameParts.join(' ');
+        
+        const userProfileData: UserProfile = {
+            id: user.uid,
+            email: user.email,
+            phone: user.phoneNumber,
+            firstName: firstName || 'Anonymous',
+            lastName: lastName || '',
+            profilePicture: user.photoURL || '',
+            role: 'student',
+            language: 'fr',
+            system: extraData.system || 'francophone',
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp(),
+        };
+        
+        setDoc(userRef, userProfileData).catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'create',
+                requestResourceData: userProfileData,
+            }));
+        });
 
-  if (!docSnap.exists()) {
-    const name = extraData.fullName || user.displayName || '';
-    const [firstName, ...lastNameParts] = name.split(' ');
-    const lastName = lastNameParts.join(' ');
-    
-    const userProfileData: UserProfile = {
-      id: user.uid,
-      email: user.email,
-      phone: user.phoneNumber,
-      firstName: firstName || 'Anonymous',
-      lastName: lastName || '',
-      profilePicture: user.photoURL || '',
-      role: 'student',
-      language: 'fr',
-      system: extraData.system || 'francophone',
-      createdAt: serverTimestamp(),
-      lastLogin: serverTimestamp(),
-    };
-    
-    await setDoc(userRef, userProfileData);
+        // Send a welcome notification
+        const notificationsCollectionRef = collection(firestore, 'users', user.uid, 'notifications');
+        const notificationData = {
+            messageFr: "Bienvenue sur RéviseCamer ! Créez votre premier plan d'étude pour commencer.",
+            messageEn: "Welcome to RéviseCamer! Create your first study plan to get started.",
+            sentAt: serverTimestamp(),
+            targetURL: "/study-plan",
+        };
+        addDoc(notificationsCollectionRef, notificationData).catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: notificationsCollectionRef.path,
+                operation: 'create',
+                requestResourceData: notificationData,
+            }));
+        });
 
-    // Send a welcome notification
-    const notificationsCollectionRef = collection(firestore, 'users', user.uid, 'notifications');
-    await addDoc(notificationsCollectionRef, {
-      messageFr: "Bienvenue sur RéviseCamer ! Créez votre premier plan d'étude pour commencer.",
-      messageEn: "Welcome to RéviseCamer! Create your first study plan to get started.",
-      sentAt: serverTimestamp(),
-      targetURL: "/study-plan",
-    });
-
-  } else {
-    await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
-  }
+    } else {
+        updateDoc(userRef, { lastLogin: serverTimestamp() }).catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'update',
+                requestResourceData: { lastLogin: 'serverTimestamp()' },
+            }));
+        });
+    }
+  }).catch(error => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'get',
+      }));
+  });
 };
 
 
@@ -227,7 +252,7 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: fullName });
       
-      await getOrCreateUserProfile(firestore, userCredential.user, {
+      getOrCreateUserProfile(firestore, userCredential.user, {
           fullName,
           system,
       });
@@ -277,7 +302,7 @@ export default function SignupPage() {
     try {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
-        await getOrCreateUserProfile(firestore, result.user);
+        getOrCreateUserProfile(firestore, result.user);
         toast({ title: t.accountCreatedTitle, description: t.accountCreatedDesc });
         router.push('/dashboard');
     } catch (error: any) {

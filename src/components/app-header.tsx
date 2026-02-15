@@ -13,7 +13,7 @@ import {
 import { LanguageSwitcher } from './language-switcher';
 import { UserNav } from './user-nav';
 import { useLanguage } from '@/context/language-context';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { collection, query, orderBy, limit, doc, deleteDoc } from 'firebase/firestore';
 import type { Notification } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -39,14 +39,15 @@ export function AppHeader() {
   );
   const { data: notifications } = useCollection<Notification>(notificationsRef);
 
-  const handleDeleteNotification = async (notificationId: string) => {
-    if (!user) return;
+  const handleDeleteNotification = (notificationId: string) => {
+    if (!user || !firestore) return;
     const notifDocRef = doc(firestore, 'users', user.uid, 'notifications', notificationId);
-    try {
-        await deleteDoc(notifDocRef);
-    } catch(e) {
-        console.error("Error deleting notification:", e)
-    }
+    deleteDoc(notifDocRef).catch(e => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: notifDocRef.path,
+            operation: 'delete',
+        }));
+    });
   }
 
   const content = {
