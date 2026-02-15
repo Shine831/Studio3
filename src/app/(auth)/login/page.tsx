@@ -139,7 +139,7 @@ function LoginPageContent() {
       errorFillFields: 'Veuillez remplir tous les champs.',
       errorInvalidCredentials: 'Email ou mot de passe invalide. Veuillez vérifier vos informations et réessayer.',
       errorTooManyRequests: "L'accès à ce compte a été temporairement désactivé en raison de nombreuses tentatives de connexion échouées. Vous pouvez le restaurer immédiatement en réinitialisant votre mot de passe ou réessayer plus tard.",
-      errorFirebaseConfig: "Configuration Firebase manquante. Assurez-vous que vos variables d'environnement (ex: .env.local) sont correctement configurées pour cet environnement d'aperçu.",
+      errorFirebaseConfig: "Configuration Firebase manquante. Si vous déployez sur Vercel, assurez-vous que les variables d'environnement sont correctement configurées.",
       errorUnexpected: "Une erreur inattendue s'est produite. Veuillez réessayer.",
       errorUnauthorizedDomain: "Ce domaine n'est pas autorisé pour l'authentification. L'administrateur doit l'ajouter dans la console Firebase.",
       headsUp: 'Attention !',
@@ -162,7 +162,7 @@ function LoginPageContent() {
         errorFillFields: 'Please fill in all fields.',
         errorInvalidCredentials: 'Invalid email or password. Please check your credentials and try again.',
         errorTooManyRequests: 'Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.',
-        errorFirebaseConfig: 'Firebase configuration is missing. Ensure your environment variables (e.g., .env.local) are correctly set up for this preview environment.',
+        errorFirebaseConfig: 'Firebase configuration is missing. If deploying to Vercel, ensure your Environment Variables are set correctly.',
         errorUnexpected: 'An unexpected error occurred. Please try again.',
         errorUnauthorizedDomain: "This domain is not authorized for authentication. The administrator needs to add it in the Firebase console.",
         headsUp: 'Heads up!',
@@ -276,7 +276,7 @@ function LoginPageContent() {
           {error && (
              <Alert variant="destructive">
                 <Terminal className="h-4 w-4" />
-                <AlertTitle>{t.headsUp}</AlertTitle>
+                <AlertTitle>{t.loginFailedTitle}</AlertTitle>
                 <AlertDescription>
                     {error}
                 </AlertDescription>

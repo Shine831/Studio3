@@ -1,11 +1,2 @@
-// This configuration is now loaded from environment variables
-// to ensure that sensitive keys are not exposed in the source code.
-// See the .env.local.example file for the required variables.
-
-export const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-};
+// This file is deprecated. The Firebase configuration has been moved directly into
+// src/firebase/index.ts to ensure it's loaded at runtime on the client-side.

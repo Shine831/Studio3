@@ -168,7 +168,7 @@ export default function SignupPage() {
       errorEmailInUse: 'Cette adresse email est déjà utilisée par un autre compte.',
       errorWeakPassword: 'Le mot de passe est trop faible. Veuillez utiliser un mot de passe plus fort.',
       errorInvalidEmail: 'L\'adresse email n\'est pas valide.',
-      errorFirebaseConfig: "Configuration Firebase manquante. Assurez-vous que vos variables d'environnement (ex: .env.local) sont correctement configurées pour cet environnement d'aperçu.",
+      errorFirebaseConfig: "Configuration Firebase manquante. Si vous déployez sur Vercel, assurez-vous que les variables d'environnement sont correctement configurées.",
       errorUnexpected: "Une erreur inattendue s'est produite. Veuillez réessayer.",
       errorUnauthorizedDomain: "Ce domaine n'est pas autorisé pour l'authentification. L'administrateur doit l'ajouter dans la console Firebase.",
       headsUp: 'Attention !',
@@ -205,7 +205,7 @@ export default function SignupPage() {
       errorEmailInUse: 'This email address is already in use by another account.',
       errorWeakPassword: 'The password is too weak. Please use a stronger password.',
       errorInvalidEmail: 'The email address is not valid.',
-      errorFirebaseConfig: 'Firebase configuration is missing. Ensure your environment variables (e.g., .env.local) are correctly set up for this preview environment.',
+      errorFirebaseConfig: 'Firebase configuration is missing. If deploying to Vercel, ensure your Environment Variables are set correctly.',
       errorUnexpected: 'An unexpected error occurred. Please try again.',
       errorUnauthorizedDomain: "This domain is not authorized for authentication. The administrator needs to add it in the Firebase console.",
       headsUp: 'Heads up!',
@@ -354,7 +354,7 @@ export default function SignupPage() {
           {error && (
              <Alert variant="destructive" className="mb-4">
                 <Terminal className="h-4 w-4" />
-                <AlertTitle>{t.headsUp}</AlertTitle>
+                <AlertTitle>{t.signupFailedTitle}</AlertTitle>
                 <AlertDescription>
                     {error}
                 </AlertDescription>
