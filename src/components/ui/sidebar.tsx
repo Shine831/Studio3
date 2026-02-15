@@ -1,5 +1,4 @@
-// This component has been removed as it was unused.
-'use client';
+// This file has been emptied as it was unused and to simplify the project structure.
 export default function Sidebar() {
   return null;
 }

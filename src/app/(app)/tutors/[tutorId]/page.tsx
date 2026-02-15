@@ -1,6 +1,4 @@
-'use client';
-
-// This page is not used in the current version of the application.
+// This file has been emptied as it was unused and to simplify the project structure.
 export default function TutorProfilePage() {
     return null;
 }
