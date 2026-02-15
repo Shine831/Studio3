@@ -21,6 +21,7 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: 'RéviseCamer',
   description: "Générez des plans d'étude, des leçons et des quiz pour réussir votre lycée au Cameroun.",
+  icons: null,
 };
 
 export default function RootLayout({
@@ -30,13 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={cn(
-          'min-h-screen bg-background font-body antialiased',
-          inter.variable,
-          spaceGrotesk.variable
-        )}
-      >
+      <body>
         {/* Google Tag Manager */}
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`
