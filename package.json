@@ -49,8 +49,8 @@
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.8",
-    "genkit": "^1.0.0",
-    "@genkit-ai/googleai": "^1.0.0"
+    "genkit": "*",
+    "@genkit-ai/google-genai": "*"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
