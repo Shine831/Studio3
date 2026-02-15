@@ -1,3 +1,4 @@
+
 'use client';
 import { useUser, useDoc, useFirestore } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
@@ -18,7 +19,7 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
   const firestore = useFirestore();
   const { language } = useLanguage();
   
-  const userProfileRef = useMemo(() => (user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
+  const userProfileRef = useMemo(() => (user ? doc(firestore, 'users', user.uid) : null), [firestore, user?.uid]);
   const { data: userProfile, isLoading } = useDoc<UserProfile>(userProfileRef);
 
   const t = {

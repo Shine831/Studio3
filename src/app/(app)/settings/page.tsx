@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
@@ -61,7 +62,7 @@ export default function SettingsPage() {
 
   const userProfileRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
-    [firestore, user]
+    [firestore, user?.uid]
   );
   const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userProfileRef);
 

@@ -435,13 +435,13 @@ export default function StudyPlanDetailPage() {
 
   const planRef = useMemo(
     () => (user && planId ? doc(firestore, 'users', user.uid, 'studyPlans', planId as string) : null),
-    [firestore, user, planId]
+    [firestore, user?.uid, planId]
   );
   const { data: plan, isLoading: isPlanLoading, error: planError } = useDoc<WithId<SavedStudyPlan>>(planRef);
 
   const userProfileRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
-    [firestore, user]
+    [firestore, user?.uid]
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 

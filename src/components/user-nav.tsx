@@ -49,7 +49,7 @@ export function UserNav() {
 
   const userProfileRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
-    [firestore, user]
+    [firestore, user?.uid]
   );
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 

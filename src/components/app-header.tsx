@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -35,7 +36,7 @@ export function AppHeader() {
             limit(10)
           )
         : null,
-    [firestore, user]
+    [firestore, user?.uid]
   );
   const { data: notifications } = useCollection<Notification>(notificationsRef);
 
