@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -90,6 +91,13 @@ export function UserNav() {
     router.push('/');
   };
 
+  const avatarName = useMemo(() => {
+    if (userProfile?.firstName) {
+        return `${userProfile.firstName} ${userProfile.lastName || ''}`;
+    }
+    return user?.displayName;
+  }, [userProfile, user]);
+
   return (
     <>
       <DropdownMenu>
@@ -97,14 +105,14 @@ export function UserNav() {
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-9 w-9">
               <AvatarImage src={userProfile?.profilePicture} alt="User avatar" />
-              <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+              <AvatarFallback>{getInitials(avatarName)}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user?.displayName || 'User'}</p>
+              <p className="text-sm font-medium leading-none">{avatarName || 'User'}</p>
               <p className="text-xs leading-none text-muted-foreground">
                 {user?.email || t.noEmail}
               </p>

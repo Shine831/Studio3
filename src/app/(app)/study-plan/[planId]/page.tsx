@@ -506,7 +506,7 @@ export default function StudyPlanDetailPage() {
             </div>
             <Separator />
 
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
                 {plan.lessons.map((lesson, index) => (
                     <AccordionItem value={`item-${index}`} key={index}>
                         <AccordionTrigger>

@@ -100,7 +100,8 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
       generationError: "Une erreur est survenue lors de la génération du plan. Veuillez réessayer.",
       noPlanGenerated: "Impossible de générer un plan pour ce sujet. Veuillez essayer une autre matière.",
       close: "Fermer",
-      unlimitedAccess: "Le paiement de 1200 FCFA vous donne un accès illimité pour la journée."
+      unlimitedAccess: "Le paiement de 1200 FCFA vous donne un accès illimité pour la journée.",
+      errorTitle: "Erreur de Génération"
     },
     en: {
       subjectLabel: 'Subject',
@@ -113,7 +114,8 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
       generationError: "An error occurred while generating the plan. Please try again.",
       noPlanGenerated: "Could not generate a plan for this topic. Please try another subject.",
       close: "Close",
-      unlimitedAccess: "Paying 1200 FCFA gives you unlimited access for the day."
+      unlimitedAccess: "Paying 1200 FCFA gives you unlimited access for the day.",
+      errorTitle: "Generation Error"
     },
   }[language];
 
@@ -196,6 +198,13 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            {error && (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>{t.errorTitle}</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
             <FormField
               control={form.control}
               name="subject"
@@ -223,7 +232,6 @@ function GeneratePlanDialog({ userProfile, onPlanGenerated }: { userProfile: Use
                 </FormItem>
               )}
             />
-            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{t.close}</Button>
               <Button type="submit" disabled={isLoading}>

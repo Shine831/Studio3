@@ -263,8 +263,11 @@
       "required": [
         "description",
         "userId",
+        "userEmail",
         "createdAt",
-        "status"
+        "status",
+        "url",
+        "userAgent"
       ]
     }
   },

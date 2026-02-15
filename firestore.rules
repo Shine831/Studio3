@@ -24,6 +24,16 @@ service cloud.firestore {
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
+    function isValidBugReport(data) {
+      return data.description is string && data.description.size() > 0 && data.description.size() <= 1000
+        && data.userId == request.auth.uid
+        && data.userEmail == request.auth.token.email
+        && data.createdAt == request.time
+        && data.status == 'new'
+        && data.url is string
+        && data.userAgent is string;
+    }
+    
     // --------------------------------------------------------------------
     // User Data Collections (/users)
     // --------------------------------------------------------------------
@@ -60,7 +70,7 @@ service cloud.firestore {
     // --------------------------------------------------------------------
 
     match /bug_reports/{reportId} {
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && isValidBugReport(request.resource.data);
       allow read, update, delete: if isAdmin();
     }
   }
