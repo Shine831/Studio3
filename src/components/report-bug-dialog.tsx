@@ -18,6 +18,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -36,11 +37,12 @@ const ReportBugSchema = z.object({
 
 type ReportBugValues = z.infer<typeof ReportBugSchema>;
 
-export function ReportBugDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
+export function ReportBugDialog({ children }: { children: React.ReactNode }) {
   const { language } = useLanguage();
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const t = {
@@ -96,7 +98,7 @@ export function ReportBugDialog({ open, onOpenChange }: { open: boolean, onOpenC
       .then(() => {
         toast({ title: t.successTitle, description: t.successDesc });
         form.reset();
-        onOpenChange(false);
+        setOpen(false);
       })
       .catch((error) => {
         const permissionError = new FirestorePermissionError({
@@ -113,7 +115,8 @@ export function ReportBugDialog({ open, onOpenChange }: { open: boolean, onOpenC
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t.title}</DialogTitle>
@@ -135,7 +138,7 @@ export function ReportBugDialog({ open, onOpenChange }: { open: boolean, onOpenC
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>{t.cancel}</Button>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{t.cancel}</Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isLoading ? t.submitting : t.submit}
