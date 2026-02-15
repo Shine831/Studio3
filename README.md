@@ -18,12 +18,12 @@ RéviseCamer is a web application designed to help Cameroonian students succeed 
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **UI Components**: [ShadCN UI](https://ui.shadcn.com/)
 - **AI/Generative**: [Google Gemini](https://gemini.google.com/) via [Genkit](https://firebase.google.com/docs/genkit)
-- **Database & Auth**: [Firebase](https://firebase.google.com/) (Firestore & Authentication)
 - **Form Management**: [React Hook Form](https://react-hook-form.com/) & [Zod](https://zod.dev/)
+- **Development Environment**: [Visual Studio Code](https://code.visualstudio.com/)
 
 ## Getting Started
 
-To run the project locally, you will need to set up your own Firebase project and configure the environment variables.
+Follow these steps to set up and run the project locally. It is recommended to use [Visual Studio Code](https://code.visualstudio.com/) as your code editor.
 
 ### 1. Clone the Repository
 ```bash
@@ -36,29 +36,12 @@ cd revise-camer
 npm install
 ```
 
-### 3. Set Up Environment Variables
-- Create a new project in the [Firebase Console](https://console.firebase.google.com/).
-- In your project settings, add a new **Web App**.
-- Copy the Firebase configuration object provided.
-- Create a file named `.env.local` in the root of your project.
-- Use the `.env.local.example` file as a template and populate `.env.local` with the values from your Firebase config.
-
-Your `.env.local` file should look like this:
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-NEXT_PUBLIC_FIREBASE_APP_ID=1:1234...
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=1234...
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-ABCD...
-```
-
-### 4. Run the Development Server
+### 3. Run the Development Server
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:9002](http://localhost:9002) with your browser to see the result.
+Open [http://localhost:9002](http://localhost:9002) with your browser to see the result. The application requires certain environment variables to be set up to connect to its backend services. Please refer to `.env.local.example` for the required variables.
 
 ---
 
@@ -75,7 +58,7 @@ Deploying this application to Vercel is straightforward.
 
 3.  **Configure Environment Variables:**
     - In the project settings on Vercel, navigate to the "Environment Variables" section.
-    - Add all the `NEXT_PUBLIC_` variables from your `.env.local` file. This is a crucial step for your deployed app to connect to Firebase.
+    - Add all the required variables listed in the `.env.local.example` file. This is a crucial step for your deployed app to connect to its backend services.
 
 4.  **Deploy:**
     - Vercel will automatically detect that this is a Next.js project.
