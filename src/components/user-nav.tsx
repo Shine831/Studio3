@@ -63,7 +63,6 @@ export function UserNav() {
       loggedOutTitle: 'Déconnecté',
       loggedOutDesc: 'Vous avez été déconnecté avec succès.',
       noEmail: 'Pas d\'email',
-      reportBug: 'Signaler un bug',
     },
     en: {
       profile: 'Profile',
@@ -75,7 +74,6 @@ export function UserNav() {
       loggedOutTitle: 'Logged Out',
       loggedOutDesc: 'You have been successfully logged out.',
       noEmail: 'No email',
-      reportBug: 'Report a bug',
     }
   };
   const t = content[language];
@@ -124,12 +122,7 @@ export function UserNav() {
               <span>{t.profile}</span>
             </Link>
           </DropdownMenuItem>
-          <ReportBugDialog>
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-              <Bug className="mr-2 h-4 w-4" />
-              <span>{t.reportBug}</span>
-            </DropdownMenuItem>
-          </ReportBugDialog>
+          <ReportBugDialog />
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
          <DropdownMenuSub>

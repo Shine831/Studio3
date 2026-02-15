@@ -21,11 +21,7 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: 'RéviseCamer',
   description: "Générez des plans d'étude, des leçons et des quiz pour réussir votre lycée au Cameroun.",
-  icons: {
-    icon: '/icon.png',
-    shortcut: '/favicon.ico',
-    apple: '/apple-icon.png',
-  },
+  icons: false,
 };
 
 export default function RootLayout({

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
+import { DropdownMenuItem } from './ui/dropdown-menu';
 
 const ReportBugSchema = z.object({
   description: z.string().min(10, { message: 'Please describe the bug in at least 10 characters.' }).max(1000),
@@ -37,7 +39,7 @@ const ReportBugSchema = z.object({
 
 type ReportBugValues = z.infer<typeof ReportBugSchema>;
 
-export function ReportBugDialog({ children }: { children: React.ReactNode }) {
+export function ReportBugDialog() {
   const { language } = useLanguage();
   const { toast } = useToast();
   const { user } = useUser();
@@ -58,6 +60,7 @@ export function ReportBugDialog({ children }: { children: React.ReactNode }) {
       successDesc: "Merci pour votre aide. Nous allons examiner ce problème.",
       errorTitle: "Erreur",
       errorDesc: "Impossible d'envoyer le rapport. Veuillez réessayer.",
+      reportBug: 'Signaler un bug',
     },
     en: {
       title: "Report a Bug",
@@ -71,6 +74,7 @@ export function ReportBugDialog({ children }: { children: React.ReactNode }) {
       successDesc: "Thank you for your help. We will look into this issue.",
       errorTitle: "Error",
       errorDesc: "Could not send the report. Please try again.",
+      reportBug: 'Report a bug',
     }
   }[language];
 
@@ -116,7 +120,12 @@ export function ReportBugDialog({ children }: { children: React.ReactNode }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogTrigger asChild>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <Bug className="mr-2 h-4 w-4" />
+          <span>{t.reportBug}</span>
+        </DropdownMenuItem>
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t.title}</DialogTitle>
