@@ -21,14 +21,14 @@ export default function DashboardPage() {
 
   // Data fetching
   const studyPlansRef = useMemo(
-    () => (user ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
-    [firestore, user?.uid]
+    () => (user && firestore ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
+    [firestore, user]
   );
   const { data: studyPlans, isLoading: arePlansLoading, error: plansError } = useCollection<SavedStudyPlan>(studyPlansRef);
 
   const quizResultsRef = useMemo(
-    () => (user ? query(collection(firestore, 'users', user.uid, 'quizResults'), orderBy('completionDate', 'desc'), limit(10)) : null),
-    [firestore, user?.uid]
+    () => (user && firestore ? query(collection(firestore, 'users', user.uid, 'quizResults'), orderBy('completionDate', 'desc'), limit(10)) : null),
+    [firestore, user]
   );
   const { data: quizResults, isLoading: areResultsLoading, error: resultsError } = useCollection<QuizResult>(quizResultsRef);
   

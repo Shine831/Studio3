@@ -30,7 +30,10 @@ export default function AdminBugsPage() {
   const { language } = useLanguage();
   const { toast } = useToast();
 
-  const bugsRef = useMemo(() => query(collection(firestore, 'bug_reports'), orderBy('createdAt', 'desc')), [firestore]);
+  const bugsRef = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'bug_reports'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
   const { data: bugs, isLoading, error } = useCollection<BugReport>(bugsRef);
 
   const t = {

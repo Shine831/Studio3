@@ -39,7 +39,10 @@ export default function AdminUsersPage() {
   const { language } = useLanguage();
   const { toast } = useToast();
 
-  const usersRef = useMemo(() => collection(firestore, 'users'), [firestore]);
+  const usersRef = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
   const { data: users, isLoading, error } = useCollection<UserProfile>(usersRef);
 
   const t = {

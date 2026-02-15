@@ -29,14 +29,14 @@ export function AppHeader() {
 
   const notificationsRef = useMemo(
     () =>
-      user
+      user && firestore
         ? query(
             collection(firestore, 'users', user.uid, 'notifications'),
             orderBy('sentAt', 'desc'),
             limit(10)
           )
         : null,
-    [firestore, user?.uid]
+    [firestore, user]
   );
   const { data: notifications } = useCollection<Notification>(notificationsRef);
 

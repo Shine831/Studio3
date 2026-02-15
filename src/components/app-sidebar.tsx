@@ -26,8 +26,8 @@ export function AppSidebar({ className }: { className?: string }) {
   const pathname = usePathname();
 
   const userProfileRef = useMemo(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
-    [firestore, user?.uid]
+    () => (user && firestore ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 

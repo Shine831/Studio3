@@ -61,8 +61,8 @@ export default function SettingsPage() {
   const [preview, setPreview] = useState<string | null>(null);
 
   const userProfileRef = useMemo(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
-    [firestore, user?.uid]
+    () => (user && firestore ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
   );
   const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useDoc<UserProfile>(userProfileRef);
 

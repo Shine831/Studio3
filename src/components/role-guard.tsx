@@ -19,7 +19,7 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
   const firestore = useFirestore();
   const { language } = useLanguage();
   
-  const userProfileRef = useMemo(() => (user ? doc(firestore, 'users', user.uid) : null), [firestore, user?.uid]);
+  const userProfileRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading } = useDoc<UserProfile>(userProfileRef);
 
   const t = {

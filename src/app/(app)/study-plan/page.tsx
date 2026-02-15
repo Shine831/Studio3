@@ -251,14 +251,14 @@ export default function StudyPlanPage() {
   const firestore = useFirestore();
 
   const userProfileRef = useMemo(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
-    [firestore, user?.uid]
+    () => (user && firestore ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const studyPlansRef = useMemo(
-    () => (user ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
-    [firestore, user?.uid]
+    () => (user && firestore ? collection(firestore, 'users', user.uid, 'studyPlans') : null),
+    [firestore, user]
   );
 
   const { data: savedPlans, isLoading: arePlansLoading, error: plansError } = useCollection<SavedStudyPlan>(studyPlansRef);

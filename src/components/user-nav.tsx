@@ -48,8 +48,8 @@ export function UserNav() {
   const [reportBugOpen, setReportBugOpen] = useState(false);
 
   const userProfileRef = useMemo(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
-    [firestore, user?.uid]
+    () => (user && firestore ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
   );
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
